@@ -13,7 +13,7 @@ It's a powerful, self-hosting blogging server with minimal social features baked
 - I want to make the easiest server for non-programmers to host their own content with
 
 ## How can I learn this project?
-Check the GitHub wiki to get started and see screenshots of how the webpages look.
+[Check the GitHub wiki](https://github.com/firecakes/cakelandish/wiki) to get started and see screenshots of how the webpages look.
 
 ## Dev Commands
 

@@ -115,6 +115,7 @@ async function contentsToAtomFile(
       },
       contributors: database.contributors,
       id: database.link + "/",
+      generator: "https://github.com/firecakes/cakelandish",
       link: [{
         "@href": database.link + "/",
       }, {
