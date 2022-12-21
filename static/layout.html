@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <head>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+
+  <body id="bg">
+    <div id="app" class="flex">
+
+      <!-- left side -->
+      <div v-if="isAuthenticated === true" class="half flex-v">
+        <!-- HTML input -->
+        <p class="center title">HTML Layout goes here!</p>
+        <textarea class="html-input textarea" rows="30" v-model="htmlInput"></textarea>
+
+        <p class="tiny-text">This layout will be injected into every post you've made and will make. To make sure your posts render where you want them to make sure you include %%%content%%% in the file where you want it to go.</p>
+
+        <div class="form" style="justify-content: space-around;">
+          <button class="button" @click="submitLayout()">Submit Layout</button>
+          <a class="button" href="index.html">Return to Main Page</a>
+        </div>
+      </div>
+
+      <!-- right side -->
+      <div v-if="isAuthenticated === true" class="half flex-v">
+        <p class="center title">How it renders on your site:</p>
+        <iframe :srcdoc="htmlInput" title="Layout Render"></iframe> 
+      </div>
+
+      <div v-if="isAuthenticated === false" class="half flex-v">
+        <p class="title center margin-center">You are not authorized to view this page</p>
+      </div>
+
+    </div>
+  </body>
+
+  <script type="module">
+    Vue.createApp({
+      data () {
+        return {
+          htmlInput: "",
+          isAuthenticated: null,
+          performAction: false,
+        }
+      },
+      async created () {
+        // check if authenticated
+        try {
+          await axios.get('/api/auth');
+          this.isAuthenticated = true;
+        } catch (err) {
+          this.isAuthenticated = false;
+          return;
+        }
+      },
+      async mounted () {
+        const results = await axios.get('/api/layout');
+        this.htmlInput = results.data.layout;
+      },
+      methods: {
+        async submitLayout () {
+          if (this.performAction) {
+            return;
+          }
+          this.performAction = true;
+          try {
+            await axios.post('/api/layout', {
+              layout: this.htmlInput,
+            });
+            window.location.href = '/index.html';
+          } catch (err) {
+            console.log(err);
+          }
+          this.performAction = false;
+        },
+        toMainPage: function () {
+          window.location.href = '/index.html';
+        }
+      }
+    }).mount('#app');
+
+  </script>
+
+  <style>
+    #bg {
+      background: #1B2327;
+    }
+
+    .textarea { 
+      resize: vertical; 
+    }
+
+    .title {
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 32px;
+      margin: 0px;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .flex-center {
+      flex-grow: 1;
+      text-align: center;
+    }
+
+    .flex {
+      display: flex;
+    }
+
+    .flex-v {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .half {
+      flex: 1 0 0;
+      margin-left: 10px;
+      margin-right: 10px;
+    }
+
+    .tiny-text {
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 12px;
+      margin: 0px;
+    }
+
+    .form {
+      display: flex;
+      align-items: center;
+    }
+
+    .button {
+      height: 30px;
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 14px;
+      background: #382f27;
+      border: 0px;
+      border-radius: 8px;
+      margin-top: 15px;
+      width: 300px;
+      align-self: center;
+      text-align: center;
+      appearance: button;
+      text-decoration: none;
+      font-size: 24px;
+    }
+
+    .html-input {
+      background: #273038;
+      flex-grow: 1;
+      color: #d2d2d2;
+      margin-bottom: 10px;
+    }
+
+    .html-output {
+      background: #273038;
+      flex-grow: 1;
+      color: #d2d2d2;
+    }
+
+  </style>
+</html>

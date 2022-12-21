@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <head>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+
+  <body id="bg">
+    <div id="app" class="flex">
+      <p v-if="isAuthenticated === true" class="title center">Your posts</p>
+      <a v-if="isAuthenticated === true" class="button submit-button" href="index.html">Return to Main Page</a>
+
+      <div v-if="isAuthenticated === true" class="post" v-for="post in orderedPosts">
+        <div class="post-contents">
+          <a :href="post.link" target="_blank"> {{ post.title }}</a>
+          <br>
+          <span v-html="post.content"></span>
+        </div>
+        <a class="button flex-row" :href="`/upload.html?localUrl=${post.localUrl}`"><p class="edit-post-text">Edit post</p></a>
+        <button v-if="!post.requestDeletion" class="button" @click="deletePost(post)">Delete post</button>
+        <button v-if="post.requestDeletion" class="button" @click="deletePost(post)">Are you sure?</button>
+      </div>
+
+      <div v-if="isAuthenticated === false" class="fourth flex-v">
+        <p class="title center margin-center">You are not authorized to view this page</p>
+      </div>
+
+    </div>
+  </body>
+
+  <script type="module">
+    Vue.createApp({
+      data () {
+        return {
+          posts: [],
+          performAction: false,
+          isAuthenticated: null,
+        }
+      },
+      async created () {
+        // check if authenticated
+        try {
+          await axios.get('/api/auth');
+          this.isAuthenticated = true;
+        } catch (err) {
+          this.isAuthenticated = false;
+          return;
+        }
+      },
+      async mounted () {
+        const result = await axios.get("/api/post", {});
+        this.posts = result.data.posts
+      },
+      computed: {
+        orderedPosts: function () {
+          return this.posts.sort((a, b) => {
+            return new Date(b.updated) - new Date(a.updated)
+          });
+        }
+      },
+      methods: {
+        async deletePost (post) {
+          if (this.performAction) {
+            return;
+          }
+          if (!post.requestDeletion) {
+            post.requestDeletion = true;
+          } else {
+            // prepare deletion. prevent pressing delete button again
+            this.performAction = true;
+            await axios.delete('/api/post', {
+              data: {
+                post: post,
+              }
+            });
+            window.location.href = '/manage.html';
+          }
+        },
+        returnToMain () {
+          window.location.href = '/index.html';
+        }
+      }
+    }).mount('#app');
+
+  </script>
+
+  <style>
+    #bg {
+      background: #273038;
+    }
+
+    .flex {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .flex-row {
+      display: flex;
+      flex-direction: row;
+    }
+
+    .title {
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 32px;
+      margin: 20px;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .post {
+      margin-bottom: 30px;
+      font-family: Inika;
+      background-color: #ECF8FF;
+      border: 0px;
+      display: flex;
+      flex-grow: 1;
+      align-items: center;
+    }
+
+    .post-contents {
+      flex-grow: 1;
+    }
+
+    .button {
+      margin-left: 20px;
+      margin-right: 20px;
+      margin-bottom: 20px;
+      padding-left: 10px;
+      padding-right: 10px;
+      height: 30px;
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 14px;
+      background: #382f27;
+      border: 0px;
+      border-radius: 8px;
+      align-self: center;
+      text-align: center;
+      appearance: button;
+      text-decoration: none;
+    }
+
+    .submit-button {
+      margin-top: 15px;
+      width: 300px;
+      font-size: 20px;
+    }
+
+    .edit-post-text {
+      align-self: center;
+    }
+
+  </style>
+</html>

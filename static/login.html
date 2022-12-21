@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <head>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+
+  <body id="bg">
+    <div id="app" class="flex">
+      <p class="title center">{{ titleText }}</p>
+
+      <input v-if="!authenticated" class="textbox" id="title" v-model="code">
+
+      <button v-if="!authenticated" class="button submit-button" @click="auth()">Authenticate</button>
+      <a class="button submit-button" href="index.html">Return to Main Page</a>
+    </div>
+  </body>
+
+  <script type="module">
+    Vue.createApp({
+      data () {
+        return {
+          titleText: "Place your code below to gain authorization",
+          code: "",
+          authenticated: false,
+        }
+      },
+      async created () {
+        // check if authenticated
+        try {
+          await axios.get('/api/auth');
+          this.authenticated = true;
+          this.titleText = "You are now authenticated.";
+        } catch (err) {
+          this.authenticated = false;
+          return;
+        }
+      },
+      methods: {
+        async auth () {
+          const result = await axios.post("/api/auth", { code: this.code });
+          if (!result.data.success) {
+            this.titleText = "Code is invalid.";
+          } else {
+            this.titleText = "You are now authenticated.";
+            this.authenticated = true;
+          }
+        },
+      }
+    }).mount('#app');
+
+  </script>
+
+  <style>
+    #bg {
+      background: #273038;
+    }
+
+    .flex {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .flex-row {
+      display: flex;
+      flex-direction: row;
+    }
+
+    .title {
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 32px;
+      margin: 20px;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .button {
+      margin-left: 20px;
+      margin-right: 20px;
+      margin-bottom: 20px;
+      padding-left: 10px;
+      padding-right: 10px;
+      height: 30px;
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 14px;
+      background: #382f27;
+      border: 0px;
+      border-radius: 8px;
+      align-self: center;
+      text-align: center;
+      appearance: button;
+      text-decoration: none;
+    }
+
+    .submit-button {
+      margin-top: 15px;
+      width: 300px;
+      font-size: 20px;
+    }
+
+    .textbox {
+      margin-left: 20px;
+      margin-right: 20px;
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 28px;
+      background: #1B2327;
+      border: 0px;
+      flex-grow: 1;
+    }
+
+  </style>
+</html>

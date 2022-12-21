@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <head>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+
+  <body id="bg">
+    <div id="app" class="flex">
+
+      <!-- left side -->
+      <div v-if="isAuthenticated === true" class="half flex-v">
+        <!-- HTML input -->
+        <p class="center title">HTML goes here!</p>
+        <textarea class="html-input textarea" rows="30" v-model="htmlInput" @input="sanitizeDebounce"></textarea>
+
+        <!-- RSS override -->
+        <button class="button rss-override" @click="toggleRssOverride">Toggle RSS Override</button>
+        <div v-if="showRssOverride" class="flex-v">
+          <p class="tiny-text">Enabling RSS Override means you want to put different content in your RSS post than the content that is stored on your server. You should keep as much of the same content in your RSS post as possible. Only enable this if you want to include more intricate styling and functionality than what the RSS reader allows for those who visit your server!</p>
+          <textarea class="html-input textarea" rows="30" v-model="rssInput" @input="sanitizeDebounce"></textarea>
+        </div>
+
+        <p class="tiny-text">Be aware that full URLs are used for images so that RSS feeds link the images properly. Make sure your server is setup on a permanent address before making posts!</p>
+
+        <!-- post info -->
+        <div class="form">
+          <label for="title" class="title">Title</label>
+          <input class="textbox" id="title" v-model="title">
+        </div>
+
+        <div class="form">
+          <label for="replyFeed" class="title">Reply Feed URL</label>
+          <input class="textbox" id="replyFeed" v-model="replyFeedUrl">
+        </div>
+
+        <div class="form">
+          <label for="replyId" class="title">Reply Post ID URL</label>
+          <input class="textbox" id="replyId" v-model="replyPostIdUrl">
+        </div>
+
+        <!-- tag management + upload -->
+        <div class="flex">
+
+          <div class="form third flex-v">
+
+            <div class="flex form">
+              <label for="tag" class="title">Tags</label>
+              <input class="textbox tag-input" id="tag" v-model="tag">
+              <button class="button tag-button" @click="addTag">Add tag</button>
+            </div>
+
+            <div class="form">
+              <label for="file-upload" class="file form file-upload-images">
+                <p class="flex-center">Upload images</p>
+              </label>
+              <input id="file-upload" accept="image/*" type="file" @change="filesSubmitted" multiple/>
+            </div>
+
+          </div>
+
+          <div class="two-third">
+            <div class="form" v-for="(t, index) in tags">
+              <p class="tiny-text half"><b>{{ t }}</b></p>
+              <button class="button half" @click="removeTag(index)">Remove</button>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+
+      <!-- right side -->
+      <div v-if="isAuthenticated === true" class="half flex-v">
+        <p class="center title">How it renders on your site:</p>
+        <iframe :srcdoc="htmlInputLayoutApplied" class="html-output" title="Layout Render"></iframe> 
+        <p class="center title">How it renders on your server's RSS reader:</p>
+        <p class="tiny-text">Dangerous / unnecessary tags such as script and style are removed in sanitiation. Be aware of this as this is how users will see your post using this server's RSS reader. Style whitelists can be made in the future but the sanitation library being used limits to explicit values set for styling. Only basic colors are supported with inline styling for certain tags.</p>
+        <span v-html="htmlOutput" class="html-output"></span>
+
+        <div class="form" style="justify-content: space-around;">
+          <button v-if="!localUrl" class="button submit-button" @click="submitPost">Submit Post</button>
+          <button v-if="localUrl" class="button submit-button" @click="submitPost">Update Post</button>
+          <button class="button discard-button" @click="discardPost">Discard Post</button>
+        </div>
+      </div>
+
+      <div v-if="isAuthenticated === false" class="half flex-v">
+        <p class="title center margin-center">You are not authorized to view this page</p>
+      </div>
+
+    </div>
+  </body>
+
+  <script type="module">
+    Vue.createApp({
+      data () {
+        return {
+          htmlInput: "Hello <i>World!</i>",
+          rssInput: "Hello <i>World!</i>",
+          htmlOutput: "",
+          title: "",
+          // use this until the user decides to submit the post, then use the real title
+          tmpTitle: "", 
+          replyFeedUrl: "",
+          replyPostIdUrl: "",
+          tags: [],
+          tag: "",
+          sanitizeDebounce: this.debounce(this.sanitizeHtml),
+          localUrl: "",
+          published: "",
+          performAction: false,
+          showRssOverride: false,
+          isAuthenticated: null,
+          layout: "",
+        }
+      },
+      async created () {
+        // check if authenticated
+        try {
+          await axios.get('/api/auth');
+          this.isAuthenticated = true;
+        } catch (err) {
+          this.isAuthenticated = false;
+          return;
+        }
+      },
+      async mounted () {
+        // hash that may appear in post IDs not included in search string. append it
+        let uri = window.location.search + window.location.hash; 
+        let params = new URLSearchParams(uri);
+
+        this.replyFeedUrl = params.get('feedurl');
+        this.replyPostIdUrl = params.get('id');
+        this.localUrl = params.get('localUrl');
+
+        this.layout = (await axios.get('/api/layout')).data.layout;
+
+        // if localUrl is defined we are editing a post
+        if (this.localUrl) {
+          const result = await axios.post("/api/post/init", {
+            localUrl: this.localUrl,
+          });
+          const foundPost = result.data.post;
+          if (!foundPost) {
+            return;
+          }
+          this.htmlInput = foundPost.originalContent;
+          this.rssInput = foundPost.content;
+          this.title = foundPost.title;
+          this.tmpTitle = result.data.name;
+          this.replyFeedUrl = foundPost.replyFeedUrl;
+          this.replyPostIdUrl = foundPost.replyPostIdUrl;
+          this.tags = foundPost.categories;
+          this.published = foundPost.published;
+          if (this.htmlInput !== this.rssInput) {
+            // different data stored in html and rss. toggle on RSS Override
+            this.showRssOverride = true;
+          }
+          this.sanitizeHtml();
+        } else {
+          this.sanitizeHtml();
+
+          const result = await axios.post("/api/post/init", {});
+          this.title = result.data.name;
+          this.tmpTitle = this.title;
+        }
+      },
+      computed: {
+        htmlInputLayoutApplied: function () {
+          return this.layout.replace(
+            new RegExp("%%%content%%%", "g"),
+            this.htmlInput,
+          );
+        }
+      },
+      methods: {
+        toggleRssOverride () {
+          this.showRssOverride = !this.showRssOverride;
+        },
+        async sanitizeHtml () {
+          if (!this.showRssOverride) {
+            this.rssInput = this.htmlInput;
+          }
+          const output = await axios.post("/api/sanitize", {
+            html: this.rssInput
+          });
+          // apply layout
+
+          this.htmlOutput = output.data;
+        },
+        addTag () {
+          if (this.tag.length === 0) return;
+          if (this.tags.includes(this.tag)) return;
+          this.tags.push(this.tag.trim().toLowerCase());
+          this.tag = "";
+        },
+        removeTag (index) {
+          this.tags.splice(index, 1);
+        },
+        async filesSubmitted (event) {
+          const formData = new FormData();
+          for (let i = 0; i < event.target.files.length; i++) {
+            const file = event.target.files[i];
+            formData.append('myFile', file)
+          }
+          const results = await axios.post('/api/upload', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          for (let file of results.data.files) {
+            this.htmlInput += `\n<img src="${file}"></img>`
+          }
+          this.sanitizeHtml();
+        },
+        async submitPost () {
+          if (this.performAction) {
+            return;
+          }
+          this.performAction = true;
+          let postObj = {
+            htmlContent: this.htmlInput,
+            // sanitizing the html input can change its typing out of string. apparently
+            rssContent: "" + this.htmlOutput,
+            title: this.title,
+            tmpTitle: this.tmpTitle,
+            replyFeedUrl: this.replyFeedUrl,
+            replyPostIdUrl: this.replyPostIdUrl,
+            tags: this.tags,
+            localUrl: this.localUrl, // for editing a post
+            published: this.published,
+          }
+
+          try {
+            if (this.localUrl) { // edit an existing post
+              await axios.put("/api/post", postObj);
+            } else {
+              await axios.post("/api/post", postObj);
+            }
+          } catch (err) {
+            console.log(err);
+            this.performAction = false;
+          }
+
+          window.location.href = '/'; // take back to main page when finished
+        },
+        async discardPost () {
+          if (this.performAction) {
+            return;
+          }
+          this.performAction = true;
+
+          try {
+            await axios.delete("/api/post/discard", {});
+          } catch (err) {
+            console.log(err);
+            this.performAction = false;
+          }
+          
+          window.location.href = '/'; // take back to main page when finished
+        },
+        debounce (func, timeout = 500){
+          let timer;
+          return (...args) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => { func.apply(this, args); }, timeout);
+          };
+        }
+      }
+    }).mount('#app');
+
+  </script>
+
+  <style>
+    #bg {
+      background: #1B2327;
+    }
+
+    #file-upload {
+      display: none;
+    }
+
+    .textarea { 
+      resize: vertical; 
+    }
+
+    .file-upload-images {
+      border-radius: 8px;
+    }
+
+    .title {
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 32px;
+      margin: 0px;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .flex-center {
+      flex-grow: 1;
+      text-align: center;
+    }
+
+    .flex {
+      display: flex;
+    }
+
+    .flex-v {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .third {
+      flex: 1 0 0;
+    }
+
+    .two-third {
+      flex: 2 0 0;
+      margin-left: 10px;
+    }
+
+    .half {
+      flex: 1 0 0;
+      margin-left: 10px;
+      margin-right: 10px;
+    }
+
+    .tiny-text {
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 12px;
+      margin: 0px;
+    }
+
+    .form {
+      display: flex;
+      align-items: center;
+    }
+
+    .textbox {
+      margin-left: 20px;
+      height: 30px;
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 28px;
+      background: #273038;
+      border: 0px;
+      flex-grow: 1;
+    }
+
+    .tag-input {
+      width: 200px;
+      margin-right: 20px;
+    }
+
+    .button {
+      margin-left: 20px;
+      height: 30px;
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 14px;
+      background: #382f27;
+      border: 0px;
+      border-radius: 8px;
+    }
+
+    .file {
+      height: 30px;
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 14px;
+      background: #382f27;
+      width: 200px;
+      margin-top: 5px;
+    }
+
+    .tag-button {
+      width: 100px;
+    }
+
+    .upload-button {
+      margin-top: 5px;
+      width: 200px;
+    }
+
+    .submit-button {
+      margin-top: 15px;
+      width: 300px;
+    }
+
+    .discard-button {
+      margin-top: 15px;
+      width: 150px;
+      font-size: 14px;
+    }
+
+    .html-input {
+      background: #273038;
+      flex-grow: 1;
+      color: #d2d2d2;
+      margin-bottom: 10px;
+    }
+
+    .html-output {
+      background: #273038;
+      flex-grow: 1;
+      color: #d2d2d2;
+    }
+
+    .rss-override {
+      align-self: center;
+    }
+
+  </style>
+</html>

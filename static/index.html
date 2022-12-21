@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <head>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="alternate" type="application/atom+xml" href="/feed.atom">
+  </head>
+
+  <body id="bg" class="no-space">
+    <div id="app" class="flex">
+
+      <div v-if="isAuthenticated === true" class="fourth flex-v">
+        <a class="button margin-center" href="upload.html">New Post</a>
+        <a class="button margin-center" href="manage.html">Manage Posts</a>
+        <div class="other-buttons">
+          <a class="button small-button margin-center" href="layout.html">Edit Post Layout</a>
+          <button v-if="!exportedData" class="button small-button margin-center" @click="exportData()">Export Data</button>
+          <a v-if="exportedData" 
+              download="exported.tar" 
+              :href="exportedData" 
+              class="button small-button margin-center">
+            Click here to download your exported data
+          </a>
+        </div>
+        <p class="title center margin-center">Your Feeds</p>
+
+        <!-- feed list -->
+        <div v-if="!isLoading" class="scroll">
+          <div v-for="(feed, index) in feeds" class="feed-list">
+            <div class="form">
+              <img class="icon" :src="feed.iconUrl"></img>
+              <!-- parsing errors should show the text in red -->
+              <p class="textbox" :class="{ 'red-text': !feed.success }" id="name" @click="presentFeed(index)">{{ feed.name }}</p>
+              <!-- more feed history to download -->
+              <img 
+                v-if="feed.meta && feed.meta.nextArchive && !searchingForExtraFeed" 
+                class="icon" 
+                src="/feed-extras.png"
+                title="Archive feed link found. Click to download more content from this feed."
+                @click="downloadExtras(feed)"> </img>
+              <!-- Focusing on one feed -->
+              <img 
+                v-if="focusedFeedIndex === index || focusedFeedIndex === null" 
+                class="icon" 
+                src="/eye-open.png" 
+                @click="focusFeed(index)"> </img>
+              <img v-else class="icon" src="/eye-closed.png" @click="focusFeed(index)"> </img>
+              
+            </div>
+          </div>
+        </div>
+
+        <button 
+          v-if="!showingAddFeedForm && !isLoading" 
+          class="button add-feed-button" 
+          @click="presentFeed(null)">Add Feed
+        </button>
+
+        <!-- add/edit feed form -->
+        <div v-if="showingAddFeedForm" class="add-feed">
+          <div class="form" style="margin-bottom: 10px">
+            <label class="label" for="name">Name  </label>
+            <input class="textbox" id="name" v-model="feed.name">
+          </div>
+          <div class="form">
+            <label class="label" for="url">URL  </label>
+            <input class="textbox" id="url" v-model="feed.url">
+          </div>
+          <div class="form">
+            <label class="label" for="update-interval">Update Interval  </label>
+            <input type="number" class="textbox" id="update-interval" v-model="feed.updateMinutes">
+            <p style="margin-left: 10px">Minutes</p>
+          </div>
+          <div class="add-feed-options">
+            <button class="button add-feed-option-button" @click="addFeed">{{ selectedIndex === null ? "Add Feed" : "Save Edits"}}</button>
+            <button class="button add-feed-option-button" @click="deleteFeed">Delete Feed</button>
+          </div>
+        </div>
+
+        <p v-if="isLoading" class="title center margin-center">
+          Updating feed content...
+        </p>
+
+        <!-- Search posts -->
+        <p class="title center margin-center">Search Posts</p>
+
+        <div class="flex search">
+          <div class="flex-v half form">
+            <p class="small-title center margin-center">Type</p>
+            <select class="center select" v-model="searchType">
+              <option v-for="type in searchTypeList"> {{ type }} </option>
+            </select>
+          </div>
+          <div class="flex-v half form">
+            <p class="small-title center margin-center">Value</p>
+            <input v-if="searchType === 'Category'" class="select" v-model="searchValues[0].value" @change="feedToList()">
+            <input v-if="searchType === 'Title'" class="select" v-model="searchValues[1].value" @change="feedToList()">
+            <input v-if="searchType === 'Content'" class="select" v-model="searchValues[2].value" @change="feedToList()">
+            <div class="flex" v-if="searchType === 'Date'">
+              <div>
+                <p class="date-field-text center margin-center">From</p>
+                <input class="select" type="date" v-model="searchValues[3].value.from" @change="feedToList()">
+              </div>
+              <div>
+                <p class="date-field-text center margin-center">To</p>
+                <input class="select" type="date" v-model="searchValues[3].value.to" @change="feedToList()">
+              </div>
+            </div>
+            <input v-if="searchType === 'Has Image'" type="checkbox" class="select checkbox" v-model="searchValues[4].value" @change="feedToList()">
+          </div>
+        </div>
+      </div>
+
+      <!-- display feed content -->
+      <div v-if="isAuthenticated === true" class="three-fourth flex-v">
+        <!-- render each post -->
+        <feed-post 
+          @render-reply-to="renderReplyTo"
+          :class="{repliedToPost: post.entry.isRepliedTo }"
+          :post="post" 
+          :index="index"
+          class="post" 
+          v-for="(post, index) in orderedContent">
+        </feed-post>
+      </div>
+
+      <div v-if="isAuthenticated === false" class="half flex-v">
+        <p class="title center margin-center">You are not authorized to view this page</p>
+      </div>
+
+    </div>
+  </body>
+
+  <script type="module">
+    import * as util from "./util.js";
+    import FeedPost from "./components/FeedPost.js";
+
+    Vue.createApp({
+      components: {
+        FeedPost
+      },
+      data () {
+        return {
+          feeds: [],
+          orderedContent: [],
+          showingAddFeedForm: false,
+          selectedIndex: null,
+          feed: {
+            name: "",
+            url: "",
+            updateMinutes: 10
+          },
+          isLoading: false,
+          focusedFeedIndex: null,
+          searchType: "Category",
+          searchValues: [{
+            type: "Category",
+            value: "",
+          },{
+            type: "Title",
+            value: "",
+          },{
+            type: "Content",
+            value: "",
+          },{
+            type: "Date",
+            value: {
+              from: "",
+              to: "",
+            }
+          },{
+            type: "Has Image",
+            value: false,
+          },],
+          searchTypeList: ["Category", "Title", "Content", "Date", "Has Image"],
+          searchingForExtraFeed: false,
+          isAuthenticated: null,
+          exportedData: "",
+        }
+      },
+      async created () {
+        // check if authenticated
+        try {
+          await axios.get('/api/auth');
+          this.isAuthenticated = true;
+        } catch (err) {
+          this.isAuthenticated = false;
+          return;
+        }
+      },
+      async mounted () {
+        // get all feeds
+        this.isLoading = true;
+        await this.getFeeds();
+        this.isLoading = false;
+      },
+      methods: {
+        async getFeeds () {
+          const feeds = (await axios.get('/api/feed')).data.feeds;
+          // parse XML data from RSS and ATOM feeds and combine into one structure
+          const parsedFeeds = await util.parseFeeds(feeds);
+          this.feeds = parsedFeeds;
+          this.feedToList();
+        },
+        feedToList () {
+          // sort entries by newest dates. remove any unsuccessful feed parsings
+          // also pass in the URL of the feed to each entry for future reference
+          // also runs through user-created filters
+          this.orderedContent = this.feeds
+            .filter(feed => feed.success)
+            // remove all but the user-selected feed if applicable
+            .filter((feed, index) => this.focusedFeedIndex === null || this.focusedFeedIndex === index)
+            .map(feed => feed.feedArray.map(item => Object.assign(item, {url: feed.url})))
+            .flat()
+            // per-post filters....
+            .filter(post => {
+              for (let i = 0; i < this.searchValues.length; i++) {
+                const searchType = this.searchValues[i].type;
+                const searchValue = this.searchValues[i].value;
+                if (searchType === "Category" && searchValue !== "" && !post.entry.categories.map(c => c.toLowerCase()).includes(searchValue.toLowerCase())) {
+                  return false;
+                }
+                if (searchType === "Title" && searchValue !== "" && !post.entry.title.toLowerCase().includes(searchValue.toLowerCase())) {
+                  return false;
+                }
+                if (searchType === "Content" && searchValue !== "" && !post.entry.content.toLowerCase().includes(searchValue.toLowerCase())) {
+                  return false;
+                }
+                if (searchType === "Date" && searchValue.from !== "" && searchValue.to !== "") {
+                  const postDate = new Date(post.entry.date)
+                  const fromDate = new Date(searchValue.from)
+                  const toDate = new Date(searchValue.to)
+                  if (postDate < fromDate || postDate > toDate) {
+                    return false;
+                  }
+                }
+                if (searchType === "Has Image" && searchValue === true && !post.entry.content.includes("<img src=")) {
+                  return false;
+                }
+              }
+              return true;
+            })
+            .map(post => { // reset hide reply state since replies get wiped on change
+              post.entry.hideReplyToButton = false;
+              return post;
+            })
+            .sort((a, b) => {
+              return new Date(b.entry.date) - new Date(a.entry.date)
+            });
+        },
+        presentFeed (index = null) {
+          this.showingAddFeedForm = !this.showingAddFeedForm;
+
+          if (index === null) { // Add Feed button was pressed
+            this.feed.name = "";
+            this.feed.url = "";
+            this.feed.updateMinutes = 5;
+          } else {
+            this.feed.name = this.feeds[index].name;
+            this.feed.url = this.feeds[index].url;
+            this.feed.updateMinutes = this.feeds[index].updateMinutes;
+          }
+          this.selectedIndex = index;
+        },
+        async addFeed () {
+          this.showingAddFeedForm = !this.showingAddFeedForm;
+          let feedObj = {
+            name: this.feed.name,
+            url: this.feed.url,
+            updateMinutes: this.feed.updateMinutes,
+            index: this.selectedIndex !== null ? this.selectedIndex : undefined 
+          };
+          if (this.selectedIndex !== null) { // update feed
+            await axios.put('/api/feed', feedObj);
+          } else { // add feed
+            await axios.post('/api/feed', feedObj);
+          }
+          this.isLoading = true;
+          await this.getFeeds();
+          this.selectedIndex = null;
+          this.isLoading = false;
+        },
+        async deleteFeed () {
+          this.showingAddFeedForm = !this.showingAddFeedForm;
+
+          if (this.selectedIndex !== null) { // delete feed
+            await axios.delete('/api/feed', {
+              data: {
+                index: this.selectedIndex,
+              }
+            })
+            this.isLoading = true;
+            await this.getFeeds(); // refresh feed list
+            this.isLoading = false;
+          }
+
+          this.selectedIndex = null;
+        },
+        renderReplyTo (post, index) {
+          this.orderedContent.splice(index + 1, 0, post);
+        },
+        focusFeed (index) {
+          if (this.focusedFeedIndex === index) {
+            this.focusedFeedIndex = null;
+          } else {
+            this.focusedFeedIndex = index;
+          }
+          this.feedToList(); // update the list
+        },
+        async downloadExtras (feed) {
+          // download more content using nextArchive
+          if (!feed.meta.nextArchive) {
+            return;
+          }
+          this.searchingForExtraFeed = true;
+
+          try {
+            const result = await axios.post("/api/query/feed", {
+              url: feed.meta.nextArchive,
+            });
+
+            const nextFeed = await util.parseFeed(result.data.feed);
+
+            // add the new nextFeed contents to the original feed object
+            feed.url = feed.meta.nextArchive;
+            if (nextFeed.meta.nextArchive) {
+              feed.meta.nextArchive = nextFeed.meta.nextArchive;
+            } else {
+              feed.meta.nextArchive = null;
+            }
+
+            if (feed.feedArray) {
+              feed.feedArray = feed.feedArray.concat(nextFeed.feedArray);
+            }
+
+            this.feedToList();
+          } catch (err) {
+            console.log(err);
+          }
+
+          this.searchingForExtraFeed = false;
+        },
+        async exportData () {
+          // retrieve a zip of the user's data from the server
+          const result = await axios.get("/api/export", {
+            responseType: 'blob',
+          });
+          const url = window.URL.createObjectURL(
+            new Blob([result.data])
+          );
+          this.exportedData = url;
+        }
+      }
+    }).mount('#app');
+
+  </script>
+
+  <style>
+    #bg {
+      background: #273038;
+    }
+
+    .flex {
+      display: flex;
+    }
+
+    .flex-v {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .fourth {
+      flex: 1 0 0;
+      background: #1b2327;
+      height: 100%;
+    }
+
+    .no-space {
+      margin: 0px;
+      padding: 0px;
+    }
+
+    .three-fourth {
+      flex: 3 0 0;
+    }
+
+    .half {
+      flex: 1 0 0;
+    }
+
+    .button {
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 36px;
+      background: #382f27;
+      border: 0px;
+      border-radius: 8px;
+      text-align: center;
+      appearance: button;
+      text-decoration: none;
+    }
+
+    .title {
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 32px;
+      margin: 0px;
+    }
+
+    .small-title {
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 24px;
+      margin: 0px;
+      margin-bottom: 10px;
+    }
+
+    .margin-center {
+      margin-top: 20px;
+      margin-left: 30px;
+      margin-right: 30px;
+    }
+
+    .add-feed-button {
+      font-family: Inika;
+      font-size: 24px;
+      margin-top: 20px;
+      margin-left: 50px;
+      margin-right: 50px;
+      margin-bottom: 10px;
+    }
+
+    .add-feed {
+      font-family: Inika;
+      font-size: 16px;
+      margin-top: 20px;
+      margin-left: 50px;
+      margin-right: 30px;
+      color: #d2d2d2;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .textbox {
+      margin-left: 20px;
+      margin-top: 0px;
+      margin-bottom: 0px;
+      height: 30px;
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 18px;
+      background: #273038;
+      border: 0px;
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+    }
+
+    .add-feed-options {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+
+    .add-feed-option-button {
+      margin-left: 10px;
+      margin-right: 10px;
+      font-size: 18px;
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+
+    .form {
+      display: flex;
+      align-items: center;
+    }
+
+    .label {
+      width: 50px;
+    }
+
+    .feed-list {
+      font-family: Inika;
+      font-size: 16px;
+      margin-top: 20px;
+      margin-left: 50px;
+      margin-right: 30px;
+      color: #d2d2d2;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .icon {
+      height: 25px;
+    }
+    
+    .scroll {
+      overflow: scroll;
+      max-height: 400px;
+    }
+
+    .post {
+      margin-left: 10px;
+      margin-right: 10px;
+      margin-top: 10px;
+      background-color: #ECF8FF;
+      display: flex;
+      flex-direction: row;
+    }
+
+    .post-left {
+      flex: 4 0 0;
+      margin-left: 5px;
+      margin-right: 5px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .post-right {
+      flex: 1 0 0;
+      margin-right: 5px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .red-text {
+      color: #FF0000;
+    }
+
+    .post-title {
+      font-family: Inika;
+      font-size: 24px;
+      margin: 10px;
+    }
+
+    .link-id {
+      font-family: Inika;
+      font-size: 10px;
+      margin: 5px;
+      display: flex-inline;
+      align-self: center;
+    }
+
+    .meta-subtitle {
+      font-family: Inika;
+      font-size: 12px;
+    }
+
+    .vr {
+      border-left: 1px solid #273038;
+      border-right: 1px solid #273038;
+      height: 100%;
+    }
+
+    .span {
+      margin-top: 5px;
+    }
+
+    .category {
+      font-family: Inika;
+      font-size: 12px;
+    }
+
+    .meta-author {
+      margin: 5px;
+      font-family: Inika;
+      font-size: 14px;
+    }
+
+    .date {
+      font-family: Inika;
+      font-size: 14px;
+      margin-top: auto;
+    }
+
+    .time-ago {
+      margin: 5px;
+    }
+
+    .content-end {
+      margin-bottom: 5px;
+    }
+
+    .reply-button {
+      font-size: 14px;
+      margin: 5px;
+    }
+
+    .load-reply-button {
+      font-size: 16px;
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    .reply-div {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: auto;
+    }
+
+    .repliedToPost {
+      margin-left: 30px;
+    }
+
+    .select {
+      margin-left: 10px;
+      margin-right: 10px;
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 18px;
+      background: #273038;
+      border: 0px;
+    }
+
+    .search {
+      margin-bottom: 30px;
+    }
+
+    .checkbox {
+      width: 20px;
+      height: 20px;
+    }
+
+    .date-field-text {
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 18px;
+      margin: 0px;
+    }
+
+    .other-buttons {
+      display: flex;
+      justify-content: center;
+    }
+
+    .small-button {
+      font-family: Inika;
+      font-size: 20px;
+      padding-left: 10px;
+      padding-right: 10px;
+      align-self: center;
+      text-align: center;
+      appearance: button;
+      text-decoration: none;
+    }
+
+  </style>
+</html>
