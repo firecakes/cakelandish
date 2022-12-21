@@ -25,6 +25,9 @@ Auto run on save:
 
 Build:
 `deno compile --no-check --allow-net --allow-read --allow-write=./ main.ts`
+`deno compile --target x86_64-unknown-linux-gnu --no-check --allow-net --allow-read --allow-write=./ main.ts`
+`deno compile --target x86_64-pc-windows-msvc --no-check --allow-net --allow-read --allow-write=./ main.ts`
+`deno compile --target x86_64-apple-darwin --no-check --allow-net --allow-read --allow-write=./ main.ts`
 
 Create auth code:
 `deno run --allow-net --allow-read=./ --allow-write=./ main.ts code`
