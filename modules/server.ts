@@ -335,7 +335,7 @@ export function startServer() {
   // add a new feed to watch
   router.post("/api/feed", jwtMiddleware, async (ctx, next) => {
     const input: Feed = await ctx.request.body({ type: "json" }).value;
-    if (typeof input.updateMinutes !== "number" || input.updateMinutes < 0) {
+    if (typeof input.updateMinutes !== "number" || input.updateMinutes < 1) {
       input.updateMinutes = 5; // default
     }
     // add to database
@@ -349,7 +349,7 @@ export function startServer() {
     if (typeof input.index !== "number" || input.index < 0) {
       ctx.response.status = 400;
     }
-    if (typeof input.updateMinutes !== "number" || input.updateMinutes < 0) {
+    if (typeof input.updateMinutes !== "number" || input.updateMinutes < 1) {
       input.updateMinutes = 5; // default
     }
     // add to database
