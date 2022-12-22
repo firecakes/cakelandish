@@ -57,7 +57,7 @@ config.link = `${config.https ? "https" : "http"}://${config.host}${
   SUBTITLE: Subtitle of your feed
   AUTHOR: Who made the feed. Put your name or username here
   CONTRIBUTORS: A comma-separated array of names you want to shoutout for helping with your feed
-  CATEGORIES: A comma-separated array of keywords or tags to categorize the type of content you post. At least one required
+  CATEGORIES: A comma-separated array of keywords or tags to categorize the type of content you post
   HOST: The host name of the server. Defaults to localhost
   PORT: The port the web server should run on. The default is 8000
   HTTPS: Whether HTTPS is enabled. Defaults to false
