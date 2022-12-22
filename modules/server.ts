@@ -275,7 +275,7 @@ export function startServer() {
     );
 
     // "move" post to the original post's location
-    const originalPostUrl = `static/${localUrl}`;
+    const originalPostUrl = `static/${input.localUrl}`;
 
     await Deno.remove(originalPostUrl, { recursive: true });
     await Deno.rename(
