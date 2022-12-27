@@ -22,7 +22,7 @@ export async function generateCode(minutes = 20) {
 export async function deleteCode() {
   // delete the code.txt file
   try {
-    Deno.remove("code.txt");
+    await Deno.remove("code.txt");
   } catch (err) {
   }
 }

@@ -1,7 +1,7 @@
 import * as xml from "./modules/xml.ts";
 import * as db from "./modules/db.ts";
 import { startServer } from "./modules/server.ts";
-import { generateCode, generateJwtSecret } from "./modules/auth.ts";
+import { generateCode, generateJwtSecret, deleteCode } from "./modules/auth.ts";
 
 if (Deno.args[0] === "code") { // create temporary auth code
   console.log(
@@ -14,6 +14,7 @@ if (Deno.args[0] === "code") { // create temporary auth code
   console.log(await generateCode(20));
 } else { // no special arguments. run server normally
   console.log("Starting server");
+  await deleteCode(); // delete potentially lingering auth code
   // creates a JWT secret for signing if one doesn't exist already
   await generateJwtSecret();
   // starts the web server. this must run before initializing the database in case
