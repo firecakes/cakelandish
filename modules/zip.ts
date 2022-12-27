@@ -1,5 +1,4 @@
-import { tar } from "https://deno.land/x/compress@v0.4.4/mod.ts";
-import { copyDirectory } from "../deps.ts";
+import { copyDirectory, tar } from "../deps.ts";
 
 const EXPORTED_ZIP_NAME = "exported.tar";
 
