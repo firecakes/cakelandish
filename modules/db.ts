@@ -16,7 +16,16 @@ export async function init() {
     console.log(
       "No database.json found in root directory. Initializing new file.",
     );
-    await saveDb({});
+    await saveDb({
+      feeds: [],
+    });
+    // add local feed by default
+    await addFeed({
+      name: "Local Feed",
+      url: `${config.link}/feed.atom`,
+      updateMinutes: 5,
+      index: 0,
+    });
     db = await readDb();
   }
   // sync up information from the .env file to the FeedDatabase JSON
