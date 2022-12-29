@@ -58,7 +58,7 @@
 
             <div class="form">
               <label for="file-upload" class="file form file-upload-images">
-                <p class="flex-center">Upload images</p>
+                <p class="flex-center">Upload media</p>
               </label>
               <input id="file-upload" accept="image/*" type="file" @change="filesSubmitted" multiple/>
             </div>
@@ -206,6 +206,10 @@
           this.tags.splice(index, 1);
         },
         async filesSubmitted (event) {
+          let imageTypes = ["apng", "avif", "gif", "jpeg", "jpg", "png", "svg", "webp", "bmp"];
+          let audioTypes = ["wav", "ogg", "mp3"];
+          let videoTypes = ["webm", "mp4"];
+
           const formData = new FormData();
           for (let i = 0; i < event.target.files.length; i++) {
             const file = event.target.files[i];
@@ -217,7 +221,23 @@
             }
           });
           for (let file of results.data.files) {
-            this.htmlInput += `\n<img src="${file}"></img>`
+            // smartly create different elements depending on the file type submitted
+            const extension = file.split(".").reverse()[0];
+
+            if (imageTypes.includes(extension)) {
+              this.htmlInput += `\n<img src="${file}"></img>`
+            } else if (audioTypes.includes(extension)) {
+              this.htmlInput += `\n<audio controls>
+  <source src="${file}">
+</audio>`
+            } else if (videoTypes.includes(extension)) {
+              this.htmlInput += `\n<video controls>
+  <source src="${file}" type="video/${extension}">
+</video>`
+            } else {
+              this.htmlInput += `\n<a href="${file}">${file.split("/").reverse()[0]}</a>` // default to using a link
+            }
+            
           }
           this.sanitizeHtml();
         },
