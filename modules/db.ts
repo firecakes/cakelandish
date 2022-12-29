@@ -210,14 +210,43 @@ export async function saveLayout(layout) {
 }
 
 export async function applyLayoutToPost(layout, post) {
-  const newOriginalContent = layout.replace(
+  // perform replacements for various metadata in the post object
+  let modifiedContent = layout.replace(
     new RegExp("%%%content%%%", "g"),
     post.originalContent,
+  );
+  modifiedContent = modifiedContent.replace(
+    new RegExp("%%%published%%%", "g"),
+    post.published,
+  );
+  modifiedContent = modifiedContent.replace(
+    new RegExp("%%%updated%%%", "g"),
+    post.updated,
+  );
+  modifiedContent = modifiedContent.replace(
+    new RegExp("%%%categories%%%", "g"),
+    post.categories,
+  );
+  modifiedContent = modifiedContent.replace(
+    new RegExp("%%%title%%%", "g"),
+    post.title,
+  );
+  modifiedContent = modifiedContent.replace(
+    new RegExp("%%%localUrl%%%", "g"),
+    post.localUrl,
+  );
+  modifiedContent = modifiedContent.replace(
+    new RegExp("%%%replyFeedUrl%%%", "g"),
+    post.replyFeedUrl,
+  );
+  modifiedContent = modifiedContent.replace(
+    new RegExp("%%%replyPostIdUrl%%%", "g"),
+    post.replyPostIdUrl,
   );
   // save the post contents
   await Deno.writeTextFile(
     `static${post.localUrl}/index.html`,
-    newOriginalContent,
+    modifiedContent,
   );
 }
 
