@@ -221,6 +221,15 @@ export async function applyLayoutToPost(layout, post) {
   );
 }
 
+export async function getTags() {
+  const db = await readDb();
+  let tags = new Set();
+  db.entries.forEach((entry) =>
+    entry.categories.forEach((cat) => tags.add(cat))
+  );
+  return Array.from(tags);
+}
+
 // interfaces
 
 export interface FeedDatabase {

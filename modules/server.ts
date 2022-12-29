@@ -12,6 +12,7 @@ import {
   getFeeds,
   getLayout,
   getPosts,
+  getTags,
   saveLayout,
 } from "./db.ts";
 import * as xml from "./xml.ts";
@@ -424,6 +425,13 @@ export function startServer() {
     const input = await ctx.request.body({ type: "json" }).value;
     await saveLayout(input.layout);
     ctx.response.body = {};
+  });
+
+  // retrieve all tags ever used
+  router.get("/api/tag", jwtMiddleware, async (ctx, next) => {
+    ctx.response.body = {
+      tags: (await getTags()).sort(),
+    };
   });
 
   // get files under static folder, and resolve "/" to index.html

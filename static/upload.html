@@ -49,6 +49,10 @@
             <div class="flex form">
               <label for="tag" class="title">Tags</label>
               <input class="textbox tag-input" id="tag" v-model="tag">
+              <select class="tag-select" @change="chooseTag">
+                <option value="">Used tags</option>
+                <option v-for="tag in existingTags">{{ tag }}</option>
+              </select>
               <button class="button tag-button" @click="addTag">Add tag</button>
             </div>
 
@@ -114,6 +118,7 @@
           showRssOverride: false,
           isAuthenticated: null,
           layout: "",
+          existingTags: [],
         }
       },
       async created () {
@@ -136,6 +141,7 @@
         this.localUrl = params.get('localUrl');
 
         this.layout = (await axios.get('/api/layout')).data.layout;
+        this.existingTags = (await axios.get('/api/tag')).data.tags;
 
         // if localUrl is defined we are editing a post
         if (this.localUrl) {
@@ -260,6 +266,9 @@
           }
           
           window.location.href = '/'; // take back to main page when finished
+        },
+        chooseTag (event) {
+          this.tag = event.target.value;
         },
         debounce (func, timeout = 500){
           let timer;
@@ -414,6 +423,17 @@
 
     .rss-override {
       align-self: center;
+    }
+
+    .tag-select {
+      margin-left: 20px;
+      height: 30px;
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 24px;
+      background: #273038;
+      border: 0px;
+      flex-grow: 1;
     }
 
   </style>
