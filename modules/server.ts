@@ -342,6 +342,16 @@ export function startServer() {
     // generate and save the ATOM feed from the database contents
     await xml.saveJsonToAtom();
 
+    // find current saved feeds for the local feed and update specifically that one
+    const feeds = await getFeeds();
+    const localFeed = feeds.find((feed) =>
+      new URL(feed.url).origin === new URL(config.link).origin
+    );
+    if (localFeed) {
+      // use editFeed function to force update and reset timer
+      await editFeed(localFeed);
+    }
+
     ctx.response.body = {};
   });
 
