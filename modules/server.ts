@@ -434,6 +434,24 @@ export function startServer() {
     };
   });
 
+  // get the software's version and the remote software's version
+  router.get("/api/version", jwtMiddleware, async (ctx, next) => {
+    let remoteVersion = "";
+
+    try {
+      const releaseData = await fetch(
+        "https://api.github.com/repos/firecakes/cakelandish/releases",
+      );
+      remoteVersion = (await releaseData.json())[0].tag_name; // get the most recent release
+    } catch (err) {
+    }
+
+    ctx.response.body = {
+      currentVersion: config.version,
+      remoteVersion: remoteVersion,
+    };
+  });
+
   // get files under static folder, and resolve "/" to index.html
   app.use(async (ctx, next) => {
     try {

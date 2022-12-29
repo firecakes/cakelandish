@@ -111,6 +111,14 @@
             <input v-if="searchType === 'Has Image'" type="checkbox" class="select checkbox" v-model="searchValues[4].value" @change="feedToList()">
           </div>
         </div>
+
+        <!-- Version information -->
+        <div v-if="currentVersion">
+          <p class="version center">Current version: {{ currentVersion }}</p>
+          <p v-if="!onNewestVersion" class="version center"> 
+            <a href="https://github.com/firecakes/cakelandish/releases">Newer version available: {{ remoteVersion }}</a>
+          </p>
+        </div>
       </div>
 
       <!-- display feed content -->
@@ -178,6 +186,8 @@
           searchingForExtraFeed: false,
           isAuthenticated: null,
           exportedData: "",
+          currentVersion: null,
+          remoteVersion: null,
         }
       },
       async created () {
@@ -194,7 +204,27 @@
         // get all feeds
         this.isLoading = true;
         await this.getFeeds();
+        const versionData = (await axios.get('/api/version')).data;
+        this.currentVersion = versionData.currentVersion;
+        this.remoteVersion = versionData.remoteVersion;
         this.isLoading = false;
+      },
+      computed: {
+        onNewestVersion: function () {
+          if (!this.currentVersion || !this.remoteVersion) {
+            return true;
+          }
+          const currentVersion = this.currentVersion.split(".");
+          const remoteVersion = this.remoteVersion.split(".");
+
+          if (remoteVersion[0] < currentVersion[0]) {
+            return true;
+          }
+          if (remoteVersion[1] < currentVersion[1]) {
+            return true;
+          }
+          return remoteVersion[2] <= currentVersion[2];
+        }
       },
       methods: {
         async getFeeds () {
@@ -413,6 +443,14 @@
       color: #d2d2d2;
       font-family: Inika;
       font-size: 24px;
+      margin: 0px;
+      margin-bottom: 10px;
+    }
+
+    .version {
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 12px;
       margin: 0px;
       margin-bottom: 10px;
     }
