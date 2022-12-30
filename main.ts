@@ -26,4 +26,6 @@ if (Deno.args[0] === "code") { // create temporary auth code
   console.log("Database ready");
   // generate and save the ATOM feed from the database contents
   await xml.saveJsonToAtom();
+  // initialize feeds after generating XML. default local feed tries to read the feed file and fails otherwise
+  await db.initializeFeeds(await db.readDb());
 }
