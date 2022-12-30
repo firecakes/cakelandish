@@ -15,6 +15,9 @@
         <a class="button margin-center" href="upload.html">New Post</a>
         <a class="button margin-center" href="manage.html">Manage Posts</a>
         <div class="other-buttons">
+          <a class="button small-button margin-center" href="files.html">Manage Global Files</a>
+        </div>
+        <div class="other-buttons">
           <a class="button small-button margin-center" href="layout.html">Edit Post Layout</a>
           <button v-if="!exportedData" class="button small-button margin-center" @click="exportData()">Export Data</button>
           <a v-if="exportedData" 

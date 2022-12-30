@@ -3,13 +3,16 @@ import { cleaner } from "./ammonia.ts";
 import { config } from "../config.ts";
 import {
   addFeed,
+  addFile,
   addPost,
   deleteFeed,
+  deleteFile,
   deletePost,
   editFeed,
   editPost,
   feedGetHelper,
   getFeeds,
+  getFiles,
   getLayout,
   getPosts,
   getTags,
@@ -462,6 +465,54 @@ export function startServer() {
     };
   });
 
+  // return all files
+  router.get("/api/file", jwtMiddleware, async (ctx, next) => {
+    // read from database
+    ctx.response.body = {
+      files: await getFiles(),
+    };
+  });
+
+  // add a new file
+  router.post("/api/file", jwtMiddleware, async (ctx, next) => {
+    // enforce its existence
+    await Deno.mkdir(
+      `static/files`,
+      { recursive: true },
+    );
+
+    const results = await ctx.request.body({ type: "form-data" }).value.read({
+      maxFileSize: 10 * 1000 * 1000 * 1000, // allow uploads of up to 10 GB. only the site owner can call this anyway. 10 GB seems very reasonable
+      outPath: `static/files`,
+    });
+
+    // rename the files to what they were originally
+    for await (let file of results.files) {
+      await Deno.rename(
+        file.filename,
+        `static/files/${file.originalName}`,
+      );
+    }
+
+    for (let i = 0; i < results.files.length; i++) {
+      // add to database
+      await addFile(`files/${results.files[i].originalName}`);
+    }
+
+    ctx.response.body = {};
+  });
+
+  // delete an existing file
+  router.delete("/api/file", jwtMiddleware, async (ctx, next) => {
+    const input: Feed = await ctx.request.body({ type: "json" }).value;
+
+    // delete from database
+    await Deno.remove(`static/${input.file}`);
+    await deleteFile(input.file);
+
+    ctx.response.body = {};
+  });
+
   // get files under static folder, and resolve "/" to index.html
   app.use(async (ctx, next) => {
     try {
@@ -509,9 +560,6 @@ async function generatePostFolderName(postName) {
 }
 
 // only reads inside static folder
-async function readFile(path) {
-  return Deno.open(`static/${path}`, { read: true });
-}
 
 async function deleteTmpFolders() {
   try {

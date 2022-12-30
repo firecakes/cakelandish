@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <head>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+
+  <body id="bg">
+    <div id="app" class="flex">
+
+      <div class="flex" v-if="isAuthenticated === true">
+        <p class="title center">Put files that you want accessible by all posts here</p>
+
+        <div class="form">
+          <label for="file-upload" class="form file-upload">
+            <p class="flex-center">Upload file</p>
+          </label>
+          <input id="file-upload" accept="image/*" type="file" @change="filesSubmitted" multiple/>
+        </div>
+        <p class="center"><a class="button submit-button" href="index.html">Return to Main Page</a></p>
+
+        <div class="file" v-for="file in orderedFiles">
+
+          <img v-if="getFileType(file.path) === 'image'" 
+            style="width: 300px" 
+            :src="file.path">
+          </img>
+          <audio v-if="getFileType(file.path) === 'audio'" controls>
+            <source :src="file.path">
+          </audio>
+          <video style="width: 300px" v-if="getFileType(file.path) === 'video'" controls>
+            <source :src="file.path">
+          </video>
+          <a :href="file.path" target="_blank">{{ file.path }}</a>
+
+          <button v-if="!file.requestDeletion" class="button" @click="deleteFile(file)">Delete</button>
+          <button v-if="file.requestDeletion" class="button" @click="deleteFile(file)">Are you sure?</button>
+        </div>
+      </div>
+
+      <div v-if="isAuthenticated === false" class="fourth flex-v">
+        <p class="title center margin-center">You are not authorized to view this page</p>
+      </div>
+
+    </div>
+  </body>
+
+  <script type="module">
+    Vue.createApp({
+      data () {
+        return {
+          files: [],
+          isAuthenticated: null,
+        }
+      },
+      async created () {
+        // check if authenticated
+        try {
+          await axios.get('/api/auth');
+          this.isAuthenticated = true;
+        } catch (err) {
+          this.isAuthenticated = false;
+          return;
+        }
+      },
+      async mounted () {
+        await this.getFiles();
+      },
+      computed: {
+        orderedFiles: function () {
+          return this.files.sort((a, b) => {
+            return a.path.localeCompare(b.path);
+          });
+        }
+      },
+      methods: {
+        async getFiles () {
+          const result = await axios.get("/api/file", {});
+          this.files = result.data.files.map(file => ({
+            path: file
+          }));
+        },
+        async filesSubmitted (event) {
+          const formData = new FormData();
+          for (let i = 0; i < event.target.files.length; i++) {
+            const file = event.target.files[i];
+            formData.append('myFile', file);
+          }
+          const results = await axios.post('/api/file', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          await this.getFiles();
+        },
+        getFileType (file) {
+          let imageTypes = ["apng", "avif", "gif", "jpeg", "jpg", "png", "svg", "webp", "bmp"];
+          let audioTypes = ["wav", "ogg", "mp3"];
+          let videoTypes = ["webm", "mp4"];
+          const extension = file.split(".").reverse()[0];
+
+          if (imageTypes.includes(extension)) {
+            return "image";
+          } else if (audioTypes.includes(extension)) {
+            return "audio";
+          } else if (videoTypes.includes(extension)) {
+            return "video";
+          } else {
+            return "image";
+          }
+        },
+        async deleteFile (file) {
+          if (!file.requestDeletion) {
+            file.requestDeletion = true;
+          } else {
+            await axios.delete('/api/file', {
+              data: {
+                file: file.path,
+              }
+            });
+            await this.getFiles();
+          }
+        },
+      }
+    }).mount('#app');
+
+  </script>
+
+  <style>
+    #bg {
+      background: #273038;
+    }
+
+    #file-upload {
+      display: none;
+    }
+
+    .flex {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .flex-row {
+      display: flex;
+      flex-direction: row;
+    }
+
+    .title {
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 32px;
+      margin: 20px;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .file {
+      margin-bottom: 30px;
+      font-family: Inika;
+      background-color: #ECF8FF;
+      border: 0px;
+      display: flex;
+      flex-grow: 1;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .file-contents {
+      flex-grow: 1;
+    }
+
+    .button {
+      margin-left: 20px;
+      margin-right: 20px;
+      margin-bottom: 20px;
+      padding-left: 10px;
+      padding-right: 10px;
+      height: 30px;
+      color: #d2d2d2;
+      font-family: Inika;
+      background: #382f27;
+      border: 0px;
+      border-radius: 8px;
+      align-self: center;
+      text-align: center;
+      appearance: button;
+      text-decoration: none;
+    }
+
+    .submit-button {
+      margin-top: 15px;
+      width: 300px;
+      font-size: 20px;
+    }
+
+    .edit-post-text {
+      align-self: center;
+    }
+
+    .form {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .file {
+      font-family: Inika;
+      font-size: 20px;
+      margin-top: 5px;
+    }
+
+    .file-upload {
+      border-radius: 8px;
+      font-family: Inika;
+      background-color: #382f27;
+      font-size: 20px;
+      color: #d2d2d2;
+      border: 0px;
+      align-items: center;
+      width: 200px;
+    }
+
+  </style>
+</html>

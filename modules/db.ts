@@ -43,6 +43,11 @@ export async function init() {
     db.layout = await Deno.readTextFile("layout-default.html");
   }
 
+  // initialize files
+  if (db.files === undefined) {
+    db.files = [];
+  }
+
   await saveDb(db);
   return db;
 }
@@ -259,6 +264,31 @@ export async function getTags() {
   return Array.from(tags);
 }
 
+export async function getFiles() {
+  const db = await readDb();
+  return db.files;
+}
+
+export async function addFile(file) {
+  const db = await readDb();
+  db.files.push(file);
+
+  // files can be overwritten. don't allow duplicates in the list
+  let fileSet = new Set();
+  db.files.forEach((file) => {
+    fileSet.add(file);
+  });
+  db.files = Array.from(fileSet);
+
+  await saveDb(db);
+}
+
+export async function deleteFile(file) {
+  let db = await readDb();
+  db.files = db.files.filter((target) => target !== file);
+  await saveDb(db);
+}
+
 // interfaces
 
 export interface FeedDatabase {
@@ -273,6 +303,7 @@ export interface FeedDatabase {
   feeds: Feed[];
   globalIndex: number;
   layout: String; // stringified HTML
+  files: URL[];
 }
 
 export interface Entry {
