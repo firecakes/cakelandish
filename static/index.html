@@ -277,6 +277,10 @@
             })
             .map(post => { // reset hide reply state since replies get wiped on change
               post.entry.hideReplyToButton = false;
+              // nsfw category check
+              if (post.entry.categories.includes('nsfw')) {
+                post.entry.nsfw = true;
+              }
               return post;
             })
             .sort((a, b) => {
@@ -332,6 +336,10 @@
           this.selectedIndex = null;
         },
         renderReplyTo (post, index) {
+          // nsfw category check
+          if (post.entry.categories.includes('nsfw')) {
+            post.entry.nsfw = true;
+          }
           this.orderedContent.splice(index + 1, 0, post);
         },
         focusFeed (index) {

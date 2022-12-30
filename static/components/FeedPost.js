@@ -14,9 +14,18 @@ export default {
         <span class="post-title">{{ post.entry.title }}</span>
       </div>
       <a class="center link-id" :href="post.entry.id">{{ post.entry.id }}</a>
+
+      <button 
+        v-if="post.entry.nsfw"
+        class="button load-reply-button" 
+        @click="post.entry.nsfw = false">
+        Post marked as NSFW. Click here to show it.
+      </button>
+
       <!-- summary text is included as a tooltip when hovering over the content -->
       <span 
-        v-html="post.entry.content" 
+        v-html="post.entry.content"
+        v-if="!post.entry.nsfw"
         :title="post.entry.summary">
       </span>
       <br>
