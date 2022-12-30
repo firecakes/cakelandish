@@ -31,6 +31,12 @@ export async function init() {
   // sync up information from the .env file to the FeedDatabase JSON
   Object.assign(db, config);
 
+  try {
+    await initializeFeeds(db);
+  } catch (err) {
+    console.log(err); // don't hard fail here
+  }
+
   // initialize globalIndex
   if (db.globalIndex === undefined) {
     db.globalIndex = 0;
@@ -154,7 +160,7 @@ export async function refreshFeedIntervals() {
 
 // helper functions
 
-export async function initializeFeeds(db) {
+async function initializeFeeds(db) {
   if (!Array.isArray(db.feeds)) {
     db.feeds = [];
   }
