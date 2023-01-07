@@ -298,6 +298,24 @@ export async function deleteFile(file) {
   await saveDb(db);
 }
 
+export async function changeDomains(oldDomain, newDomain) {
+  const db = await readDb();
+
+  db.entries = db.entries.map((entry) => {
+    entry.content = entry.content.replace(
+      new RegExp(oldDomain, "g"),
+      newDomain,
+    );
+    entry.link = entry.link.replace(
+      new RegExp(oldDomain, "g"),
+      newDomain,
+    );
+    return entry;
+  });
+
+  await saveDb(db);
+}
+
 // interfaces
 
 export interface FeedDatabase {

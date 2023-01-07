@@ -5,6 +5,7 @@ import {
   addFeed,
   addFile,
   addPost,
+  changeDomains,
   deleteFeed,
   deleteFile,
   deletePost,
@@ -262,14 +263,7 @@ export function startServer() {
     await xml.saveJsonToAtom();
 
     // find current saved feeds for the local feed and update specifically that one
-    const feeds = await getFeeds();
-    const localFeed = feeds.find((feed) =>
-      new URL(feed.url).origin === new URL(config.link).origin
-    );
-    if (localFeed) {
-      // use editFeed function to force update and reset timer
-      await editFeed(localFeed);
-    }
+    await updateLocalFeed();
 
     ctx.response.body = {};
   });
@@ -328,14 +322,7 @@ export function startServer() {
     await xml.saveJsonToAtom();
 
     // find current saved feeds for the local feed and update specifically that one
-    const feeds = await getFeeds();
-    const localFeed = feeds.find((feed) =>
-      new URL(feed.url).origin === new URL(config.link).origin
-    );
-    if (localFeed) {
-      // use editFeed function to force update and reset timer
-      await editFeed(localFeed);
-    }
+    await updateLocalFeed();
 
     ctx.response.body = {};
   });
@@ -354,14 +341,7 @@ export function startServer() {
     await xml.saveJsonToAtom();
 
     // find current saved feeds for the local feed and update specifically that one
-    const feeds = await getFeeds();
-    const localFeed = feeds.find((feed) =>
-      new URL(feed.url).origin === new URL(config.link).origin
-    );
-    if (localFeed) {
-      // use editFeed function to force update and reset timer
-      await editFeed(localFeed);
-    }
+    await updateLocalFeed();
 
     ctx.response.body = {};
   });
@@ -521,6 +501,20 @@ export function startServer() {
     ctx.response.body = {};
   });
 
+  // performs a string replacement of all instances of the old domain passed in with the new one
+  router.post("/api/domain", jwtMiddleware, async (ctx, next) => {
+    const input = await ctx.request.body({ type: "json" }).value;
+    await changeDomains(input.oldDomain, input.newDomain);
+
+    // generate and save the ATOM feed from the database contents
+    await xml.saveJsonToAtom();
+
+    // find current saved feeds for the local feed and update specifically that one
+    await updateLocalFeed();
+
+    ctx.response.body = {};
+  });
+
   // get files under static folder, and resolve "/" to index.html
   app.use(async (ctx, next) => {
     try {
@@ -608,4 +602,17 @@ async function getTmpFolder() {
     );
   }
   return folderName;
+}
+
+// force updates the local feed's contents
+async function updateLocalFeed() {
+  // find current saved feeds for the local feed and update specifically that one
+  const feeds = await getFeeds();
+  const localFeed = feeds.find((feed) =>
+    new URL(feed.url).origin === new URL(config.link).origin
+  );
+  if (localFeed) {
+    // use editFeed function to force update and reset timer
+    await editFeed(localFeed);
+  }
 }

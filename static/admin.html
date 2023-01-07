@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <head>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+
+  <body id="bg">
+    <div id="app" class="flex" v-cloak>
+
+      <div class="flex" v-if="isAuthenticated === true">
+        <p class="title center">Admin Settings</p>
+        <p class="center"><a class="button submit-button" href="index.html">Return to Main Page</a></p>
+
+        <div class="margin"></div>
+
+        <!-- export data -->
+        <p class="small-title center">Creates a tar of all your posts, your global files, and your database.json for you to download</p>
+        <button v-if="!exportedData" class="button small-button margin-center" @click="exportData()">Export Data</button>
+        <a v-if="exportedData" 
+            download="exported.tar" 
+            :href="exportedData" 
+            class="button small-button margin-center">
+          Click here to download your exported data
+        </a>
+
+        <div class="margin"></div>
+
+        <!-- change domain name -->
+        <p class="small-title center">Attempts to replace all instances of a domain name with another one. It's literally just a string replacement method going through all your RSS posts, but intended for migrating over to a new domain. Please back up your data before trying this feature out!</p>
+        <div>
+          <label for="title" class="title">Old Domain</label>
+          <input class="textbox" id="title" v-model="oldDomain">
+        </div>
+        <div>
+          <label for="title" class="title">New Domain</label>
+          <input class="textbox" id="title" v-model="newDomain">
+        </div>
+        <button v-if="oldDomain && newDomain" class="button small-button margin-center" @click="changeDomain()">Replace RSS Links with New Domains</button>
+
+      </div>
+
+      <div v-if="isAuthenticated === false" class="fourth flex-v">
+        <p class="title center margin-center">You are not authorized to view this page</p>
+      </div>
+
+    </div>
+  </body>
+
+  <script type="module">
+    Vue.createApp({
+      data () {
+        return {
+          exportedData: "",
+          oldDomain: "",
+          newDomain: "",
+          performAction: false,
+          isAuthenticated: null,
+        }
+      },
+      async created () {
+        // check if authenticated
+        try {
+          await axios.get('/api/auth');
+          this.isAuthenticated = true;
+        } catch (err) {
+          this.isAuthenticated = false;
+          return;
+        }
+      },
+      async mounted () {
+      },
+      methods: {
+        async exportData () {
+          // retrieve a zip of the user's data from the server
+          const result = await axios.get("/api/export", {
+            responseType: 'blob',
+          });
+          const url = window.URL.createObjectURL(
+            new Blob([result.data])
+          );
+          this.exportedData = url;
+        },
+        async changeDomain () {
+          if (!this.performAction) {
+            this.performAction = true;
+          }
+          await axios.post("/api/domain", {
+            oldDomain: this.oldDomain,
+            newDomain: this.newDomain,
+          });
+          window.location.href = '/index.html';
+        }
+      }
+    }).mount('#app');
+
+  </script>
+
+  <style>
+    #bg {
+      background: #273038;
+    }
+
+    #file-upload {
+      display: none;
+    }
+
+    .flex {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .flex-row {
+      display: flex;
+      flex-direction: row;
+    }
+
+    .title {
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 32px;
+      margin: 20px;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .button {
+      margin-left: 20px;
+      margin-right: 20px;
+      margin-bottom: 20px;
+      margin-top: 10px;
+      padding-left: 10px;
+      padding-right: 10px;
+      height: 30px;
+      color: #d2d2d2;
+      font-family: Inika;
+      background: #382f27;
+      border: 0px;
+      border-radius: 8px;
+      align-self: center;
+      text-align: center;
+      appearance: button;
+      text-decoration: none;
+    }
+
+    .submit-button {
+      margin-top: 15px;
+      width: 300px;
+      font-size: 20px;
+    }
+
+    .small-button {
+      font-family: Inika;
+      font-size: 20px;
+      padding-left: 10px;
+      padding-right: 10px;
+      text-align: center;
+      appearance: button;
+      text-decoration: none;
+    }
+
+    .small-title {
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 24px;
+      margin: 0px;
+      margin-bottom: 10px;
+    }
+
+    .textbox {
+      margin-left: 20px;
+      height: 30px;
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 28px;
+      background: #1B2327;
+      border: 0px;
+      flex-grow: 1;
+    }
+
+    .margin {
+      margin-bottom: 25px;
+    }
+
+    /* keep at bottom of css! */
+    [v-cloak] {
+      display: none;
+    }
+
+  </style>
+</html>

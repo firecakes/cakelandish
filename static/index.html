@@ -19,13 +19,7 @@
         </div>
         <div class="other-buttons">
           <a class="button small-button margin-center" href="layout.html">Edit Post Layout</a>
-          <button v-if="!exportedData" class="button small-button margin-center" @click="exportData()">Export Data</button>
-          <a v-if="exportedData" 
-              download="exported.tar" 
-              :href="exportedData" 
-              class="button small-button margin-center">
-            Click here to download your exported data
-          </a>
+          <a class="button small-button margin-center" href="admin.html">Admin Tools</a>
         </div>
         <p class="title center margin-center">Your Feeds</p>
 
@@ -194,7 +188,6 @@
           searchTypeList: ["Category", "Title", "Content", "Date", "Has Image"],
           searchingForExtraFeed: false,
           isAuthenticated: null,
-          exportedData: "",
           currentVersion: null,
           remoteVersion: null,
           postLocations: null,
@@ -396,16 +389,6 @@
           }
 
           this.searchingForExtraFeed = false;
-        },
-        async exportData () {
-          // retrieve a zip of the user's data from the server
-          const result = await axios.get("/api/export", {
-            responseType: 'blob',
-          });
-          const url = window.URL.createObjectURL(
-            new Blob([result.data])
-          );
-          this.exportedData = url;
         }
       }
     }).mount('#app');
