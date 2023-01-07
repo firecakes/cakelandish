@@ -8,7 +8,7 @@
   </head>
 
   <body id="bg">
-    <div id="app" class="flex">
+    <div id="app" class="flex" v-cloak>
 
       <!-- left side -->
       <div v-if="isAuthenticated === true" class="half flex-v">
@@ -454,6 +454,11 @@
       background: #273038;
       border: 0px;
       flex-grow: 1;
+    }
+
+    /* keep at bottom of css! */
+    [v-cloak] {
+      display: none;
     }
 
   </style>

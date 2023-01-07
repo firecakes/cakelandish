@@ -8,7 +8,7 @@
   </head>
 
   <body id="bg">
-    <div id="app" class="flex">
+    <div id="app" class="flex" v-cloak>
       <p v-if="isAuthenticated === true" class="title center">Your posts</p>
       <a v-if="isAuthenticated === true" class="button submit-button" href="index.html">Return to Main Page</a>
 
@@ -153,6 +153,11 @@
 
     .edit-post-text {
       align-self: center;
+    }
+
+    /* keep at bottom of css! */
+    [v-cloak] {
+      display: none;
     }
 
   </style>

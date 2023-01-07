@@ -8,7 +8,7 @@
   </head>
 
   <body id="bg">
-    <div id="app" class="flex">
+    <div id="app" class="flex" v-cloak>
       <p class="title center">{{ titleText }}</p>
 
       <input v-if="!authenticated" class="textbox" id="title" v-model="code">
@@ -113,6 +113,11 @@
       background: #1B2327;
       border: 0px;
       flex-grow: 1;
+    }
+
+    /* keep at bottom of css! */
+    [v-cloak] {
+      display: none;
     }
 
   </style>

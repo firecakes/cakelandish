@@ -8,7 +8,7 @@
   </head>
 
   <body id="bg">
-    <div id="app" class="flex">
+    <div id="app" class="flex" v-cloak>
 
       <div class="flex" v-if="isAuthenticated === true">
         <p class="title center">Put files that you want accessible by all posts here</p>
@@ -222,6 +222,11 @@
       border: 0px;
       align-items: center;
       width: 200px;
+    }
+
+    /* keep at bottom of css! */
+    [v-cloak] {
+      display: none;
     }
 
   </style>
