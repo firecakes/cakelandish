@@ -137,8 +137,14 @@
         </feed-post>
       </div>
 
+      <!-- unauthenticated view of posts (not RSS) -->
       <div v-if="isAuthenticated === false" class="half flex-v">
-        <p class="title center margin-center">You are not authorized to view this page</p>
+        <p class="center title post-index-title">Post Index</p>
+        <div class="post-index" v-for="(post, index) in postLocations">
+          <p class="center title" v-if="index === 0 || post.year !== postLocations[index - 1].year || post.month !== postLocations[index - 1].month">{{ numberToMonth(post.month) }} {{ post.year }}<br></p>
+          <a v-if="post.title" class="post-index-link" :href="post.path">{{ post.title }}</a>
+          <a v-else class="post-index-link" :href="post.path">Untitled Post</a>
+        </div>
       </div>
 
     </div>
@@ -191,26 +197,31 @@
           exportedData: "",
           currentVersion: null,
           remoteVersion: null,
+          postLocations: null,
         }
       },
-      async created () {
+      async mounted () {
         // check if authenticated
         try {
           await axios.get('/api/auth');
           this.isAuthenticated = true;
         } catch (err) {
           this.isAuthenticated = false;
-          return;
         }
-      },
-      async mounted () {
-        // get all feeds
-        this.isLoading = true;
-        await this.getFeeds();
-        const versionData = (await axios.get('/api/version')).data;
-        this.currentVersion = versionData.currentVersion;
-        this.remoteVersion = versionData.remoteVersion;
-        this.isLoading = false;
+        
+        if (this.isAuthenticated) {
+          // get all feeds
+          this.isLoading = true;
+          await this.getFeeds();
+          const versionData = (await axios.get('/api/version')).data;
+          this.currentVersion = versionData.currentVersion;
+          this.remoteVersion = versionData.remoteVersion;
+          this.isLoading = false;
+        } else {
+          const postLocations = (await axios.get('/api/post/all')).data.postLocations;
+
+          this.postLocations = postLocations;
+        }
       },
       computed: {
         onNewestVersion: function () {
@@ -230,6 +241,9 @@
         }
       },
       methods: {
+        numberToMonth (num) {
+          return ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][num];
+        },
         async getFeeds () {
           const feeds = (await axios.get('/api/feed')).data.feeds;
           // parse XML data from RSS and ATOM feeds and combine into one structure
@@ -699,6 +713,23 @@
       text-align: center;
       appearance: button;
       text-decoration: none;
+    }
+
+    .post-index {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .post-index-link {
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 18px;
+    }
+
+    .post-index-title {
+      margin-bottom: 30px;
     }
 
   </style>

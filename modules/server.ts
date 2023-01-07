@@ -28,6 +28,7 @@ import {
   verifyJwtRefreshToken,
 } from "./auth.ts";
 import { exportData } from "./zip.ts";
+import { getPostLocations } from "./post.ts";
 
 export function startServer() {
   // start the web server initialization
@@ -153,6 +154,13 @@ export function startServer() {
         `/tmp/${folderName}/${file.originalName}`
       ),
       address: config.link,
+    };
+  });
+
+  // get all posts in static folder. this is public, and does not read from the database to get the info
+  router.get("/api/post/all", async (ctx, next) => {
+    ctx.response.body = {
+      postLocations: getPostLocations(),
     };
   });
 

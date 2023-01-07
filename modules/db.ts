@@ -1,4 +1,5 @@
 import { config } from "../config.ts";
+import { generatePostFileStructure } from "./post.ts";
 
 let memory = {
   feeds: [], // store xml and js parsed data in memory to avoid read/write collisions
@@ -53,6 +54,7 @@ export async function init() {
   }
 
   await saveDb(db);
+  await generatePostFileStructure();
   return db;
 }
 
@@ -84,6 +86,7 @@ export async function addPost(post: Entry) {
 
   // apply layout
   await applyLayoutToPost(db.layout, post);
+  await generatePostFileStructure();
 }
 
 export async function editPost(post: Entry) {
@@ -105,12 +108,14 @@ export async function editPost(post: Entry) {
 
   // apply layout
   await applyLayoutToPost(db.layout, post);
+  await generatePostFileStructure();
 }
 
 export async function deletePost(post: Entry) {
   let db = await readDb();
   db.entries = db.entries.filter((target) => target.localUrl !== post.localUrl);
   await saveDb(db);
+  await generatePostFileStructure();
 }
 
 // feed functions
