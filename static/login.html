@@ -5,10 +5,11 @@
   <head>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="main.css">
   </head>
 
   <body id="bg">
-    <div id="app" class="flex" v-cloak>
+    <div id="app" class="flex-v" v-cloak>
       <p class="title center">{{ titleText }}</p>
 
       <input v-if="!authenticated" class="textbox" id="title" v-model="code">
@@ -54,70 +55,23 @@
   </script>
 
   <style>
-    #bg {
-      background: #273038;
-    }
-
-    .flex {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .flex-row {
-      display: flex;
-      flex-direction: row;
-    }
-
-    .title {
-      color: #d2d2d2;
-      font-family: Inika;
-      font-size: 32px;
-      margin: 20px;
-    }
-
-    .center {
-      text-align: center;
-    }
 
     .button {
-      margin-left: 20px;
-      margin-right: 20px;
-      margin-bottom: 20px;
-      padding-left: 10px;
-      padding-right: 10px;
+      margin-top: 20px;
+      padding-left: 50px;
+      padding-right: 50px;
       height: 30px;
-      color: #d2d2d2;
-      font-family: Inika;
       font-size: 14px;
-      background: #382f27;
-      border: 0px;
-      border-radius: 8px;
       align-self: center;
-      text-align: center;
-      appearance: button;
-      text-decoration: none;
     }
 
     .submit-button {
-      margin-top: 15px;
-      width: 300px;
       font-size: 20px;
     }
 
     .textbox {
-      margin-left: 20px;
-      margin-right: 20px;
-      color: #d2d2d2;
-      font-family: Inika;
-      font-size: 28px;
       background: #1B2327;
-      border: 0px;
-      flex-grow: 1;
-    }
-
-    /* keep at bottom of css! */
-    [v-cloak] {
-      display: none;
+      margin-right: 20px;
     }
 
   </style>

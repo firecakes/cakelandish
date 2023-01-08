@@ -5,10 +5,11 @@
   <head>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="main.css">
   </head>
 
   <body id="bg">
-    <div id="app" class="flex" v-cloak>
+    <div id="app" class="flex-v" v-cloak>
       <p v-if="isAuthenticated === true" class="title center">Your posts</p>
       <a v-if="isAuthenticated === true" class="button submit-button" href="index.html">Return to Main Page</a>
 
@@ -18,7 +19,7 @@
           <br>
           <span v-html="post.content"></span>
         </div>
-        <a class="button flex-row" :href="`/upload.html?localUrl=${post.localUrl}`"><p class="edit-post-text">Edit post</p></a>
+        <a class="button flex" :href="`/upload.html?localUrl=${post.localUrl}`"><p class="edit-post-text">Edit post</p></a>
         <button v-if="!post.requestDeletion" class="button" @click="deletePost(post)">Delete post</button>
         <button v-if="post.requestDeletion" class="button" @click="deletePost(post)">Are you sure?</button>
       </div>
@@ -87,30 +88,6 @@
   </script>
 
   <style>
-    #bg {
-      background: #273038;
-    }
-
-    .flex {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .flex-row {
-      display: flex;
-      flex-direction: row;
-    }
-
-    .title {
-      color: #d2d2d2;
-      font-family: Inika;
-      font-size: 32px;
-      margin: 20px;
-    }
-
-    .center {
-      text-align: center;
-    }
 
     .post {
       margin-bottom: 30px;
@@ -129,35 +106,21 @@
     .button {
       margin-left: 20px;
       margin-right: 20px;
-      margin-bottom: 20px;
-      padding-left: 10px;
-      padding-right: 10px;
+      padding-left: 20px;
+      padding-right: 20px;
       height: 30px;
-      color: #d2d2d2;
-      font-family: Inika;
       font-size: 14px;
-      background: #382f27;
-      border: 0px;
-      border-radius: 8px;
       align-self: center;
-      text-align: center;
-      appearance: button;
-      text-decoration: none;
     }
 
     .submit-button {
       margin-top: 15px;
-      width: 300px;
+      margin-bottom: 20px;
       font-size: 20px;
     }
 
     .edit-post-text {
       align-self: center;
-    }
-
-    /* keep at bottom of css! */
-    [v-cloak] {
-      display: none;
     }
 
   </style>

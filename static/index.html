@@ -6,6 +6,7 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <link rel="alternate" type="application/atom+xml" href="/feed.atom">
+    <link rel="stylesheet" href="main.css">
   </head>
 
   <body id="bg" class="no-space">
@@ -396,65 +397,6 @@
   </script>
 
   <style>
-    #bg {
-      background: #273038;
-    }
-
-    .flex {
-      display: flex;
-    }
-
-    .flex-v {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .fourth {
-      flex: 1 0 0;
-      background: #1b2327;
-      height: 100%;
-    }
-
-    .no-space {
-      margin: 0px;
-      padding: 0px;
-    }
-
-    .three-fourth {
-      flex: 3 0 0;
-    }
-
-    .half {
-      flex: 1 0 0;
-    }
-
-    .button {
-      color: #d2d2d2;
-      font-family: Inika;
-      font-size: 36px;
-      background: #382f27;
-      border: 0px;
-      border-radius: 8px;
-      text-align: center;
-      appearance: button;
-      text-decoration: none;
-    }
-
-    .title {
-      color: #d2d2d2;
-      font-family: Inika;
-      font-size: 32px;
-      margin: 0px;
-    }
-
-    .small-title {
-      color: #d2d2d2;
-      font-family: Inika;
-      font-size: 24px;
-      margin: 0px;
-      margin-bottom: 10px;
-    }
-
     .version {
       color: #d2d2d2;
       font-family: Inika;
@@ -489,21 +431,11 @@
       flex-direction: column;
     }
 
-    .center {
-      text-align: center;
-    }
-
     .textbox {
-      margin-left: 20px;
       margin-top: 0px;
       margin-bottom: 0px;
-      height: 30px;
-      color: #d2d2d2;
-      font-family: Inika;
       font-size: 18px;
       background: #273038;
-      border: 0px;
-      flex-grow: 1;
       display: flex;
       align-items: center;
     }
@@ -521,11 +453,6 @@
       font-size: 18px;
       padding-left: 20px;
       padding-right: 20px;
-    }
-
-    .form {
-      display: flex;
-      align-items: center;
     }
 
     .label {
@@ -546,7 +473,7 @@
     .icon {
       height: 25px;
     }
-    
+
     .scroll {
       overflow: scroll;
       max-height: 400px;
@@ -687,17 +614,6 @@
       justify-content: center;
     }
 
-    .small-button {
-      font-family: Inika;
-      font-size: 20px;
-      padding-left: 10px;
-      padding-right: 10px;
-      align-self: center;
-      text-align: center;
-      appearance: button;
-      text-decoration: none;
-    }
-
     .post-index {
       display: flex;
       flex-direction: column;
@@ -714,11 +630,5 @@
     .post-index-title {
       margin-bottom: 30px;
     }
-
-    /* keep at bottom of css! */
-    [v-cloak] {
-      display: none;
-    }
-
   </style>
 </html>
