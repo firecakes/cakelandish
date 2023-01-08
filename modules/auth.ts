@@ -46,7 +46,10 @@ export async function generateJwtAccessToken() {
   const token = await jwt.create({ alg: "HS512", typ: "JWT" }, {
     exp: jwt.getNumericDate(60), // one minute lifespan
   }, jwtAccessKey);
-  return token;
+  return {
+    token: token,
+    expiry: 60,
+  };
 }
 
 // generates a refresh JWT for an authorized user
@@ -54,7 +57,10 @@ export async function generateJwtRefreshToken() {
   const token = await jwt.create({ alg: "HS512", typ: "JWT" }, {
     exp: jwt.getNumericDate(86400 * config.refreshTokenDays), // configurable lifespan. defaults to 2 months.
   }, jwtRefreshKey);
-  return token;
+  return {
+    token: token,
+    expiry: 86400 * config.refreshTokenDays,
+  };
 }
 
 // verifies an access JWT for an authorized user

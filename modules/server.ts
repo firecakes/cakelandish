@@ -61,11 +61,12 @@ export function startServer() {
       const refreshToken = await ctx.cookies.get("jwt-refresh");
       await verifyJwtRefreshToken(refreshToken);
       // no exceptions thrown. generate a new access token and continue;
-      const accessToken = await generateJwtAccessToken();
-      await ctx.cookies.set("jwt-access", accessToken, {
+      const access = await generateJwtAccessToken();
+      await ctx.cookies.set("jwt-access", access.token, {
         secure: config.https,
         httpOnly: true,
         sameSite: "strict",
+        maxAge: access.expiry,
       });
       await next();
       success = true;
@@ -102,21 +103,23 @@ export function startServer() {
     // use this method to prevent timing-based attacks on authentication
     if (compareStrings(input.code, text)) { // valid code. authenticate
       deleteCode(); // auth code no longer needed
-      const accessToken = await generateJwtAccessToken();
-      const refreshToken = await generateJwtRefreshToken();
+      const access = await generateJwtAccessToken();
+      const refresh = await generateJwtRefreshToken();
       // store tokens in client as a cookie
       // secure means https only. will be true if env var HTTPS is set to true
       // httpOnly means JS cannot be used to retrieve the cookie
       // strictness means cookie will only be readable with this site specifically
-      await ctx.cookies.set("jwt-access", accessToken, {
+      await ctx.cookies.set("jwt-access", access.token, {
         secure: config.https,
         httpOnly: true,
         sameSite: "strict",
+        maxAge: access.expiry,
       });
-      await ctx.cookies.set("jwt-refresh", refreshToken, {
+      await ctx.cookies.set("jwt-refresh", refresh.token, {
         secure: config.https,
         httpOnly: true,
         sameSite: "strict",
+        maxAge: refresh.expiry,
       });
       ctx.response.body = {
         success: true,
