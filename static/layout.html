@@ -10,9 +10,11 @@
 
   <body id="bg">
     <div id="app" class="flex" v-cloak>
+      <!-- switch view button for smaller screen sizes -->
+      <button v-if="screen !== 'lg' && isAuthenticated" class="button switch-view-button" @click="switchViews">{{ currentViewText }}</button>
 
       <!-- left side -->
-      <div v-if="isAuthenticated === true" class="half flex-v">
+      <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'input')" class="half flex-v">
         <!-- HTML input -->
         <p class="center title">HTML Layout goes here!</p>
         <textarea class="html-input textarea" rows="30" v-model="htmlInput"></textarea>
@@ -26,7 +28,7 @@
       </div>
 
       <!-- right side -->
-      <div v-if="isAuthenticated === true" class="half flex-v">
+      <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'output')" class="half flex-v">
         <p class="center title">How it renders on your site:</p>
         <iframe :srcdoc="htmlInput" title="Layout Render"></iframe> 
       </div>
@@ -39,12 +41,17 @@
   </body>
 
   <script type="module">
+    import * as util from "./util.js";
+
     Vue.createApp({
       data () {
         return {
           htmlInput: "",
           isAuthenticated: null,
           performAction: false,
+          screen: "lg",
+          currentView: "input",
+          currentViewText: "Show Output",
         }
       },
       async created () {
@@ -58,6 +65,11 @@
         }
       },
       async mounted () {
+        this.screen = util.widthToScreenSize(window.innerWidth);
+        window.addEventListener('resize', () => {
+          this.screen = util.widthToScreenSize(window.innerWidth);
+        });
+
         const results = await axios.get('/api/layout');
         this.htmlInput = results.data.layout;
       },
@@ -79,6 +91,15 @@
         },
         toMainPage: function () {
           window.location.href = '/index.html';
+        },
+        switchViews () {
+          if (this.currentView === "input") {
+            this.currentView = "output";
+            this.currentViewText = "Show Input"
+          } else if (this.currentView === "output") {
+            this.currentView = "input";
+            this.currentViewText = "Show Output"
+          }
         }
       }
     }).mount('#app');
@@ -86,6 +107,10 @@
   </script>
 
   <style>
+    body {
+      margin: 0px;
+    }
+
     #bg {
       background: #1B2327;
     }
@@ -122,6 +147,33 @@
       background: #273038;
       flex-grow: 1;
       color: #d2d2d2;
+    }
+
+    .switch-view-button {
+      margin: 0px;
+    }
+
+    /* media queries + changing layout of HTML based on screen size */
+
+    @media only screen and (max-width: 1000px) {
+      .half {
+        padding-top: 30px;
+      }
+      .title {
+        font-size: 24px;
+      }
+      .button {
+        font-size: 20px;
+      }
+    }
+
+    @media only screen and (max-width: 600px) {
+      .title {
+        font-size: 16px;
+      }
+      .button {
+        font-size: 12px;
+      }
     }
 
   </style>

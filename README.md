@@ -15,8 +15,6 @@ It's a powerful, self-hosting blogging server with minimal social features baked
 ## How can I learn this project?
 [Check the GitHub wiki](https://github.com/firecakes/cakelandish/wiki) to get started and see screenshots of how the webpages look.
 
-Mobile devices not supported yet. Stay tuned.
-
 ## Dev Commands
 
 Auto format on save: 

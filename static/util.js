@@ -43,6 +43,18 @@ export async function parseFeed(feed) {
   }
 }
 
+export function widthToScreenSize (num) {
+  if (num <= 600) {
+    return 'sm';
+  }
+  else if (num > 600 && num <= 1000) {
+    return 'md';
+  }
+  else {
+    return 'lg';
+  }
+};
+
 async function parseRss(xml) {
   const feed = xmlGetOne(xml, ["rss", "channel"]);
   const meta = {

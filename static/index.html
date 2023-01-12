@@ -11,8 +11,11 @@
 
   <body id="bg" class="no-space">
     <div id="app" class="flex" v-cloak>
+      <!-- switch view button for smaller screen sizes -->
+      <button v-if="screen !== 'lg' && isAuthenticated" class="button switch-view-button" @click="switchViews">{{ currentViewText }}</button>
 
-      <div v-if="isAuthenticated === true" class="fourth flex-v">
+      <!-- feed sidebar -->
+      <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'feeds')" class="fourth flex-v">
         <a class="button margin-center" href="upload.html">New Post</a>
         <a class="button margin-center" href="manage.html">Manage Posts</a>
         <div class="other-buttons">
@@ -120,7 +123,7 @@
       </div>
 
       <!-- display feed content -->
-      <div v-if="isAuthenticated === true" class="three-fourth flex-v">
+      <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'posts')" class="three-fourth flex-v">
         <!-- render each post -->
         <feed-post 
           @render-reply-to="renderReplyTo"
@@ -192,9 +195,17 @@
           currentVersion: null,
           remoteVersion: null,
           postLocations: null,
+          screen: "lg",
+          currentView: "posts",
+          currentViewText: "Show Feeds",
         }
       },
       async mounted () {
+        this.screen = util.widthToScreenSize(window.innerWidth);
+        window.addEventListener('resize', () => {
+          this.screen = util.widthToScreenSize(window.innerWidth);
+        });
+
         // check if authenticated
         try {
           await axios.get('/api/auth');
@@ -390,6 +401,15 @@
           }
 
           this.searchingForExtraFeed = false;
+        },
+        switchViews () {
+          if (this.currentView === "posts") {
+            this.currentView = "feeds";
+            this.currentViewText = "Show Posts"
+          } else if (this.currentView === "feeds") {
+            this.currentView = "posts";
+            this.currentViewText = "Show Feeds"
+          }
         }
       }
     }).mount('#app');
@@ -630,5 +650,26 @@
     .post-index-title {
       margin-bottom: 30px;
     }
+
+    /* media queries + changing layout of HTML based on screen size */
+
+    @media only screen and (max-width: 1000px) {
+      img {
+        max-width: 100%;
+      }
+      .fourth {
+        padding-top: 24px;
+      }
+      .three-fourth {
+        padding-top: 24px;
+      }
+    }
+
+    @media only screen and (max-width: 600px) {
+      .post {
+        flex-direction: column;
+      }
+    }
+
   </style>
 </html>

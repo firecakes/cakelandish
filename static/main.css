@@ -105,6 +105,12 @@
   flex-grow: 1;
 }
 
+.switch-view-button {
+  font-size: 20px;
+  position: fixed;
+  width: 100%;
+}
+
 /* keep at bottom of css! */
 [v-cloak] {
   display: none;

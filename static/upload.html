@@ -11,8 +11,11 @@
   <body id="bg">
     <div id="app" class="flex" v-cloak>
 
+      <!-- switch view button for smaller screen sizes -->
+      <button v-if="screen !== 'lg' && isAuthenticated" class="button switch-view-button" @click="switchViews">{{ currentViewText }}</button>
+
       <!-- left side -->
-      <div v-if="isAuthenticated === true" class="half flex-v">
+      <div id="side" v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'input')" class="half flex-v">
         <!-- HTML input -->
         <p class="center title">HTML goes here!</p>
         <textarea class="html-input textarea" rows="30" v-model="htmlInput" @input="sanitizeDebounce"></textarea>
@@ -43,20 +46,27 @@
         </div>
 
         <!-- tag management + upload -->
-        <div class="flex">
+        <div class="tag-management">
 
           <div class="form third flex-v">
 
-            <div class="flex form">
-              <label for="tag" class="title">Tags</label>
-              <input class="textbox tag-input" id="tag" v-model="tag">
-              <select class="tag-select" @change="chooseTag">
-                <option value="">Used tags</option>
-                <option v-for="tag in existingTags">{{ tag }}</option>
-              </select>
-              <button class="button tag-button" @click="addTag">Add tag</button>
+            <!-- tag form -->
+            <div class="tag-form form">
+              <div class="flex form">
+                <label for="tag" class="title">Tags</label>
+                <input class="textbox tag-input" id="tag" v-model="tag">
+              </div>
+
+              <div class="flex form">
+                <select class="tag-select" @change="chooseTag">
+                  <option value="">Used tags</option>
+                  <option v-for="tag in existingTags">{{ tag }}</option>
+                </select>
+                <button class="button tag-button" @click="addTag">Add tag</button>
+              </div>
             </div>
 
+            <!-- upload media form -->
             <div class="form">
               <label for="file-upload" class="file form file-upload-images">
                 <p class="flex-center">Upload media</p>
@@ -77,7 +87,7 @@
       </div>
 
       <!-- right side -->
-      <div v-if="isAuthenticated === true" class="half flex-v">
+      <div id="side" v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'output')" class="half flex-v">
         <p class="center title">How it renders on your site:</p>
         <iframe :srcdoc="htmlInputLayoutApplied" class="html-output" title="Layout Render"></iframe> 
         <p class="center title">How it renders on your server's RSS reader:</p>
@@ -99,6 +109,8 @@
   </body>
 
   <script type="module">
+    import * as util from "./util.js";
+
     Vue.createApp({
       data () {
         return {
@@ -120,6 +132,9 @@
           isAuthenticated: null,
           layout: "",
           existingTags: [],
+          screen: "lg",
+          currentView: "input",
+          currentViewText: "Show Output",
         }
       },
       async created () {
@@ -133,6 +148,11 @@
         }
       },
       async mounted () {
+        this.screen = util.widthToScreenSize(window.innerWidth);
+        window.addEventListener('resize', () => {
+          this.screen = util.widthToScreenSize(window.innerWidth);
+        });
+
         // hash that may appear in post IDs not included in search string. append it
         let uri = window.location.search + window.location.hash; 
         let params = new URLSearchParams(uri);
@@ -297,6 +317,15 @@
             clearTimeout(timer);
             timer = setTimeout(() => { func.apply(this, args); }, timeout);
           };
+        },
+        switchViews () {
+          if (this.currentView === "input") {
+            this.currentView = "output";
+            this.currentViewText = "Show Input"
+          } else if (this.currentView === "output") {
+            this.currentView = "input";
+            this.currentViewText = "Show Output"
+          }
         }
       }
     }).mount('#app');
@@ -304,6 +333,10 @@
   </script>
 
   <style>
+    body {
+      margin: 0px;
+    }
+
     #bg {
       background: #1B2327;
     }
@@ -328,6 +361,7 @@
     .form {
       display: flex;
       align-items: center;
+      margin-bottom: 5px;
     }
 
     .two-third {
@@ -406,6 +440,53 @@
       background: #273038;
       border: 0px;
       flex-grow: 1;
+    }
+
+    .switch-view-button {
+      margin: 0px;
+    }
+
+    .tag-management {
+      display: flex;
+    }
+
+    .tag-form {
+      display: flex;
+    }
+
+    /* media queries + changing layout of HTML based on screen size */
+
+    @media only screen and (max-width: 1200px) {
+      .title {
+        font-size: 24px;
+      }
+      .submit-button {
+        width: 150px;
+      }
+    }
+
+    @media only screen and (max-width: 1000px) {
+      #side {
+        padding-top: 30px;
+      }
+      .tag-management {
+        flex-direction: column;
+      }
+    }
+
+    @media only screen and (max-width: 600px) {
+      .title {
+        font-size: 16px;
+      }
+      .textbox {
+        font-size: 16px;
+      }
+      .tag-select {
+        font-size: 16px;
+      }
+      .tag-form {
+        flex-direction: column;
+      }
     }
 
   </style>

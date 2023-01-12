@@ -25,13 +25,13 @@
         <div class="file" v-for="file in orderedFiles">
 
           <img v-if="getFileType(file.path) === 'image'" 
-            style="width: 300px" 
+            style="max-width: 300px" 
             :src="file.path">
           </img>
           <audio v-if="getFileType(file.path) === 'audio'" controls>
             <source :src="file.path">
           </audio>
-          <video style="width: 300px" v-if="getFileType(file.path) === 'video'" controls>
+          <video style="max-width: 300px" v-if="getFileType(file.path) === 'video'" controls>
             <source :src="file.path">
           </video>
           <a class="link" :href="file.path" target="_blank">{{ file.path }}</a>
@@ -180,6 +180,27 @@
     .link {
       margin-left: 10px;
       margin-right: 10px;
+    }
+
+    /* media queries + changing layout of HTML based on screen size */
+
+    @media only screen and (max-width: 1000px) {
+      .title {
+        font-size: 24px;
+      }
+      .file {
+        display: flex;
+        flex-direction: column;
+      }
+    }
+
+    @media only screen and (max-width: 600px) {
+      .title {
+        font-size: 16px;
+      }
+      .link {
+        font-size: 16px;
+      }
     }
 
   </style>

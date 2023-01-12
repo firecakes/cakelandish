@@ -123,5 +123,19 @@
       align-self: center;
     }
 
+    /* media queries + changing layout of HTML based on screen size */
+
+    @media only screen and (max-width: 1000px) {
+      img {
+        max-width: 100%;
+      }
+    }
+
+    @media only screen and (max-width: 600px) {
+      .post {
+        flex-direction: column;
+      }
+    }
+
   </style>
 </html>
