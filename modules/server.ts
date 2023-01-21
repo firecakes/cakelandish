@@ -143,6 +143,7 @@ export function startServer() {
     const results = await ctx.request.body({ type: "form-data" }).value.read({
       maxFileSize: 10 * 1000 * 1000 * 1000, // allow uploads of up to 10 GB. only the site owner can call this anyway. 10 GB seems very reasonable
       outPath: `static/tmp/${folderName}`,
+      customContentTypes: extractCustomContentTypes(ctx),
     });
     // rename the files to what they were originally
     for await (let file of results.files) {
@@ -475,6 +476,7 @@ export function startServer() {
     const results = await ctx.request.body({ type: "form-data" }).value.read({
       maxFileSize: 10 * 1000 * 1000 * 1000, // allow uploads of up to 10 GB. only the site owner can call this anyway. 10 GB seems very reasonable
       outPath: `static/files`,
+      customContentTypes: extractCustomContentTypes(ctx),
     });
 
     // rename the files to what they were originally
@@ -618,4 +620,14 @@ async function updateLocalFeed() {
     // use editFeed function to force update and reset timer
     await editFeed(localFeed);
   }
+}
+
+// this gets around oak's weirdly restrictive allowed MIME types that cannot be read from the body first
+function extractCustomContentTypes (ctx) {
+  const contentTypes = ctx.request.headers.get('custom-content-types').split(',');
+  const customContentTypes = {};
+  for (let type of contentTypes) {
+    customContentTypes[type] = 'txt'; // arbitrary
+  }
+  return customContentTypes;
 }

@@ -85,13 +85,18 @@
         },
         async filesSubmitted (event) {
           const formData = new FormData();
+          const contentTypes = [];
           for (let i = 0; i < event.target.files.length; i++) {
             const file = event.target.files[i];
+            contentTypes.push(file.type);
             formData.append('myFile', file);
           }
+
           const results = await axios.post('/api/file', formData, {
             headers: {
-              'Content-Type': 'multipart/form-data'
+              'Content-Type': 'multipart/form-data',
+              // custom header, to get around oak's strangely restrictive allowed MIME types 
+              'custom-content-types': contentTypes.join(','),
             }
           });
           await this.getFiles();
