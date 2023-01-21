@@ -623,11 +623,13 @@ async function updateLocalFeed() {
 }
 
 // this gets around oak's weirdly restrictive allowed MIME types that cannot be read from the body first
-function extractCustomContentTypes (ctx) {
-  const contentTypes = ctx.request.headers.get('custom-content-types').split(',');
+function extractCustomContentTypes(ctx) {
+  const contentTypes = ctx.request.headers.get("custom-content-types").split(
+    ",",
+  );
   const customContentTypes = {};
   for (let type of contentTypes) {
-    customContentTypes[type] = 'txt'; // arbitrary
+    customContentTypes[type] = "txt"; // arbitrary
   }
   return customContentTypes;
 }
