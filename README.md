@@ -15,6 +15,10 @@ It's a powerful, self-hosting blogging server with minimal social features baked
 ## How can I learn this project?
 [Check the GitHub wiki](https://github.com/firecakes/cakelandish/wiki) to get started and see screenshots of how the webpages look.
 
+Or, if you want to see an example of this project running in the wild, check out my instance here: https://cakelandish.firecakesworld.com
+
+My RSS feed is at `https://cakelandish.firecakesworld.com/feed.atom`.
+
 ## Dev Commands
 
 Auto format on save: 
