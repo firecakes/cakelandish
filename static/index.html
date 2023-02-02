@@ -28,9 +28,12 @@
         <p class="title center margin-center">Your Feeds</p>
 
         <!-- feed list -->
+        <div class="feedInBetween" @dragover="allowDrop($event)" @drop="dropFeedItem($event, 0)"></div> <!-- for placing feed items above top of array -->
+
         <div v-if="!isLoading" class="scroll">
           <div v-for="(feed, index) in feeds" class="feed-list">
-            <div class="form">
+            <!-- the feed items are drag n droppable! -->
+            <div class="form" draggable="true" @dragstart="dragFeedItem($event, index)"> 
               <img class="icon" :src="feed.iconUrl"></img>
               <!-- parsing errors should show the text in red -->
               <p class="textbox" :class="{ 'red-text': !feed.success }" id="name" @click="presentFeed(index)">{{ feed.name }}</p>
@@ -48,8 +51,9 @@
                 src="/eye-open.png" 
                 @click="focusFeed(index)"> </img>
               <img v-else class="icon" src="/eye-closed.png" @click="focusFeed(index)"> </img>
-              
             </div>
+            
+            <div class="feedInBetween" @dragover="allowDrop($event)" @drop="dropFeedItem($event, index + 1)"></div>
           </div>
         </div>
 
@@ -410,6 +414,30 @@
             this.currentView = "posts";
             this.currentViewText = "Show Feeds"
           }
+        },
+        // drag and drop handling
+        dragFeedItem (event, index) {
+          event.dataTransfer.setData("text/plain", index);
+        },
+        allowDrop (event) {
+          event.preventDefault();
+        },
+        dropFeedItem (event, to) {
+          event.preventDefault();
+          const from = event.dataTransfer.getData("text/plain");
+          const oldFeedTarget = this.feeds[this.focusedFeedIndex];
+          // transfer the data in the feed list between the two indices
+          const feed = this.feeds.splice(from, 1)[0];
+          this.feeds.splice(from >= to ? to : to - 1, 0, feed);
+          // also change the focus feed index!
+          if (oldFeedTarget) {
+            this.focusedFeedIndex = this.feeds.findIndex(feed => feed === oldFeedTarget);
+          }
+          // inform the server of the changes but do not force a whole update cycle
+          axios.put('/api/feed/reorder', {
+            from: Number(from),
+            to: Number(to),
+          });
         }
       }
     }).mount('#app');
@@ -482,7 +510,6 @@
     .feed-list {
       font-family: Inika;
       font-size: 16px;
-      margin-top: 20px;
       margin-left: 50px;
       margin-right: 30px;
       color: #d2d2d2;
@@ -649,6 +676,10 @@
 
     .post-index-title {
       margin-bottom: 30px;
+    }
+
+    .feedInBetween {
+      padding-top: 20px;
     }
 
     img {

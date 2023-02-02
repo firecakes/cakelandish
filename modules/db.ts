@@ -125,6 +125,7 @@ export async function getFeeds() {
 
 export async function addFeed(feed: Feed) {
   const db = await readDb();
+  feed.index = db.feeds.length;
   db.feeds.push(feed);
   await saveDb(db);
 
@@ -147,11 +148,29 @@ export async function editFeed(feed: Feed) {
 export async function deleteFeed(index: number) {
   const db = await readDb();
   db.feeds.splice(index, 1);
+  db.feeds.forEach((feed, index) => feed.index = index);
   await saveDb(db);
 
   clearInterval(memory.timers[index]);
   memory.feeds.splice(index, 1);
+  memory.feeds.forEach((feed, index) => feed.index = index);
   memory.timers.splice(index, 1);
+}
+
+export async function reorderFeed(from: number, to: number) {
+  const db = await readDb();
+
+  const feed = db.feeds.splice(from, 1)[0];
+  db.feeds.splice(from >= to ? to : to - 1, 0, feed);
+  db.feeds.forEach((feed, index) => feed.index = index);
+  await saveDb(db);
+
+  const memoryFeed = memory.feeds.splice(from, 1)[0];
+  memory.feeds.splice(from >= to ? to : to - 1, 0, memoryFeed);
+  memory.feeds.forEach((feed, index) => feed.index = index);
+
+  const memoryTimer = memory.timers.splice(from, 1)[0];
+  memory.timers.splice(from >= to ? to : to - 1, 0, memoryTimer);
 }
 
 export async function refreshFeedIntervals() {

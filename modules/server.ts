@@ -17,6 +17,7 @@ import {
   getLayout,
   getPosts,
   getTags,
+  reorderFeed,
   saveLayout,
 } from "./db.ts";
 import * as xml from "./xml.ts";
@@ -394,6 +395,16 @@ export function startServer() {
     // delete from database
     await deleteFeed(input.index);
 
+    ctx.response.body = {};
+  });
+
+  // swap the order of a feed item
+  router.put("/api/feed/reorder", jwtMiddleware, async (ctx, next) => {
+    const input = await ctx.request.body({ type: "json" }).value;
+    if (typeof input.from !== "number" || typeof input.to !== "number") {
+      ctx.response.status = 400;
+    }
+    await reorderFeed(input.from, input.to);
     ctx.response.body = {};
   });
 
