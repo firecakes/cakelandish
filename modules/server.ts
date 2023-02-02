@@ -492,7 +492,9 @@ export function startServer() {
       await addFile(`files/${results.files[i].originalName}`);
     }
 
-    ctx.response.body = {};
+    ctx.response.body = {
+      files: results.files.map((file) => `files/${file.originalName}`),
+    };
   });
 
   // delete an existing file

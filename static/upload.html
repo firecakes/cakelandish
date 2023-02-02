@@ -74,6 +74,11 @@
               <input id="file-upload" accept="image/*" type="file" @change="filesSubmitted" multiple/>
             </div>
 
+            <p v-if="uploadsInProgress.size !== 0" class="tiny-text">Currently uploading:</p>
+            <div v-for="upload in Array.from(uploadsInProgress)">
+              <p class="tiny-text">{{ upload }}</p>
+            </div>
+
           </div>
 
           <div class="two-third">
@@ -135,6 +140,7 @@
           screen: "lg",
           currentView: "input",
           currentViewText: "Show Output",
+          uploadsInProgress: new Set(),
         }
       },
       async created () {
@@ -237,7 +243,9 @@
             const file = event.target.files[i];
             contentTypes.push(file.type);
             formData.append('myFile', file)
+            this.uploadsInProgress.add(file.name);
           }
+
           const results = await axios.post('/api/upload', formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
@@ -246,6 +254,7 @@
             }
           });
           for (let file of results.data.files) {
+            this.uploadsInProgress.delete(file.split("/")[file.split("/").length - 1]);
             // smartly create different elements depending on the file type submitted
             const extension = file.split(".").reverse()[0];
 

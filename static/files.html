@@ -22,6 +22,11 @@
         </div>
         <p class="center"><a class="button submit-button" href="index.html">Return to Main Page</a></p>
 
+        <p v-if="uploadsInProgress.size !== 0" class="tiny-text center">Currently uploading:</p>
+        <div v-for="upload in Array.from(uploadsInProgress)">
+          <p class="tiny-text center">{{ upload }}</p>
+        </div>
+
         <div class="file" v-for="file in orderedFiles">
 
           <img v-if="getFileType(file.path) === 'image'" 
@@ -54,6 +59,7 @@
         return {
           files: [],
           isAuthenticated: null,
+          uploadsInProgress: new Set(),
         }
       },
       async created () {
@@ -90,6 +96,7 @@
             const file = event.target.files[i];
             contentTypes.push(file.type);
             formData.append('myFile', file);
+            this.uploadsInProgress.add(file.name);
           }
 
           const results = await axios.post('/api/file', formData, {
@@ -99,6 +106,11 @@
               'custom-content-types': contentTypes.join(','),
             }
           });
+
+          for (let file of results.data.files) {
+            this.uploadsInProgress.delete(file.split("/")[file.split("/").length - 1]);
+          }
+
           await this.getFiles();
         },
         getFileType (file) {
