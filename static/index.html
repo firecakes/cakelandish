@@ -261,9 +261,9 @@
           // also pass in the URL of the feed to each entry for future reference
           // also runs through user-created filters
           this.orderedContent = this.feeds
-            .filter(feed => feed.success)
             // remove all but the user-selected feed if applicable
             .filter((feed, index) => this.focusedFeedIndex === null || this.focusedFeedIndex === index)
+            .filter(feed => feed.success) // put after index checking from previous filter or the list will misalign
             .map(feed => feed.feedArray.map(item => Object.assign(item, {url: feed.url})))
             .flat()
             // per-post filters....
