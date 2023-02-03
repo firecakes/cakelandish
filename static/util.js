@@ -108,8 +108,8 @@ async function parseRss(xml) {
 async function parseAtom(xml) {
   const feed = xmlGetOne(xml, ["feed"]);
   const meta = {
-    title: await checkAndRenderHtml(xmlGetOne(feed, ["title"]), true),
-    subtitle: await checkAndRenderHtml(xmlGetOne(feed, ["subtitle"]), true),
+    title: xmlGetOne(feed, ["title"], true),
+    title: xmlGetOne(feed, ["subtitle"], true),
     author: xmlGetOne(feed, ["author", "name"], true),
     id: xmlGetOne(feed, ["id"], true),
     categories: xmlGetMany(feed, ["category"]).map(extractAttribute("term")),
@@ -128,7 +128,7 @@ async function parseAtom(xml) {
 
   const entries = await Promise.all(
     xmlGetMany(feed, ["entry"]).map(async (entry) => ({
-      title: await checkAndRenderHtml(xmlGetOne(entry, ["title"]), true),
+      title: xmlGetOne(entry, ["title"], true),
       author: xmlGetOne(entry, ["author", "name"], true),
       categories: xmlGetMany(entry, ["category"]).map(extractAttribute("term")),
       id: xmlGetOne(entry, ["id"], true),
@@ -144,7 +144,7 @@ async function parseAtom(xml) {
         ? xmlGetOne(entry, ["updated"], true)
         : xmlGetOne(entry, ["published"], true),
       content: await checkAndRenderHtml(xmlGetOne(entry, ["content"])),
-      summary: await checkAndRenderHtml(xmlGetOne(entry, ["summary"])),
+      summary: xmlGetOne(entry, ["summary"], true),
     })),
   );
 
