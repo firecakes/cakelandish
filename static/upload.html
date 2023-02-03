@@ -54,11 +54,11 @@
             <div class="tag-form form">
               <div class="flex form">
                 <label for="tag" class="title">Tags</label>
-                <input class="textbox tag-input" id="tag" v-model="tag">
+                <input class="textbox tag-input shrinkable-input" id="tag" v-model="tag">
               </div>
 
               <div class="flex form">
-                <select class="tag-select" @change="chooseTag">
+                <select class="tag-select shrinkable-input" @change="chooseTag">
                   <option value="">Used tags</option>
                   <option v-for="tag in existingTags">{{ tag }}</option>
                 </select>
@@ -94,7 +94,7 @@
       <!-- right side -->
       <div id="side" v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'output')" class="half flex-v">
         <p class="center title">How it renders on your site:</p>
-        <iframe :srcdoc="htmlInputLayoutApplied" class="html-output" title="Layout Render"></iframe> 
+        <iframe :srcdoc="htmlInputLayoutApplied" class="html-output iframe" title="Layout Render"></iframe> 
         <p class="center title">How it renders on your server's RSS reader:</p>
         <p class="tiny-text">Dangerous / unnecessary tags such as script and style are removed in sanitiation. Be aware of this as this is how users will see your post using this server's RSS reader. Style whitelists can be made in the future but the sanitation library being used limits to explicit values set for styling. Only basic colors are supported with inline styling for certain tags.</p>
         <span v-html="htmlOutput" class="html-output"></span>
@@ -388,7 +388,6 @@
 
     .tag-input {
       width: 200px;
-      margin-right: 20px;
     }
 
     .button {
@@ -461,10 +460,20 @@
 
     .tag-management {
       display: flex;
+      flex-direction: column;
     }
 
     .tag-form {
       display: flex;
+    }
+
+    .shrinkable-input {
+      min-width: 200px;
+      width: 100%;
+    }
+
+    .iframe {
+      height: 600px; /* best easy option atm */
     }
 
     /* media queries + changing layout of HTML based on screen size */
@@ -481,9 +490,6 @@
     @media only screen and (max-width: 1000px) {
       #side {
         padding-top: 30px;
-      }
-      .tag-management {
-        flex-direction: column;
       }
     }
 
