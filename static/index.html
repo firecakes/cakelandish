@@ -28,7 +28,13 @@
         <p class="title center margin-center">Your Feeds</p>
 
         <!-- feed list -->
-        <div class="feedInBetween" @dragover="allowDrop($event)" @drop="dropFeedItem($event, 0)"></div> <!-- for placing feed items above top of array -->
+        <div 
+          class="feedInBetween feed-list" 
+          @dragenter="dragOnFeed($event)" 
+          @dragleave="dragOffFeed($event)" 
+          @dragover="allowDrop($event)" 
+          @drop="dropFeedItem($event, 0)">
+        </div> <!-- for placing feed items above top of array -->
 
         <div v-if="!isLoading" class="scroll">
           <div v-for="(feed, index) in feeds" class="feed-list">
@@ -53,7 +59,13 @@
               <img v-else class="icon" src="/eye-closed.png" @click="focusFeed(index)"> </img>
             </div>
             
-            <div class="feedInBetween" @dragover="allowDrop($event)" @drop="dropFeedItem($event, index + 1)"></div>
+            <div 
+              class="feedInBetween" 
+              @dragenter="dragOnFeed($event)" 
+              @dragleave="dragOffFeed($event)" 
+              @dragover="allowDrop($event)" 
+              @drop="dropFeedItem($event, index + 1)">
+            </div>
           </div>
         </div>
 
@@ -438,6 +450,14 @@
             from: Number(from),
             to: Number(to),
           });
+
+          event.target.style['background-color'] = ''; // remove bg color
+        },
+        dragOnFeed (event) {
+          event.target.style['background-color'] = '#FFF'; // show it's selected
+        },
+        dragOffFeed (event) {
+          event.target.style['background-color'] = ''; // remove bg color
         }
       }
     }).mount('#app');
