@@ -251,14 +251,16 @@
           }
           const currentVersion = this.currentVersion.split(".");
           const remoteVersion = this.remoteVersion.split(".");
-
-          if (remoteVersion[0] < currentVersion[0]) {
-            return true;
+          if (remoteVersion[0] > currentVersion[0]) {
+            return false;
           }
-          if (remoteVersion[1] < currentVersion[1]) {
-            return true;
+          if (remoteVersion[1] > currentVersion[1]) {
+            return false;
           }
-          return remoteVersion[2] <= currentVersion[2];
+          if (remoteVersion[2] > currentVersion[2]) {
+            return false;
+          }
+          return true;
         }
       },
       methods: {
