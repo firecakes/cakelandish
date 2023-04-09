@@ -253,8 +253,8 @@
           if (!this.currentVersion || !this.remoteVersion) {
             return true;
           }
-          const currentVersion = this.currentVersion.split(".");
-          const remoteVersion = this.remoteVersion.split(".");
+          const currentVersion = this.currentVersion.split(".").map(Number);
+          const remoteVersion = this.remoteVersion.split(".").map(Number);
           if (remoteVersion[0] > currentVersion[0]) {
             return false;
           }
