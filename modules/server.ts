@@ -4,10 +4,12 @@ import { config } from "../config.ts";
 import {
   addFeed,
   addFile,
+  addOrEditPage,
   addPost,
   changeDomains,
   deleteFeed,
   deleteFile,
+  deletePage,
   deletePost,
   editFeed,
   editPost,
@@ -15,6 +17,7 @@ import {
   getFeeds,
   getFiles,
   getLayout,
+  getPages,
   getPosts,
   getTags,
   reorderFeed,
@@ -31,6 +34,26 @@ import {
 } from "./auth.ts";
 import { exportData } from "./zip.ts";
 import { getPostLocations } from "./post.ts";
+
+const defaultHTML = `
+<!DOCTYPE html>
+<html>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <head>
+    <link rel="alternate" type="application/atom+xml" href="/feed.atom">
+  </head>
+
+  <body class="no-space">
+  </body>
+
+  <script type="module">
+  </script>
+
+  <style>
+  </style>
+</html>
+`;
 
 export function startServer() {
   // start the web server initialization
@@ -529,6 +552,79 @@ export function startServer() {
 
     // find current saved feeds for the local feed and update specifically that one
     await updateLocalFeed();
+
+    ctx.response.body = {};
+  });
+
+  // return all custom pages
+  router.get("/api/page", jwtMiddleware, async (ctx, next) => {
+    // read from database
+    ctx.response.body = {
+      pages: await getPages(),
+    };
+  });
+
+  // add a new page
+  router.post("/api/page", jwtMiddleware, async (ctx, next) => {
+    const input = await ctx.request.body({ type: "json" }).value;
+    if (!input.name || input.name === "") {
+      ctx.response.status = 400;
+      return;
+    }
+
+    // enforce its existence
+    await Deno.mkdir(
+      `static/pages`,
+      { recursive: true },
+    );
+
+    // save the contents to an html file
+    await Deno.writeTextFile(
+      `static/pages/${input.name}.html`,
+      defaultHTML,
+    );
+
+    await addOrEditPage({
+      name: input.name,
+      url: `pages/${input.name}.html`,
+      content: defaultHTML,
+    });
+
+    ctx.response.body = {};
+  });
+
+  // edit an existing page
+  router.put("/api/page", jwtMiddleware, async (ctx, next) => {
+    const input = await ctx.request.body({ type: "json" }).value;
+    if (!input.page.name || input.page.name === "") {
+      ctx.response.status = 400;
+      return;
+    }
+
+    // save the contents to an html file
+    await Deno.writeTextFile(
+      `static/pages/${input.page.name}.html`,
+      input.page.content,
+    );
+
+    await addOrEditPage({
+      name: input.page.name,
+      url: `pages/${input.page.name}.html`,
+      content: input.page.content,
+    });
+
+    ctx.response.body = {};
+  });
+
+  // delete an existing page
+  router.delete("/api/page", jwtMiddleware, async (ctx, next) => {
+    const input = await ctx.request.body({ type: "json" }).value;
+
+    // get the location of the page
+    const pageUrl = `static/${input.page.url}`;
+
+    await deletePage(input.page);
+    await Deno.remove(pageUrl);
 
     ctx.response.body = {};
   });

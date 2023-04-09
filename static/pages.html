@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <head>
+    <script src="/lib/vue.js"></script>
+    <script src="/lib/axios.min.js"></script>
+    <link rel="stylesheet" href="main.css">
+  </head>
+
+  <body id="bg">
+    <div id="app" class="flex-v" v-cloak>
+      <p v-if="isAuthenticated === true" class="title center">Your custom HTML pages</p>
+      <a v-if="isAuthenticated === true" class="button submit-button" href="index.html"><p class="return-main">Return to Main Page</p></a>
+
+      <div v-if="isAuthenticated === true && selectedPage">
+        <div class="flex page">
+          <!-- edit a page -->
+          <div class="half">
+            <!-- HTML input -->
+            <p class="center title">HTML Layout goes here!</p>
+            <textarea class="html-input" cols="60" rows="30" v-model="selectedPage.content"></textarea>
+          </div>
+
+          <div class="half">
+            <!-- HTML input -->
+            <iframe :srcdoc="selectedPage.content" title="Layout Render"></iframe> 
+          </div>
+        </div>
+
+        <div class="flex action-buttons">
+          <button @click="savePage" class="button">Save page</button>
+          <button @click="discardPage" class="button">Discard changes</button>
+        </div>
+      </div>
+
+      <div v-if="isAuthenticated === true">
+        <!-- make a new page -->
+        <p class="title center">Make a New Page</p>
+        <div class="form flex">
+          <label for="title" class="title">Page Name</label>
+          <input class="textbox" id="title" v-model="pageName">
+          <button @click="makeNewPage" class="button">Create new page</button>
+        </div>
+
+      </div>
+
+      <!-- page list --> 
+      <div v-if="isAuthenticated === true" class="post" v-for="page in pages">
+
+        <div class="third form"><a :href="page.url">{{ page.name }}</a></div>
+        <div class="third form"><button class="button" @click="editPage(page)">Edit page</button></div>
+        <div v-if="!page.requestDeletion" class="third form"><button class="button" @click="deletePage(page)">Delete page</button></div>
+        <div v-if="page.requestDeletion" class="third form"><button class="button" @click="deletePage(page)">Are you sure?</button></div>
+
+      </div>
+
+      <div v-if="isAuthenticated === false" class="fourth flex-v">
+        <p class="title center margin-center">You are not authorized to view this page</p>
+      </div>
+
+    </div>
+  </body>
+
+  <script type="module">
+    Vue.createApp({
+      data () {
+        return {
+          pageName: "",
+          pages: [],
+          selectedPage: null,
+          oldPageContents: "",
+          performAction: false,
+          isAuthenticated: null,
+        }
+      },
+      async created () {
+        // check if authenticated
+        try {
+          await axios.get('/api/auth');
+          this.isAuthenticated = true;
+        } catch (err) {
+          this.isAuthenticated = false;
+          return;
+        }
+      },
+      async mounted () {
+        await this.getPages();
+      },
+      methods: {
+        async getPages () {
+          const result = await axios.get("/api/page");
+          this.pages = result.data.pages;
+        },
+        async makeNewPage () {
+          try {
+            await axios.post('/api/page', {
+              name: this.pageName,
+            });
+            this.pageName = "";
+            await this.getPages();
+          } catch (err) {
+            console.log(err);
+          }
+        },
+        async editPage (page) {
+          if (this.selectedPage) {
+            this.discardPage();
+          }
+          this.selectedPage = page;
+          this.oldPageContents = this.selectedPage.content;
+        },
+        async deletePage (page) {
+          if (this.performAction) {
+            return;
+          }
+          if (!page.requestDeletion) {
+            page.requestDeletion = true;
+          } else {
+            // prepare deletion. prevent pressing delete button again
+            this.performAction = true;
+            try {
+              await axios.delete('/api/page', {
+                data: {
+                  page: page,
+                }
+              });
+              await this.getPages();
+            } catch (err) {
+              console.log(err);
+            }
+            this.performAction = false;
+          }
+        },
+        async discardPage () {
+          this.selectedPage.content = this.oldPageContents;
+          this.selectedPage = null;
+          this.oldPageContents = "";
+        },
+        async savePage () {
+          try {
+            await axios.put('/api/page', {
+              page: this.selectedPage,
+            });
+            await this.discardPage();
+            await this.getPages();
+          } catch (err) {
+            console.log(err);
+          }
+        },
+        returnToMain () {
+          window.location.href = '/index.html';
+        }
+      }
+    }).mount('#app');
+
+  </script>
+
+  <style>
+    .post {
+      margin-top: 30px;
+      margin-bottom: 30px;
+      font-family: Inika;
+      background-color: #ECF8FF;
+      border: 0px;
+      display: flex;
+      flex-grow: 1;
+      align-items: center;
+    }
+
+    .post-contents {
+      flex-grow: 1;
+    }
+
+    .button {
+      margin-left: 20px;
+      margin-right: 20px;
+      padding-left: 20px;
+      padding-right: 20px;
+      height: 30px;
+      font-size: 14px;
+      align-self: center;
+    }
+
+    .submit-button {
+      margin-top: 15px;
+      margin-bottom: 20px;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+    }
+
+    .edit-post-text {
+      align-self: center;
+    }
+
+    .textbox {
+      background: #1B2327;
+    }
+
+    .html-input {
+      background: #273038;
+      flex-grow: 1;
+      color: #d2d2d2;
+      margin-bottom: 10px;
+    }
+
+    .html-output {
+      background: #273038;
+      flex-grow: 1;
+      color: #d2d2d2;
+    }
+
+    .return-main {
+      margin: 0px;
+    }
+
+    .action-buttons {
+      padding-top: 20px;
+    }
+
+    iframe {
+      height: 100%;
+      width: 100%;
+      background: #FFFFFF;
+    }
+
+    /* Rules that allow for better resizing of the content */
+
+    img {
+      max-width: 100%;
+    }
+
+    pre {
+      white-space: pre-wrap;
+    }
+
+    p {
+      word-break: break-word;
+    }
+
+    /* media queries + changing layout of HTML based on screen size */
+
+    @media only screen and (max-width: 1000px) {
+      .page {
+        flex-direction: column;
+      }
+
+      .title {
+        font-size: 20px;
+      }
+
+      .textbox {
+        font-size: 20px;
+      }
+
+      .button {
+        font-size: 11px;
+      }
+
+      .html-input {
+        width: 100%;
+      }
+
+      iframe {
+        height: 600px;
+      }
+    }
+
+    @media only screen and (max-width: 600px) {
+      .title {
+        font-size: 16px;
+      }
+
+      .textbox {
+        font-size: 16px;
+      }
+
+      .button {
+        padding-left: 5px;
+        padding-right: 5px;
+      }
+
+      .post {
+        flex-direction: column;
+      }
+    }
+
+  </style>
+</html>

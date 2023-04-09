@@ -53,6 +53,11 @@ export async function init() {
     db.files = [];
   }
 
+  // initialize pages
+  if (db.pages === undefined) {
+    db.pages = [];
+  }
+
   await saveDb(db);
   await generatePostFileStructure();
   return db;
@@ -335,6 +340,36 @@ export async function changeDomains(oldDomain, newDomain) {
   await saveDb(db);
 }
 
+// page functions
+
+export async function getPages() {
+  const db = await readDb();
+  return db.pages;
+}
+
+export async function addOrEditPage(page: Page) {
+  const db = await readDb();
+
+  // pages can be overwritten
+  const existingPageIndex = db.pages.findIndex((other) =>
+    other.name === page.name
+  );
+
+  if (existingPageIndex !== -1) {
+    db.pages[existingPageIndex] = page;
+  } else {
+    db.pages.push(page);
+  }
+
+  await saveDb(db);
+}
+
+export async function deletePage(page: Page) {
+  let db = await readDb();
+  db.pages = db.pages.filter((target) => target.url !== page.url);
+  await saveDb(db);
+}
+
 // interfaces
 
 export interface FeedDatabase {
@@ -350,6 +385,7 @@ export interface FeedDatabase {
   globalIndex: number;
   layout: String; // stringified HTML
   files: URL[];
+  pages: Page[];
 }
 
 export interface Entry {
@@ -371,7 +407,13 @@ export interface Entry {
 
 export interface Feed {
   name: string;
-  url: string;
+  url: URL;
   updateMinutes: number;
   index: number;
+}
+
+export interface Page {
+  name: string;
+  url: URL;
+  content: string;
 }
