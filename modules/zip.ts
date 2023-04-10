@@ -11,6 +11,7 @@ export async function exportData() {
 
   await Deno.mkdir("exported", { recursive: true });
   await Deno.mkdir("static/files", { recursive: true });
+  await Deno.mkdir("static/pages", { recursive: true });
 
   // move content to the exported folder and then tar it
   await copyDirectory(
@@ -20,6 +21,10 @@ export async function exportData() {
   await copyDirectory(
     "static/files",
     "exported/files",
+  );
+  await copyDirectory(
+    "static/pages",
+    "exported/pages",
   );
   await Deno.copyFile("database.json", "exported/database.json");
   await tar.compress("exported", EXPORTED_ZIP_NAME);
