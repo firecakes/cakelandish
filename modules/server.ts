@@ -16,12 +16,14 @@ import {
   feedGetHelper,
   getFeeds,
   getFiles,
+  getLastDateExported,
   getLayout,
   getPages,
   getPosts,
   getTags,
   reorderFeed,
   saveLayout,
+  updateLastDateExported,
 } from "./db.ts";
 import * as xml from "./xml.ts";
 import {
@@ -449,6 +451,8 @@ export function startServer() {
     const zipName = await exportData();
     const file = await Deno.open(zipName, { read: true });
     const readableStream = file.readable;
+    // update the last date data was exported from the server
+    await updateLastDateExported();
     ctx.response.body = readableStream;
   });
 
@@ -627,6 +631,13 @@ export function startServer() {
     await Deno.remove(pageUrl);
 
     ctx.response.body = {};
+  });
+
+  // get the last date data was exported from the server
+  router.get("/api/export/date", jwtMiddleware, async (ctx, next) => {
+    ctx.response.body = {
+      exportDate: await getLastDateExported(),
+    };
   });
 
   // get files under static folder, and resolve "/" to index.html

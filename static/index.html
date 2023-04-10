@@ -136,6 +136,7 @@
           <p v-if="!onNewestVersion" class="version center"> 
             <a href="https://github.com/firecakes/cakelandish/releases">Newer version available: {{ remoteVersion }}</a>
           </p>
+          <p v-if="lastExportDateDays" class="version center">You have last exported your data {{ lastExportDateDays }} {{ lastExportDateDays == 1 ? "day" : "days" }} ago.</p>
         </div>
       </div>
 
@@ -217,6 +218,7 @@
           currentViewText: "Show Feeds",
           postsToRender: 20,
           totalPosts: 0,
+          lastExportDateDays: null,
         }
       },
       async mounted () {
@@ -241,6 +243,8 @@
           const versionData = (await axios.get('/api/version')).data;
           this.currentVersion = versionData.currentVersion;
           this.remoteVersion = versionData.remoteVersion;
+          const exportDataDate = (await axios.get('/api/export/date')).data.exportDate;
+          this.lastExportDateDays = Math.floor((Date.now() - exportDataDate) / (1000 * 60 * 60 * 24)); // days ago
           this.isLoading = false;
         } else {
           const postLocations = (await axios.get('/api/post/all')).data.postLocations;

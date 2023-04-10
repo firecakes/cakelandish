@@ -58,6 +58,11 @@ export async function init() {
     db.pages = [];
   }
 
+  // initialize last date exported
+  if (db.lastDateExported === undefined) {
+    db.lastDateExported = Date.now();
+  }
+
   await saveDb(db);
   await generatePostFileStructure();
   return db;
@@ -367,6 +372,17 @@ export async function addOrEditPage(page: Page) {
 export async function deletePage(page: Page) {
   let db = await readDb();
   db.pages = db.pages.filter((target) => target.url !== page.url);
+  await saveDb(db);
+}
+
+export async function getLastDateExported() {
+  let db = await readDb();
+  return db.lastDateExported;
+}
+
+export async function updateLastDateExported() {
+  let db = await readDb();
+  db.lastDateExported = Date.now();
   await saveDb(db);
 }
 
