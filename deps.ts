@@ -1,6 +1,4 @@
-// oak currently has issues with crashing mid-request. until the newer version is stable enough for use, use an older version of oak.
-// https://github.com/oakserver/oak/issues/563
-export * as oak from "https://deno.land/x/oak@v12.1.0/mod.ts";
+export * as oak from "https://deno.land/x/oak@v12.4.0/mod.ts";
 export { config } from "https://deno.land/x/dotenv@v3.2.0/mod.ts";
 export { stringify as jsonToXml } from "https://deno.land/x/xml@2.0.4/mod.ts";
 export * as ammonia from "https://deno.land/x/ammonia@0.3.1/mod.ts";
