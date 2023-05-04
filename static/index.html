@@ -15,7 +15,7 @@
       <button v-if="screen !== 'lg' && isAuthenticated" class="button switch-view-button" @click="switchViews">{{ currentViewText }}</button>
 
       <!-- feed sidebar -->
-      <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'feeds')" class="fourth flex-v">
+      <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'feeds')" class="fourth flex-v" :class="{ 'sidebar': screen === 'lg' }">
         <a class="button margin-center" href="upload.html">New Post</a>
         <a class="button margin-center" href="manage.html">Manage Posts</a>
         <div class="other-buttons">
@@ -141,7 +141,7 @@
       </div>
 
       <!-- display feed content -->
-      <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'posts')" class="three-fourth flex-v">
+      <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'posts')" class="three-fourth flex-v" :class="{ 'display-feed': screen === 'lg'}">
         <!-- render each post -->
         <feed-post 
           @render-reply-to="renderReplyTo"
@@ -564,6 +564,7 @@
     .scroll {
       overflow: scroll;
       max-height: 400px;
+      min-height: 100px;
     }
 
     .post {
@@ -719,7 +720,16 @@
     }
 
     .feedInBetween {
-      padding-top: 20px;
+      padding-top: 15px;
+    }
+
+    .sidebar {
+      position: fixed;
+      width: 480px;
+    }
+
+    .display-feed {
+      margin-left: 480px;
     }
 
     /* Rules that allow for better resizing of the content */
