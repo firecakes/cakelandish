@@ -104,7 +104,7 @@ export default {
     },
     startReply(post) {
       window.location.href =
-        `/upload.html?feedurl=${post.url}&id=${post.entry.id}`;
+        `/upload.html?feedurl=${post.meta.feedLink}&id=${post.entry.id}`;
     },
     async loadReplyTo(entry) {
       // disable the Load Original button immediately

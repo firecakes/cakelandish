@@ -57,11 +57,21 @@ export function widthToScreenSize (num) {
 
 async function parseRss(xml) {
   const feed = xmlGetOne(xml, ["rss", "channel"]);
+
+  // find the RSS location from the feed to have for all posts
+  const rssLinks = xmlGetMany(feed, ["atom:link"])
+    .filter((element) =>
+      element.attributes &&
+      element.attributes.getNamedItem("rel") &&
+      element.attributes.getNamedItem("rel").value === "self"
+    ).map((element) => element.attributes.getNamedItem("href").value);
+
   const meta = {
     title: xmlGetOne(feed, ["title"], true),
     subtitle: xmlGetOne(feed, ["description"], true),
     id: xmlGetOne(feed, ["id"], true),
     categories: xmlGetMany(feed, ["category"], true),
+    feedLink: rssLinks.length > 0 ? rssLinks[0] : null,
     nextArchive: null,
   };
   let nextArchive = xmlGetMany(feed, ["link"])
@@ -107,12 +117,22 @@ async function parseRss(xml) {
 
 async function parseAtom(xml) {
   const feed = xmlGetOne(xml, ["feed"]);
+
+  // find the RSS location from the feed to have for all posts
+  const rssLinks = xmlGetMany(feed, ["link"])
+    .filter((element) =>
+      element.attributes &&
+      element.attributes.getNamedItem("rel") &&
+      element.attributes.getNamedItem("rel").value === "self"
+    ).map((element) => element.attributes.getNamedItem("href").value);
+
   const meta = {
     title: xmlGetOne(feed, ["title"], true),
-    title: xmlGetOne(feed, ["subtitle"], true),
+    subtitle: xmlGetOne(feed, ["subtitle"], true),
     author: xmlGetOne(feed, ["author", "name"], true),
     id: xmlGetOne(feed, ["id"], true),
     categories: xmlGetMany(feed, ["category"]).map(extractAttribute("term")),
+    feedLink: rssLinks.length > 0 ? rssLinks[0] : null,
     nextArchive: null,
   };
   let nextArchive = xmlGetMany(feed, ["link"])
