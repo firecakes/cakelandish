@@ -275,11 +275,26 @@
         numberToMonth (num) {
           return ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][num];
         },
+        areFeedsEqual (feed1, feed2) {
+          return feed1.name === feed2.name && feed1.url === feed2.url && feed1.updateMinutes === feed2.updateMinutes && feed1.xml === feed2.xml;
+        },
         async getFeeds () {
           const feeds = (await axios.get('/api/feed')).data.feeds;
-          // parse XML data from RSS and ATOM feeds and combine into one structure
-          const parsedFeeds = await util.parseFeeds(feeds);
-          this.feeds = parsedFeeds;
+          // only parse feeds that have changed since the last update
+          // incoming feeds not found on existing feeds are new
+          const newFeeds = feeds.filter(feed => {
+            return this.feeds.findIndex(target => this.areFeedsEqual(target, feed)) === -1;
+          });
+          // current feeds found on incoming feeds should stay in the feed list. all others should be removed
+          const nonExpiredFeeds = this.feeds.filter(feed => {
+            return feeds.findIndex(target => this.areFeedsEqual(target, feed)) !== -1;
+          });
+          // parse XML data from RSS and ATOM feeds and combine into one structure. only new feeds need to be parsed!
+          const parsedFeeds = await util.parseFeeds(newFeeds);
+          // non expired feeds + new feeds = updated feed list
+          const updatedFeedList = nonExpiredFeeds.concat(parsedFeeds);
+          // order the list by its indeces
+          this.feeds = updatedFeedList.sort((feed1,feed2) => feed1.index - feed2.index);
           this.feedToList();
         },
         onScroll (event) {
