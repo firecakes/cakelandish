@@ -391,7 +391,10 @@ export function startServer() {
       input.updateMinutes = 5; // default
     }
     // add to database
-    await addFeed(input);
+    const success = await addFeed(input);
+    if (!success) {
+      ctx.response.status = 400;
+    }
     ctx.response.body = {};
   });
 
@@ -404,9 +407,11 @@ export function startServer() {
     if (typeof input.updateMinutes !== "number" || input.updateMinutes < 1) {
       input.updateMinutes = 5; // default
     }
-    // add to database
-    await editFeed(input);
-
+    // update database
+    const success = await editFeed(input);
+    if (!success) {
+      ctx.response.status = 400;
+    }
     ctx.response.body = {};
   });
 

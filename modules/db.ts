@@ -129,22 +129,45 @@ export async function deletePost(post: Entry) {
 }
 
 // feed functions
+
+// only url matters for checking equality
+function areFeedsEqual(feed1, feed2) {
+  return feed1.url === feed2.url;
+}
+
 export async function getFeeds() {
   return memory.feeds;
 }
 
+// returns whether the incoming feed is unique
 export async function addFeed(feed: Feed) {
   const db = await readDb();
+  // check for duplicates
+  const foundIndex = db.feeds.findIndex((target) =>
+    areFeedsEqual(target, feed)
+  );
+  if (foundIndex !== -1) {
+    return false;
+  }
   feed.index = db.feeds.length;
   db.feeds.push(feed);
   await saveDb(db);
 
   memory.feeds.push(await feedGetHelper(feed));
   memory.timers.push(createFeedInterval(feed));
+  return true;
 }
 
+// returns whether the incoming feed is unique
 export async function editFeed(feed: Feed) {
   const db = await readDb();
+  // check for duplicates, except for at the index where the feed originated
+  const foundIndex = db.feeds.findIndex((target) =>
+    areFeedsEqual(target, feed)
+  );
+  if (foundIndex !== -1 && feed.index !== foundIndex) {
+    return false;
+  }
   db.feeds[feed.index] = feed;
   await saveDb(db);
 
@@ -153,6 +176,7 @@ export async function editFeed(feed: Feed) {
   memory.feeds[feed.index] = feed;
   await updateFeed(feed); // force update the feed
   memory.timers[feed.index] = createFeedInterval(feed);
+  return true;
 }
 
 export async function deleteFeed(index: number) {
