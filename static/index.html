@@ -472,6 +472,10 @@
           });
 
           event.target.style['background-color'] = ''; // remove bg color
+          // close the feed form if it happened to be out
+          if (this.showingAddFeedForm) {
+            this.showingAddFeedForm = false;
+          }
         },
         dragOnFeed (event) {
           event.target.style['background-color'] = '#FFF'; // show it's selected
