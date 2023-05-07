@@ -222,7 +222,8 @@ async function initializeFeeds(db) {
   if (!Array.isArray(db.feeds)) {
     db.feeds = [];
   }
-  memory.feeds = db.feeds; // put data from file into memory
+  // put data from file into memory. don't let them share the same reference!
+  memory.feeds = JSON.parse(JSON.stringify(db.feeds));
   // setup timers and query URLs
   // run all updateFeeds at once and then await the result after the loop
   let updateFeedPromises = [];
