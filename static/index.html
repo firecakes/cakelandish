@@ -216,7 +216,9 @@
           screen: "lg",
           currentView: "posts",
           currentViewText: "Show Feeds",
-          postsToRender: 20,
+          RENDER_POST_INIT: 10,
+          RENDER_POST_INCREASE: 2,
+          postsToRender: 10,
           totalPosts: 0,
           lastExportDateDays: null,
         }
@@ -301,7 +303,7 @@
           const PIXELS_FROM_BOTTOM_OF_FEED = 1000;
           // determine if more posts should be rendered and we're not displaying all of them yet
           if (document.body.scrollHeight - window.scrollY < PIXELS_FROM_BOTTOM_OF_FEED && this.postsToRender < this.totalPosts) {
-            this.postsToRender += 20;
+            this.postsToRender += this.RENDER_POST_INCREASE;
           }
         },
         feedToList () {
@@ -354,7 +356,7 @@
               return new Date(b.entry.date) - new Date(a.entry.date)
             });
           // reset post render count
-          this.postsToRender = 20;
+          this.postsToRender = this.RENDER_POST_INIT;
           this.totalPosts = this.orderedContent.length;
         },
         presentFeed (index = null) {
