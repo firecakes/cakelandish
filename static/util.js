@@ -43,6 +43,35 @@ export async function parseFeed(feed) {
   }
 }
 
+export async function findTargetPost (feedToCheck, originalLink) {
+  for (let i = 0; i < feedToCheck.feedArray.length; i++) {
+    const post = feedToCheck.feedArray[i];
+    if (decodeURIComponent(post.entry.id) === decodeURIComponent(originalLink)) {
+      return post;
+    }
+  }
+  if (feedToCheck.meta && feedToCheck.meta.nextArchive) {
+    // not found yet, but there is a nextArchive to seek through
+    // maybe don't do this. unsure.
+    const result = await axios.post("/api/query/feed", {
+      url: feedToCheck.meta.nextArchive,
+    }).catch(err => {
+      console.error(err)
+    });
+    if (!result || !result.data || !result.data.feed) {
+      return null;
+    }
+    const maybeParsed = await util.parseFeed(result.data.feed);
+    if (maybeParsed.success) {
+      return await findTargetPost(maybeParsed);
+    } else {
+      return null;
+    }
+  } else {
+    return null;
+  }
+}
+
 export function widthToScreenSize (num) {
   if (num <= 600) {
     return 'sm';
@@ -54,6 +83,43 @@ export function widthToScreenSize (num) {
     return 'lg';
   }
 };
+
+export async function extractFeedLinks (postEntry) {
+  let parsedFeed = null;
+  let originalLink = null;
+
+  // assume if what was parsed isn't a feed, or if the feed was already found, then the other link is a source link
+  for (let i = 0; i < postEntry.links.length; i++) {
+    const link = postEntry.links[i];
+
+    // don't parse anymore links if we already found a feed
+    if (parsedFeed !== null) {
+      originalLink = link;
+      continue;
+    }
+
+    const result = await axios.post("/api/query/feed", {
+      url: link,
+    });
+
+    if (result.data.feed === null) { // not a feed the server's aware of
+      originalLink = link;
+      continue;
+    }
+
+    const maybeParsed = await parseFeed(result.data.feed);
+    // successful parse indicates it's a proper feed link
+    if (maybeParsed.success) {
+      parsedFeed = maybeParsed;
+    } else {
+      originalLink = link;
+    }
+  }
+  return {
+    parsedFeed: parsedFeed,
+    originalLink: originalLink,
+  }
+}
 
 async function parseRss(xml) {
   const feed = xmlGetOne(xml, ["rss", "channel"]);

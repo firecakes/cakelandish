@@ -111,37 +111,8 @@ export default {
       this.post.entry.hideReplyToButton = true;
       entry.noSource = false;
 
-      // extract the link information from the post, determine if the links are valid, and if so get the feed information from the links
-      let parsedFeed = null;
-      let originalLink = null;
+      const {parsedFeed, originalLink} = await util.extractFeedLinks(entry);
 
-      // assume if what was parsed isn't a feed, or if the feed was already found, then the other link is a source link
-      for (let i = 0; i < entry.links.length; i++) {
-        const link = entry.links[i];
-
-        // don't parse anymore links if we already found a feed
-        if (parsedFeed !== null) {
-          originalLink = link;
-          continue;
-        }
-
-        const result = await axios.post("/api/query/feed", {
-          url: link,
-        });
-
-        if (result.data.feed === null) { // not a feed the server's aware of
-          originalLink = link;
-          continue;
-        }
-
-        const maybeParsed = await util.parseFeed(result.data.feed);
-        // successful parse indicates it's a proper feed link
-        if (maybeParsed.success) {
-          parsedFeed = maybeParsed;
-        } else {
-          originalLink = link;
-        }
-      }
       // both must exist before attempting to create the replied from post
       if (parsedFeed === null || originalLink === null) {
         // failed to render the reply. inform the user
@@ -153,34 +124,7 @@ export default {
       }
 
       // find the ID defined by the url of the original post and render its contents
-      let originalPost = null;
-
-      async function findTargetPost(feedToCheck) {
-        feedToCheck.feedArray.forEach((post) => {
-          if (post.entry.id === originalLink) {
-            originalPost = post;
-          }
-        });
-        if (
-          originalPost === null && feedToCheck.meta &&
-          feedToCheck.meta.nextArchive
-        ) {
-          // not found yet, but there is a nextArchive to seek through
-          // maybe don't do this. unsure.
-          const result = await axios.post("/api/query/feed", {
-            url: feedToCheck.meta.nextArchive,
-          });
-          if (!result.data.feed) {
-            return;
-          }
-          const maybeParsed = await util.parseFeed(result.data.feed);
-          if (maybeParsed.success) {
-            await findTargetPost(maybeParsed);
-          }
-        }
-      }
-      await findTargetPost(parsedFeed);
-
+      const originalPost = await util.findTargetPost(parsedFeed, originalLink);
       if (originalPost === null) {
         // failed to render the reply. inform the user
         // if true, shows the button that says the source couldn't be failed

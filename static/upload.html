@@ -45,6 +45,10 @@
           <input class="textbox" id="replyId" v-model="replyPostIdUrl">
         </div>
 
+        <!-- Embed Reply info + button -->
+        <p v-if="this.replyFeedUrl && this.replyPostIdUrl && showEmbedButton" class="tiny-text">Clicking this button will fetch the contents of the post you're replying to and then bake them into your site's post. This makes it so that viewers of your site can have the context of your post without needing the RSS link parsing logic of Cakelandish to render it. Press this button only when you're finished making your post, as this will turn on RSS override to prevent the parent post from also appearing in your feed file. Pressing the button multiple times will proceed to load additional parent posts if they are found.</p>
+        <button v-if="this.replyFeedUrl && this.replyPostIdUrl && showEmbedButton" class="button embed-button" @click="embedReply">Embed Reply in Post</button>
+
         <!-- tag management + upload -->
         <div class="tag-management">
 
@@ -141,6 +145,23 @@
           currentView: "input",
           currentViewText: "Show Output",
           uploadsInProgress: new Set(),
+          currentReplyFeedUrl: null,
+          currentReplyPostIdUrl: null,
+          showEmbedButton: true,
+          isRunningEmbedReply: false,
+        }
+      },
+      watch: {
+        // reset embed button show status if changing the feed/id urls
+        replyFeedUrl() {
+          this.showEmbedButton = true;
+          this.currentReplyFeedUrl = null;
+          this.currentReplyPostIdUrl = null;
+        },
+        replyPostIdUrl() {
+          this.showEmbedButton = true;
+          this.currentReplyFeedUrl = null;
+          this.currentReplyPostIdUrl = null;
         }
       },
       async created () {
@@ -300,7 +321,7 @@
               await axios.post("/api/post", postObj);
             }
           } catch (err) {
-            console.log(err);
+            console.error(err);
             this.performAction = false;
           }
 
@@ -315,7 +336,7 @@
           try {
             await axios.delete("/api/post/discard", {});
           } catch (err) {
-            console.log(err);
+            console.error(err);
             this.performAction = false;
           }
           
@@ -339,6 +360,83 @@
             this.currentView = "input";
             this.currentViewText = "Show Output"
           }
+        },
+        async embedReply () {
+          if (this.isRunningEmbedReply) {
+            return;
+          }
+          this.isRunningEmbedReply = true;
+
+          try {
+            if (!this.currentReplyFeedUrl || !this.currentReplyPostIdUrl) {
+              this.currentReplyFeedUrl = this.replyFeedUrl;
+              this.currentReplyPostIdUrl = this.replyPostIdUrl;
+            }
+            if (!this.currentReplyFeedUrl || !this.currentReplyPostIdUrl) {
+              return;
+            }
+
+            const repliedToPost = await this.loadReplyTo(this.currentReplyFeedUrl, this.currentReplyPostIdUrl);
+            if (repliedToPost && repliedToPost.entry) {
+              // render the RSS post contents and insert them into the site's HTML
+              // this must not show up in the RSS feed. only show it on the site!
+              this.showRssOverride = true;
+              this.htmlInput += `\n<hr><a href="${repliedToPost.entry.id}">Original post</a>\n<div style="margin-left:20px">\n${repliedToPost.entry.content}\n</div>`;
+
+              // got a valid post. check if there's another parent post attached and allow the ability to render THAT parent post too
+              const {parsedFeed, originalLink} = await util.extractFeedLinks(repliedToPost.entry);
+              
+              if (parsedFeed !== null && originalLink !== null) {
+                this.currentReplyFeedUrl = parsedFeed.url;
+                this.currentReplyPostIdUrl = originalLink;
+              } else {
+                this.currentReplyFeedUrl = null;
+                this.currentReplyPostIdUrl = null;
+                this.showEmbedButton = false;
+              }
+            } else {
+              alert("Unable to locate replied to post.");
+              this.currentReplyFeedUrl = null;
+              this.currentReplyPostIdUrl = null;
+              this.showEmbedButton = false;
+            }
+          } catch (err) {
+            console.error(err);
+          }
+
+          this.isRunningEmbedReply = false;
+        },
+        async loadReplyTo(replyFeedUrl, replyPostIdUrl) {
+          if (!replyFeedUrl) {
+            return;
+          }
+          // extract the link information from the feed url, determine if the links are valid, and if so get the feed information from the links
+          let parsedFeed = null;
+
+          const result = await axios.post("/api/query/feed", {
+            url: replyFeedUrl,
+          });
+
+          const maybeParsed = await util.parseFeed(result.data.feed);
+          // successful parse indicates it's a proper feed link
+          if (maybeParsed.success) {
+            parsedFeed = maybeParsed;
+          }
+
+          if (parsedFeed === null) {
+            console.error("Failed to parse the provided feed.");
+            return;
+          }
+
+          // find the ID defined by the url of the original post
+          const originalPost = await util.findTargetPost(parsedFeed, replyPostIdUrl);
+          if (originalPost === null) {
+            // failed to render the reply
+            console.error("Failed to parse the provided feed.");
+            return;
+          }
+
+          return originalPost;
         }
       }
     }).mount('#app');
@@ -394,6 +492,11 @@
       margin-left: 20px;
       height: 30px;
       font-size: 14px;
+    }
+
+    .embed-button {
+      margin-left: 20px;
+      margin-right: 20px;
     }
 
     .file {
