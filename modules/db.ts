@@ -168,7 +168,12 @@ export async function editFeed(feed: Feed) {
   if (foundIndex !== -1 && feed.index !== foundIndex) {
     return false;
   }
-  db.feeds[feed.index] = feed;
+  db.feeds[feed.index] = {
+    name: feed.name,
+    url: feed.url,
+    updateMinutes: feed.updateMinutes,
+    index: feed.index,
+  };
   await saveDb(db);
 
   // reset the timer according to the new updateMinutes property
