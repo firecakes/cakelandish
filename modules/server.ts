@@ -57,6 +57,19 @@ const defaultHTML = `
 </html>
 `;
 
+let remoteVersion = ""; // update this value periodically
+async function getRemoteVersion() {
+  try {
+    const releaseData = await fetch(
+      "https://api.github.com/repos/firecakes/cakelandish/releases",
+    );
+    remoteVersion = (await releaseData.json())[0].tag_name; // get the most recent release
+  } catch (err) {
+  }
+}
+setInterval(getRemoteVersion, 1000 * 60 * 5); // 5 minutes
+getRemoteVersion();
+
 export function startServer() {
   // start the web server initialization
   const app = new oak.Application();
@@ -484,16 +497,6 @@ export function startServer() {
 
   // get the software's version and the remote software's version
   router.get("/api/version", jwtMiddleware, async (ctx, next) => {
-    let remoteVersion = "";
-
-    try {
-      const releaseData = await fetch(
-        "https://api.github.com/repos/firecakes/cakelandish/releases",
-      );
-      remoteVersion = (await releaseData.json())[0].tag_name; // get the most recent release
-    } catch (err) {
-    }
-
     ctx.response.body = {
       currentVersion: config.version,
       remoteVersion: remoteVersion,
