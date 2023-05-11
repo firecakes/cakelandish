@@ -264,10 +264,10 @@
           if (remoteVersion[0] > currentVersion[0]) {
             return false;
           }
-          if (remoteVersion[1] > currentVersion[1]) {
+          if (remoteVersion[0] === currentVersion[0] && remoteVersion[1] > currentVersion[1]) {
             return false;
           }
-          if (remoteVersion[2] > currentVersion[2]) {
+          if (remoteVersion[0] === currentVersion[0] && remoteVersion[1] === currentVersion[1] && remoteVersion[2] > currentVersion[2]) {
             return false;
           }
           return true;
