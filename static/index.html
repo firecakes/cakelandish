@@ -434,7 +434,7 @@
               url: feed.meta.nextArchive,
             });
 
-            const nextFeed = await util.parseFeed(result.data.feed);
+            const nextFeed = (await util.parseFeeds(result.data.feed))[0];
 
             // add the new nextFeed contents to the original feed object
             feed.url = feed.meta.nextArchive;

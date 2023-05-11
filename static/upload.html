@@ -417,7 +417,7 @@
             url: replyFeedUrl,
           });
 
-          const maybeParsed = await util.parseFeed(result.data.feed);
+          const maybeParsed = (await util.parseFeeds(result.data.feed))[0];
           // successful parse indicates it's a proper feed link
           if (maybeParsed.success) {
             parsedFeed = maybeParsed;

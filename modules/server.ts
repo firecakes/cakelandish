@@ -176,6 +176,18 @@ export function startServer() {
     ctx.response.body = cleaner.clean(input.html);
   });
 
+  // sanitize HTML input
+  router.post("/api/sanitize/bulk", jwtMiddleware, async (ctx, next) => {
+    const input = await ctx.request.body({ type: "json" }).value;
+    const htmlHash = input.html;
+    for (let i in htmlHash) {
+      for (let j in htmlHash[i]) {
+        htmlHash[i][j] = cleaner.clean(htmlHash[i][j]);
+      }
+    }
+    ctx.response.body = input;
+  });
+
   // upload files to the server
   router.post("/api/upload", jwtMiddleware, async (ctx, next) => {
     let folderName = await getTmpFolder();

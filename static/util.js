@@ -1,12 +1,75 @@
 export async function parseFeeds(feeds) {
-  return Promise.all(feeds.map((feed) => {
+  if (!Array.isArray(feeds)) {
+    feeds = [feeds];
+  }
+  // batch up all the HTML content that needs to be sanitized into one call to increase performance
+  const sanitizeHash = await quickSanitize(feeds);
+  return Promise.all(feeds.map((feed, index) => {
     return new Promise((resolve, reject) => {
-      resolve(parseFeed(feed));
+      resolve(parseFeed(feed, sanitizeHash[index]));
     });
   }));
 }
 
-export async function parseFeed(feed) {
+async function quickSanitize (feeds) {
+  // only worry about running sanitization of HTML content
+  const sanitizeHash = {};
+  for (let i = 0; i < feeds.length; i++) {
+    const feed = feeds[i];
+    if (!feed.xml) {
+      continue;
+    }
+    const parsedFeed = new DOMParser().parseFromString(feed.xml, "text/xml");
+    if (xmlGetOne(parsedFeed, ["parsererror"]) !== null) {
+      continue;
+    }
+    if (!sanitizeHash[i]) {
+      sanitizeHash[i] = {};
+    }
+
+    if (xmlGetOne(parsedFeed, ["rss"]) !== null) { // RSS
+      const feed = xmlGetOne(parsedFeed, ["rss", "channel"]);
+      xmlGetMany(feed, ["item"]).map((entry, j) => {
+        if (!sanitizeHash[i][j]) {
+          sanitizeHash[i][j] = {};
+        }
+        const entryPost = xmlGetOne(entry, ["description"]);
+        if (entryPost) {
+          sanitizeHash[i][j] = entryPost.textContent;
+        }
+      });
+    } else if (xmlGetOne(parsedFeed, ["feed"]) !== null) { // ATOM
+      const feed = xmlGetOne(parsedFeed, ["feed"]);
+      xmlGetMany(feed, ["entry"]).map((entry, j) => {
+        if (!sanitizeHash[i][j]) {
+          sanitizeHash[i][j] = {};
+        }
+        const entryPost = xmlGetOne(entry, ["content"]);
+        if (entryPost) {
+          sanitizeHash[i][j] = entryPost.textContent;
+        }
+      });
+    }
+  }
+  // run a bulk sanitize on everything
+  const result = await axios.post("api/sanitize/bulk", {
+    html: sanitizeHash
+  }).catch(err => {
+    return {};
+  });
+  if (!result.data) {
+    return;
+  }
+  // sanitization can return non-strings
+  for (let i in result.data.html) {
+    for (let j in result.data.html[i]) {
+      result.data.html[i][j] = "" + result.data.html[i][j];
+    }
+  }
+  return result.data.html;
+}
+
+async function parseFeed(feed, sanitizeHash) {
   let iconUrl;
   try {
     iconUrl = new URL(feed.url).origin + "/favicon.ico";
@@ -26,11 +89,11 @@ export async function parseFeed(feed) {
     }
     // check whether it's RSS or ATOM
     if (xmlGetOne(parsedFeed, ["rss"]) !== null) {
-      feed = Object.assign(feed, await parseRss(parsedFeed), {
+      feed = Object.assign(feed, await parseRss(parsedFeed, sanitizeHash), {
         iconUrl: iconUrl,
       });
     } else if (xmlGetOne(parsedFeed, ["feed"]) !== null) {
-      feed = Object.assign(feed, await parseAtom(parsedFeed), {
+      feed = Object.assign(feed, await parseAtom(parsedFeed, sanitizeHash), {
         iconUrl: iconUrl,
       });
     } else {
@@ -61,7 +124,7 @@ export async function findTargetPost (feedToCheck, originalLink) {
     if (!result || !result.data || !result.data.feed) {
       return null;
     }
-    const maybeParsed = await util.parseFeed(result.data.feed);
+    const maybeParsed = (await parseFeeds(result.data.feed))[0];
     if (maybeParsed.success) {
       return await findTargetPost(maybeParsed);
     } else {
@@ -107,7 +170,7 @@ export async function extractFeedLinks (postEntry) {
       continue;
     }
 
-    const maybeParsed = await parseFeed(result.data.feed);
+    const maybeParsed = (await parseFeeds(result.data.feed))[0];
     // successful parse indicates it's a proper feed link
     if (maybeParsed.success) {
       parsedFeed = maybeParsed;
@@ -121,7 +184,7 @@ export async function extractFeedLinks (postEntry) {
   }
 }
 
-async function parseRss(xml) {
+async function parseRss (xml, sanitizeHash) {
   const feed = xmlGetOne(xml, ["rss", "channel"]);
 
   // find the RSS location from the feed to have for all posts
@@ -151,27 +214,22 @@ async function parseRss(xml) {
     meta.nextArchive = nextArchive[0];
   }
 
-  const entries = await Promise.all(
-    xmlGetMany(feed, ["item"]).map(async (entry) => ({
-      title: xmlGetOne(feed, ["title"], true),
-      author: xmlGetOne(entry, ["author"], true),
-      categories: xmlGetMany(entry, ["category"], true),
-      id: xmlGetOne(entry, ["guid"], true),
-      // get only links who have a "related" attribute value for "rel"
-      links: xmlGetMany(entry, ["link"])
-        .filter((element) =>
-          element.attributes &&
-          element.attributes.getNamedItem("rel") &&
-          element.attributes.getNamedItem("rel").value === "related"
-        )
-        .map((element) => element.attributes.getNamedItem("href").value),
-      date: xmlGetOne(entry, ["pubDate"], true),
-      content: await checkAndRenderHtml(
-        xmlGetOne(entry, ["description"]),
-        true,
-      ),
-    })),
-  );
+  const entries = xmlGetMany(feed, ["item"]).map((entry, index) => ({
+    title: xmlGetOne(feed, ["title"], true),
+    author: xmlGetOne(entry, ["author"], true),
+    categories: xmlGetMany(entry, ["category"], true),
+    id: xmlGetOne(entry, ["guid"], true),
+    // get only links who have a "related" attribute value for "rel"
+    links: xmlGetMany(entry, ["link"])
+      .filter((element) =>
+        element.attributes &&
+        element.attributes.getNamedItem("rel") &&
+        element.attributes.getNamedItem("rel").value === "related"
+      )
+      .map((element) => element.attributes.getNamedItem("href").value),
+    date: xmlGetOne(entry, ["pubDate"], true),
+    content: sanitizeHash && sanitizeHash[index] ? sanitizeHash[index] : null
+  }));
   return {
     feedArray: entries.map((entry) => ({
       meta: meta,
@@ -181,7 +239,7 @@ async function parseRss(xml) {
   };
 }
 
-async function parseAtom(xml) {
+async function parseAtom (xml, sanitizeHash) {
   const feed = xmlGetOne(xml, ["feed"]);
 
   // find the RSS location from the feed to have for all posts
@@ -212,27 +270,25 @@ async function parseAtom(xml) {
     meta.nextArchive = nextArchive[0];
   }
 
-  const entries = await Promise.all(
-    xmlGetMany(feed, ["entry"]).map(async (entry) => ({
-      title: xmlGetOne(entry, ["title"], true),
-      author: xmlGetOne(entry, ["author", "name"], true),
-      categories: xmlGetMany(entry, ["category"]).map(extractAttribute("term")),
-      id: xmlGetOne(entry, ["id"], true),
-      // get only links who have a "related" attribute value for "rel"
-      links: xmlGetMany(entry, ["link"])
-        .filter((element) =>
-          element.attributes &&
-          element.attributes.getNamedItem("rel") &&
-          element.attributes.getNamedItem("rel").value === "related"
-        )
-        .map((element) => element.attributes.getNamedItem("href").value),
-      date: xmlGetOne(entry, ["updated"], true) // prefer the updated post date versus the original post date
-        ? xmlGetOne(entry, ["updated"], true)
-        : xmlGetOne(entry, ["published"], true),
-      content: await checkAndRenderHtml(xmlGetOne(entry, ["content"])),
-      summary: xmlGetOne(entry, ["summary"], true),
-    })),
-  );
+  const entries = xmlGetMany(feed, ["entry"]).map((entry, index) => ({
+    title: xmlGetOne(entry, ["title"], true),
+    author: xmlGetOne(entry, ["author", "name"], true),
+    categories: xmlGetMany(entry, ["category"]).map(extractAttribute("term")),
+    id: xmlGetOne(entry, ["id"], true),
+    // get only links who have a "related" attribute value for "rel"
+    links: xmlGetMany(entry, ["link"])
+      .filter((element) =>
+        element.attributes &&
+        element.attributes.getNamedItem("rel") &&
+        element.attributes.getNamedItem("rel").value === "related"
+      )
+      .map((element) => element.attributes.getNamedItem("href").value),
+    date: xmlGetOne(entry, ["updated"], true) // prefer the updated post date versus the original post date
+      ? xmlGetOne(entry, ["updated"], true)
+      : xmlGetOne(entry, ["published"], true),
+    content: sanitizeHash && sanitizeHash[index] ? sanitizeHash[index] : null,
+    summary: xmlGetOne(entry, ["summary"], true),
+  }));
 
   return {
     feedArray: entries.map((entry) => ({
@@ -280,38 +336,17 @@ function xmlGetOne(xml, tagNames = [], getValue = false) {
   return null;
 }
 
-async function checkAndRenderHtml(element, forceHtml) {
+async function renderHtml(element) {
   if (!element) {
     return null;
   }
-  if (renderAsHtml(element) || forceHtml) {
-    const result = await axios.post(
-      "api/sanitize",
-      {
-        html: element.textContent,
-      },
-    );
-    return "" + result.data; // sanitization can return non-strings
-  } else {
-    return element.textContent;
-  }
-}
-
-function renderAsHtml(element) {
-  if (!element || !element.attributes) {
-    return false;
-  }
-  let isHtml = false;
-  for (let i = 0; i < element.attributes.length; i++) {
-    let attribute = element.attributes[i];
-    if (
-      attribute.nodeName === "type" && attribute.nodeValue.includes("html")
-    ) {
-      isHtml = true;
-    }
-  }
-
-  return isHtml;
+  const result = await axios.post(
+    "api/sanitize",
+    {
+      html: element.textContent,
+    },
+  );
+  return "" + result.data; // sanitization can return non-strings
 }
 
 function extractAttribute(attributeName) {
