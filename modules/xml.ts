@@ -50,31 +50,15 @@ export async function saveJsonToAtom() {
       null,
     );
     for (let i = 0; i < entryChunks.length; i++) {
-      if (i === 0) { // first entry chunk
-        await contentsToAtomFile(
-          database,
-          entryChunks[i],
-          `${ARCHIVE_PREFIX}/feed-${i + 1}.atom`,
-          null,
-          `${ARCHIVE_PREFIX}/feed-${i + 2}.atom`,
-        );
-      } else if (i === entryChunks.length - 1) { // last entry chunk
-        await contentsToAtomFile(
-          database,
-          entryChunks[i],
-          `${ARCHIVE_PREFIX}/feed-${i + 1}.atom`,
-          `${ARCHIVE_PREFIX}/feed-${i + 0}.atom`,
-          MAIN_FEED,
-        );
-      } else {
-        await contentsToAtomFile(
-          database,
-          entryChunks[i],
-          `${ARCHIVE_PREFIX}/feed-${i + 1}.atom`,
-          `${ARCHIVE_PREFIX}/feed-${i + 0}.atom`,
-          `${ARCHIVE_PREFIX}/feed-${i + 2}.atom`,
-        );
-      }
+      await contentsToAtomFile(
+        database,
+        entryChunks[i],
+        `${ARCHIVE_PREFIX}/feed-${i + 1}.atom`,
+        i === 0 ? null : `${ARCHIVE_PREFIX}/feed-${i + 0}.atom`,
+        i === entryChunks.length - 1
+          ? MAIN_FEED
+          : `${ARCHIVE_PREFIX}/feed-${i + 2}.atom`,
+      );
     }
   }
 }
@@ -99,8 +83,8 @@ async function contentsToAtomFile(
   database,
   entries,
   feedUrl,
-  nextFeedUrl = null,
   prevFeedUrl = null,
+  nextFeedUrl = null,
 ) {
   const output = {
     xml: {

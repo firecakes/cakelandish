@@ -46,7 +46,7 @@
               <p class="textbox" :class="{ 'red-text': !feed.success }" id="name" @click="presentFeed(index)">{{ feed.name }}</p>
               <!-- more feed history to download -->
               <img 
-                v-if="feed.meta && feed.meta.nextArchive && !searchingForExtraFeed" 
+                v-if="feed.meta && feed.meta.prevArchive && !searchingForExtraFeed" 
                 class="icon" 
                 src="/feed-extras.png"
                 title="Archive feed link found. Click to download more content from this feed."
@@ -423,25 +423,25 @@
           this.feedToList(); // update the list
         },
         async downloadExtras (feed) {
-          // download more content using nextArchive
-          if (!feed.meta.nextArchive) {
+          // download more content using prevArchive
+          if (!feed.meta.prevArchive) {
             return;
           }
           this.searchingForExtraFeed = true;
 
           try {
             const result = await axios.post("/api/query/feed", {
-              url: feed.meta.nextArchive,
+              url: feed.meta.prevArchive,
             });
 
             const nextFeed = (await util.parseFeeds(result.data.feed))[0];
 
             // add the new nextFeed contents to the original feed object
-            feed.url = feed.meta.nextArchive;
-            if (nextFeed.meta.nextArchive) {
-              feed.meta.nextArchive = nextFeed.meta.nextArchive;
+            feed.url = feed.meta.prevArchive;
+            if (nextFeed.meta.prevArchive) {
+              feed.meta.prevArchive = nextFeed.meta.prevArchive;
             } else {
-              feed.meta.nextArchive = null;
+              feed.meta.prevArchive = null;
             }
 
             if (feed.feedArray) {

@@ -113,11 +113,11 @@ export async function findTargetPost (feedToCheck, originalLink) {
       return post;
     }
   }
-  if (feedToCheck.meta && feedToCheck.meta.nextArchive) {
-    // not found yet, but there is a nextArchive to seek through
+  if (feedToCheck.meta && feedToCheck.meta.prevArchive) {
+    // not found yet, but there is a prevArchive to seek through
     // maybe don't do this. unsure.
     const result = await axios.post("/api/query/feed", {
-      url: feedToCheck.meta.nextArchive,
+      url: feedToCheck.meta.prevArchive,
     }).catch(err => {
       console.error(err)
     });
@@ -201,17 +201,17 @@ async function parseRss (xml, sanitizeHash) {
     id: xmlGetOne(feed, ["id"], true),
     categories: xmlGetMany(feed, ["category"], true),
     feedLink: rssLinks.length > 0 ? rssLinks[0] : null,
-    nextArchive: null,
+    prevArchive: null,
   };
-  let nextArchive = xmlGetMany(feed, ["link"])
+  let prevArchive = xmlGetMany(feed, ["link"])
     .filter((element) =>
       element.attributes &&
       element.attributes.getNamedItem("rel") &&
-      element.attributes.getNamedItem("rel").value === "next-archive"
+      element.attributes.getNamedItem("rel").value === "prev-archive"
     )
     .map((element) => element.attributes.getNamedItem("href").value);
-  if (nextArchive.length > 0) {
-    meta.nextArchive = nextArchive[0];
+  if (prevArchive.length > 0) {
+    meta.prevArchive = prevArchive[0];
   }
 
   const entries = xmlGetMany(feed, ["item"]).map((entry, index) => ({
@@ -257,17 +257,17 @@ async function parseAtom (xml, sanitizeHash) {
     id: xmlGetOne(feed, ["id"], true),
     categories: xmlGetMany(feed, ["category"]).map(extractAttribute("term")),
     feedLink: rssLinks.length > 0 ? rssLinks[0] : null,
-    nextArchive: null,
+    prevArchive: null,
   };
-  let nextArchive = xmlGetMany(feed, ["link"])
+  let prevArchive = xmlGetMany(feed, ["link"])
     .filter((element) =>
       element.attributes &&
       element.attributes.getNamedItem("rel") &&
-      element.attributes.getNamedItem("rel").value === "next-archive"
+      element.attributes.getNamedItem("rel").value === "prev-archive"
     )
     .map((element) => element.attributes.getNamedItem("href").value);
-  if (nextArchive.length > 0) {
-    meta.nextArchive = nextArchive[0];
+  if (prevArchive.length > 0) {
+    meta.prevArchive = prevArchive[0];
   }
 
   const entries = xmlGetMany(feed, ["entry"]).map((entry, index) => ({
