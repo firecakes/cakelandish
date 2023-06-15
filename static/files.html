@@ -101,9 +101,7 @@
 
           const results = await axios.post('/api/file', formData, {
             headers: {
-              'Content-Type': 'multipart/form-data',
-              // custom header, to get around oak's strangely restrictive allowed MIME types 
-              'custom-content-types': contentTypes.join(','),
+              'Content-Type': 'multipart/form-data'
             }
           });
 
@@ -126,7 +124,7 @@
           } else if (videoTypes.includes(extension)) {
             return "video";
           } else {
-            return "image";
+            return null; // unknown extension. trying to force a file to render as an image can cause a crash with current implementations
           }
         },
         async deleteFile (file) {

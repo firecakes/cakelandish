@@ -25,10 +25,10 @@ Auto format on save:
 `deno fmt --watch ./**/*.ts`
 
 Auto run on save:
-`deno run --allow-net --allow-read --allow-write=./ --watch=./* main.ts`
+`deno run --allow-net --allow-read --allow-write=./ --allow-env --watch=./* main.ts`
 
 Build:
-`deno compile --no-check --allow-net --allow-read --allow-write=./ main.ts`
+`deno compile --no-check --allow-net --allow-read --allow-write=./ --allow-env main.ts`
 
 `deno compile --target x86_64-unknown-linux-gnu --output Cakelandish-linux-x86_64 --no-check --allow-net --allow-read --allow-write=./ main.ts`
 
@@ -37,4 +37,4 @@ Build:
 `deno compile --target x86_64-apple-darwin --output Cakelandish-mac-x86_64 --no-check --allow-net --allow-read --allow-write=./ main.ts`
 
 Create auth code:
-`deno run --allow-net --allow-read=./ --allow-write=./ main.ts code`
+`deno run --allow-net --allow-read=./ --allow-write=./ --allow-env main.ts code`
