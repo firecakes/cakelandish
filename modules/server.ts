@@ -687,8 +687,8 @@ export async function startServer() {
   // for enabling HTTPS connections
   if (config.sslCertificateLocation && config.sslKeyLocation) {
     const options = {
-      key: await Deno.readTextFile(config.sslCertificateLocation),
-      cert: await Deno.readTextFile(config.sslKeyLocation),
+      key: await Deno.readTextFile(config.sslKeyLocation),
+      cert: await Deno.readTextFile(config.sslCertificateLocation),
     };
     https.createServer(options, app.callback()).listen(443);
   } else { // for enabling HTTP connections
