@@ -39,4 +39,4 @@ Build:
 `deno compile --target x86_64-apple-darwin --output Cakelandish-mac-x86_64 --no-check --allow-net --allow-read --allow-write=./ --allow-env --unstable main.ts`
 
 Create auth code:
-`deno run --allow-net --allow-read=./ --allow-write=./ --allow-env main.ts code`
+`deno run --allow-net --allow-read --allow-write=./ --allow-env main.ts code`

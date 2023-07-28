@@ -114,26 +114,7 @@ export async function startServer() {
     if (success) {
       return;
     }
-    // access token invalid. verify the refresh token and generate a new access token if valid
-    try {
-      const refreshToken = await ctx.cookies.get("jwt-refresh");
-      await verifyJwtRefreshToken(refreshToken);
-      // no exceptions thrown. generate a new access token and continue;
-      const access = await generateJwtAccessToken();
-      await ctx.cookies.set("jwt-access", access.token, {
-        secure: config.https,
-        httpOnly: true,
-        sameSite: "strict",
-        maxAge: access.expiry,
-      });
-      await next();
-      success = true;
-    } catch (err) {
-    }
-    if (success) {
-      return;
-    }
-    // refresh token invalid. unauthorized
+    // access token invalid. unauthorized
     ctx.status = 401; // unauthorized
   };
 
@@ -162,23 +143,19 @@ export async function startServer() {
     if (compareStrings(input.code, text)) { // valid code. authenticate
       deleteCode(); // auth code no longer needed
       const access = await generateJwtAccessToken();
-      const refresh = await generateJwtRefreshToken();
-      // store tokens in client as a cookie
+
+      // store token in client as a cookie
       // secure means https only. will be true if env var HTTPS is set to true
       // httpOnly means JS cannot be used to retrieve the cookie
       // strictness means cookie will only be readable with this site specifically
-      await ctx.cookies.set("jwt-access", access.token, {
+
+      ctx.cookies.set("jwt-access", access.token, {
         secure: config.https,
         httpOnly: true,
         sameSite: "strict",
         maxAge: access.expiry,
       });
-      await ctx.cookies.set("jwt-refresh", refresh.token, {
-        secure: config.https,
-        httpOnly: true,
-        sameSite: "strict",
-        maxAge: refresh.expiry,
-      });
+
       ctx.body = {
         success: true,
       };
