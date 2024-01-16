@@ -17,6 +17,11 @@ if (Deno.args[0] === "code") { // create temporary auth code
   await deleteCode(); // delete potentially lingering auth code
   // creates a JWT secret for signing if one doesn't exist already
   await generateJwtSecret();
+  // creates a tmp directory if one does not already exist
+  await Deno.mkdir(
+    `static/tmp/`,
+    { recursive: true },
+  );
   // starts the web server. this must run before initializing the database in case
   // we are querying a feed from the server itself
   startServer();

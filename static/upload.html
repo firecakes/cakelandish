@@ -270,8 +270,6 @@
           const results = await axios.post('/api/upload', formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
-              // custom header, to get around oak's strangely restrictive allowed MIME types 
-              'custom-content-types': contentTypes.join(','),
             }
           });
           for (let file of results.data.files) {

@@ -14,7 +14,7 @@ export async function generateCode(minutes = 20) {
   // write one code to this file that the server can read from
   await Deno.writeTextFile("code.txt", code);
 
-  setTimeout(() => deleteCode, minutes * 60 * 1000);
+  setTimeout(deleteCode, minutes * 60 * 1000);
   return code;
 }
 
@@ -44,33 +44,17 @@ export async function generateJwtSecret() {
 // generates an access JWT for an authorized user
 export async function generateJwtAccessToken() {
   const token = await jwt.create({ alg: "HS512", typ: "JWT" }, {
-    exp: jwt.getNumericDate(60), // one minute lifespan
+    exp: jwt.getNumericDate(86400 * config.refreshTokenDays), // configurable lifespan. defaults to 2 months.
   }, jwtAccessKey);
   return {
     token: token,
-    expiry: 60,
-  };
-}
-
-// generates a refresh JWT for an authorized user
-export async function generateJwtRefreshToken() {
-  const token = await jwt.create({ alg: "HS512", typ: "JWT" }, {
-    exp: jwt.getNumericDate(86400 * config.refreshTokenDays), // configurable lifespan. defaults to 2 months.
-  }, jwtRefreshKey);
-  return {
-    token: token,
-    expiry: 86400 * config.refreshTokenDays,
+    expiry: 86400 * 1000 * config.refreshTokenDays,
   };
 }
 
 // verifies an access JWT for an authorized user
 export async function verifyJwtAccessToken(token) {
   return await jwt.verify(token, jwtAccessKey);
-}
-
-// verifies a refresh JWT for an authorized user
-export async function verifyJwtRefreshToken(token) {
-  return await jwt.verify(token, jwtRefreshKey);
 }
 
 // safely compares two strings to avoid timing attacks
