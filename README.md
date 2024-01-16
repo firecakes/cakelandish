@@ -19,7 +19,7 @@ Or, if you want to see an example of this project running in the wild, check out
 
 My RSS feed is at `https://cakelandish.firecakesworld.com/feed.atom`.
 
-NOTE: The minimum Deno version required is `v1.35.3`.
+NOTE: The minimum Deno version required is `v1.38.3`. This fixes issues with multifile uploading to the server.
 
 ## Dev Commands
 

@@ -91,10 +91,8 @@
         },
         async filesSubmitted (event) {
           const formData = new FormData();
-          const contentTypes = [];
           for (let i = 0; i < event.target.files.length; i++) {
             const file = event.target.files[i];
-            contentTypes.push(file.type);
             formData.append('myFile', file);
             this.uploadsInProgress.add(file.name);
           }
