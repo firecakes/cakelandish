@@ -183,7 +183,7 @@
           feed: {
             name: "",
             url: "",
-            updateMinutes: 10
+            updateMinutes: 60
           },
           isLoading: false,
           focusedFeedIndex: null,
@@ -216,9 +216,9 @@
           screen: "lg",
           currentView: "posts",
           currentViewText: "Show Feeds",
-          RENDER_POST_INIT: 10,
-          RENDER_POST_INCREASE: 2,
-          postsToRender: 10,
+          RENDER_POST_INIT: 20,
+          RENDER_POST_INCREASE: 10,
+          postsToRender: 20,
           totalPosts: 0,
           lastExportDateDays: null,
         }
@@ -365,7 +365,7 @@
           if (index === null) { // Add Feed button was pressed
             this.feed.name = "";
             this.feed.url = "";
-            this.feed.updateMinutes = 5;
+            this.feed.updateMinutes = 60;
           } else {
             this.feed.name = this.feeds[index].name;
             this.feed.url = this.feeds[index].url;
