@@ -92,6 +92,7 @@ export async function startServer() {
       keepExtensions: true,
       maxFileSize: 10 * 1024 * 1024 * 1024, // allow uploads of up to 10 GB. only the site owner can call this anyway. 10 GB seems very reasonable
     },
+    jsonLimit: "10mb", // used for sending very large bodies sent to api/sanitize/bulk
   }));
 
   // JWT middleware function

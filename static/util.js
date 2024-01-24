@@ -33,7 +33,7 @@ async function quickSanitize (feeds) {
         if (!sanitizeHash[i][j]) {
           sanitizeHash[i][j] = {};
         }
-        const entryPost = xmlGetOne(entry, ["description"]);
+        const entryPost = xmlGetOne(entry, ["content:encoded"]) ? xmlGetOne(entry, ["content:encoded"]) : xmlGetOne(entry, ["description"]);
         if (entryPost) {
           sanitizeHash[i][j] = entryPost.textContent;
         }
@@ -185,7 +185,8 @@ export async function extractFeedLinks (postEntry) {
 }
 
 async function parseRss (xml, sanitizeHash) {
-  const feed = xmlGetOne(xml, ["rss", "channel"]);
+  // try rss -> channel. rss tag may not exist, so try parsing as if channel is the top level
+  const feed = xmlGetOne(xml, ["rss", "channel"]) ? xmlGetOne(xml, ["rss", "channel"]) : xmlGetOne(xml, ["channel"]);
 
   // find the RSS location from the feed to have for all posts
   const rssLinks = xmlGetMany(feed, ["atom:link"])
@@ -215,10 +216,10 @@ async function parseRss (xml, sanitizeHash) {
   }
 
   const entries = xmlGetMany(feed, ["item"]).map((entry, index) => ({
-    title: xmlGetOne(feed, ["title"], true),
+    title: xmlGetOne(entry, ["title"], true) ? xmlGetOne(entry, ["title"], true) : xmlGetOne(feed, ["title"], true),
     author: xmlGetOne(entry, ["author"], true),
     categories: xmlGetMany(entry, ["category"], true),
-    id: xmlGetOne(entry, ["guid"], true),
+    id: xmlGetOne(entry, ["link"], true) ? xmlGetOne(entry, ["link"], true) : extractAttribute("href")(xmlGetOne(entry, ["link"])),
     // get only links who have a "related" attribute value for "rel"
     links: xmlGetMany(entry, ["link"])
       .filter((element) =>
@@ -271,10 +272,10 @@ async function parseAtom (xml, sanitizeHash) {
   }
 
   const entries = xmlGetMany(feed, ["entry"]).map((entry, index) => ({
-    title: xmlGetOne(entry, ["title"], true),
+    title: xmlGetOne(entry, ["title"], true) ? xmlGetOne(entry, ["title"], true) : xmlGetOne(feed, ["title"], true),
     author: xmlGetOne(entry, ["author", "name"], true),
     categories: xmlGetMany(entry, ["category"]).map(extractAttribute("term")),
-    id: xmlGetOne(entry, ["id"], true),
+    id: xmlGetOne(entry, ["link"], true) ? xmlGetOne(entry, ["link"], true) : extractAttribute("href")(xmlGetOne(entry, ["link"])),
     // get only links who have a "related" attribute value for "rel"
     links: xmlGetMany(entry, ["link"])
       .filter((element) =>
