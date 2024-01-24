@@ -399,10 +399,19 @@
               data: {
                 index: this.selectedIndex,
               }
-            })
+            });
             this.isLoading = true;
             await this.getFeeds(); // refresh feed list
             this.isLoading = false;
+
+            // remove the focus if it's the same index as the deleted feed
+            if (this.focusedFeedIndex === this.selectedIndex) {
+              this.focusFeed(null);
+            }
+            // shift the focus down one if it's before the deleted one's index so the focus stays on the same feed
+            else if (this.focusedFeedIndex > this.selectedIndex) {
+              this.focusFeed(this.focusedFeedIndex - 1);
+            }
           }
 
           this.selectedIndex = null;
@@ -420,6 +429,8 @@
           } else {
             this.focusedFeedIndex = index;
           }
+          // force the scroll to the top of the list on a focus change
+          window.scrollTo(0,0);
           this.feedToList(); // update the list
         },
         async downloadExtras (feed) {
