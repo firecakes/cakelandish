@@ -16,17 +16,19 @@
 
       <!-- feed sidebar -->
       <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'feeds')" class="fourth flex-v" :class="{ 'sidebar': screen === 'lg' }">
-        <a class="button margin-center" href="upload.html">New Post</a>
-        <a class="button margin-center" href="manage.html">Manage Posts</a>
-        <div class="other-buttons">
-          <a class="button small-button margin-center" href="files.html">Manage Global Files</a>
-          <a class="button small-button margin-center" href="pages.html">Manage Custom Pages</a>
+        <div class="main-buttons">
+          <a class="button main-button margin-center" href="upload.html">New Post</a>
+          <a class="button main-button margin-center" href="manage.html">Manage Posts</a>
         </div>
         <div class="other-buttons">
-          <a class="button small-button margin-center" href="layout.html">Edit Post Layout</a>
-          <a class="button small-button margin-center" href="admin.html">Admin Tools</a>
+          <a class="button sidebar-button small-button margin-center percent50" href="files.html">Manage Global Files</a>
+          <a class="button sidebar-button small-button margin-center percent50" href="pages.html">Manage Custom Pages</a>
         </div>
-        <p class="title center margin-center">Your Feeds</p>
+        <div class="other-buttons">
+          <a class="button sidebar-button small-button margin-center percent50" href="layout.html">Edit Post Layout</a>
+          <a class="button sidebar-button small-button margin-center percent50" href="admin.html">Admin Tools</a>
+        </div>
+        <p class="small-title center margin-center">Your Feeds</p>
 
         <!-- feed list -->
         <div 
@@ -72,7 +74,7 @@
 
         <button 
           v-if="!showingAddFeedForm && !isLoading" 
-          class="button add-feed-button" 
+          class="button sidebar-button add-feed-button" 
           @click="presentFeed(null)">Add Feed
         </button>
 
@@ -97,21 +99,21 @@
           </div>
         </div>
 
-        <p v-if="isLoading" class="title center margin-center">
+        <p v-if="isLoading" class="small-title center margin-center">
           Updating feed content...
         </p>
 
         <!-- Search posts -->
-        <p class="title center margin-center">Search Posts</p>
+        <p @click="toggleSearch" class="button sidebar-button small-title center margin-center">Search Posts</p>
 
-        <div class="flex search">
-          <div class="flex-v half form">
+        <div v-if="showSearch" class="flex search">
+          <div class="flex-v half form space-to-edges">
             <p class="small-title center margin-center">Type</p>
             <select class="center select" v-model="searchType">
               <option v-for="type in searchTypeList"> {{ type }} </option>
             </select>
           </div>
-          <div class="flex-v half form">
+          <div class="flex-v half form space-to-edges">
             <p class="small-title center margin-center">Value</p>
             <input v-if="searchType === 'Category'" class="select" v-model="searchValues[0].value" @change="feedToList()">
             <input v-if="searchType === 'Title'" class="select" v-model="searchValues[1].value" @change="feedToList()">
@@ -119,11 +121,11 @@
             <div class="flex" v-if="searchType === 'Date'">
               <div>
                 <p class="date-field-text center margin-center">From</p>
-                <input class="select" type="date" v-model="searchValues[3].value.from" @change="feedToList()">
+                <input class="select small-side-margin" type="date" v-model="searchValues[3].value.from" @change="feedToList()">
               </div>
               <div>
                 <p class="date-field-text center margin-center">To</p>
-                <input class="select" type="date" v-model="searchValues[3].value.to" @change="feedToList()">
+                <input class="select small-side-margin" type="date" v-model="searchValues[3].value.to" @change="feedToList()">
               </div>
             </div>
             <input v-if="searchType === 'Has Image'" type="checkbox" class="select checkbox" v-model="searchValues[4].value" @change="feedToList()">
@@ -142,6 +144,9 @@
 
       <!-- display feed content -->
       <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'posts')" class="three-fourth flex-v" :class="{ 'display-feed': screen === 'lg'}">
+        <p v-if="isLoading && (screen !== 'lg' && currentView === 'posts')" class="small-title center margin-center">
+          Updating feed content...
+        </p>
         <!-- render each post -->
         <feed-post 
           @render-reply-to="renderReplyTo"
@@ -221,6 +226,7 @@
           postsToRender: 20,
           totalPosts: 0,
           lastExportDateDays: null,
+          showSearch: false,
         }
       },
       async mounted () {
@@ -274,6 +280,9 @@
         }
       },
       methods: {
+        toggleSearch () {
+          this.showSearch = !this.showSearch;
+        },
         numberToMonth (num) {
           return ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][num];
         },
@@ -526,9 +535,9 @@
     }
 
     .margin-center {
-      margin-top: 20px;
-      margin-left: 30px;
-      margin-right: 30px;
+      margin-top: 10px;
+      margin-left: 20px;
+      margin-right: 20px;
     }
 
     .add-feed-button {
@@ -595,8 +604,8 @@
 
     .scroll {
       overflow: scroll;
-      max-height: 400px;
-      min-height: 100px;
+      min-height: 180px;
+      margin-right: 10px;
     }
 
     .post {
@@ -758,10 +767,39 @@
     .sidebar {
       position: fixed;
       width: 480px;
+      overflow: auto;
     }
 
     .display-feed {
       margin-left: 480px;
+    }
+
+    .sidebar-button {
+      font-size: 20px;
+      margin-top: 10px;
+    }
+    
+    .main-button {
+      font-size: 24px;
+      margin-top: 10px;
+    }
+
+    .main-buttons {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .percent50 {
+      width: 50%;
+    }
+
+    .space-to-edges {
+      justify-content: space-between;
+    }
+
+    .small-side-margin {
+      margin-left: 4px;
+      margin-right: 4px;
     }
 
     /* Rules that allow for better resizing of the content */
