@@ -19,7 +19,8 @@
 
         <!-- export data -->
         <p class="small-title center">Creates a tar of all your posts, your global files, and your database.json for you to download</p>
-        <button v-if="!exportedData" class="button small-button margin-center" @click="exportData()">Export Data</button>
+        <button v-if="!exportedData && !exportInProgress" class="button small-button margin-center" @click="exportData()">Export Data</button>
+        <button v-if="!exportedData && exportInProgress" class="button small-button margin-center">Your data is exporting! This may take a long time. Do not leave the page!</button>
         <a v-if="exportedData" 
             download="exported.tar" 
             :href="exportedData" 
@@ -59,6 +60,7 @@
           newDomain: "",
           performAction: false,
           isAuthenticated: null,
+          exportInProgress: false,
         }
       },
       async created () {
@@ -75,6 +77,7 @@
       },
       methods: {
         async exportData () {
+          this.exportInProgress = true;
           // retrieve a zip of the user's data from the server
           const result = await axios.get("/api/export", {
             responseType: 'blob',
@@ -83,6 +86,7 @@
             new Blob([result.data])
           );
           this.exportedData = url;
+          this.exportInProgress = false;
         },
         async changeDomain () {
           if (!this.performAction) {
