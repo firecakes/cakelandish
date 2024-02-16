@@ -1,5 +1,14 @@
 # Environment variable file
 .env
 
+# User's own content or generated files
+static/posts/**
+static/files/**
+static/pages/**
+database.json
+exported.tar
+static/feed.atom
+static/archive/**
+
 # macOS
 .DS_Store
