@@ -12,6 +12,7 @@ if (Deno.args[0] === "code") { // create temporary auth code
     "Please do not stop this program unless you have completed authentication.",
   );
   console.log(await generateCode(20));
+  Deno.exit(); // because having startServer() in the else branch keeps the process running somehow....?
 } else { // no special arguments. run server normally
   console.log("Starting server");
   await deleteCode(); // delete potentially lingering auth code
