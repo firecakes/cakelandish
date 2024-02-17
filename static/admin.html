@@ -30,6 +30,18 @@
 
         <div class="margin"></div>
 
+        <!-- import data -->
+        <p class="small-title center">Upload a tar from a previous export and fall back to a previous state of the server. THIS WILL WIPE YOUR CURRENT DATA!!!</p>
+        <div v-if="!importInProgress" class="form">
+          <label for="file-upload" class="form file-upload">
+            <p class="flex-center">Upload tar</p>
+          </label>
+          <input id="file-upload" accept="tar/*" type="file" @change="fileSubmitted"/>
+        </div>
+        <button v-if="importInProgress" class="button small-button margin-center">Your data is importing! This may take a long time. Do not leave the page!</button>
+
+        <div class="margin"></div>
+
         <!-- change domain name -->
         <p class="small-title center">Attempts to replace all instances of a domain name with another one. It's literally just a string replacement method going through all your RSS posts, but intended for migrating over to a new domain. Please back up your data before trying this feature out!</p>
         <div>
@@ -61,6 +73,7 @@
           performAction: false,
           isAuthenticated: null,
           exportInProgress: false,
+          importInProgress: false,
         }
       },
       async created () {
@@ -97,7 +110,26 @@
             newDomain: this.newDomain,
           });
           window.location.href = '/index.html';
-        }
+        },
+        async fileSubmitted (event) {
+          const formData = new FormData();
+
+          for (let i = 0; i < event.target.files.length; i++) {
+            const file = event.target.files[i];
+            formData.append('exported', file);
+            this.importInProgress = true;
+          }
+
+          const results = await axios.post('/api/import', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+
+          this.importInProgress = false;
+
+          window.location.href = '/admin.html'; // refresh page when finished
+        },
       }
     }).mount('#app');
 
@@ -134,6 +166,17 @@
 
     .fourth {
       background: #273038;
+    }
+
+    .file-upload {
+      border-radius: 8px;
+      font-family: Inika;
+      background-color: #382f27;
+      font-size: 20px;
+      color: #d2d2d2;
+      border: 0px;
+      align-items: center;
+      width: 200px;
     }
 
   </style>

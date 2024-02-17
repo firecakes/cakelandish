@@ -43,7 +43,7 @@ import {
   verifyJwtAccessToken,
   verifyJwtRefreshToken,
 } from "./auth.ts";
-import { exportData } from "./zip.ts";
+import { exportData, importData } from "./zip.ts";
 import { getPostLocations } from "./post.ts";
 
 const defaultHTML = `
@@ -480,6 +480,28 @@ export async function startServer() {
     // update the last date data was exported from the server
     await updateLastDateExported();
     ctx.body = createReadStream(zipName);
+  });
+
+  // import a tar of the server's state
+  router.post("/api/import", jwtMiddleware, async (ctx, next) => {
+    // enforce its existence
+    await Deno.mkdir(
+      `static/files`,
+      { recursive: true },
+    );
+
+    if (!ctx.request.files.exported) {
+      ctx.status = 400;
+      return;
+    }
+
+    await importData(`static/tmp/${ctx.request.files.exported.newFilename}`);
+    // remove tar file
+    await Deno.remove(
+      `static/tmp/${ctx.request.files.exported.newFilename}`,
+    );
+
+    ctx.body = {};
   });
 
   // retrieve the post layout
