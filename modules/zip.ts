@@ -10,6 +10,12 @@ export async function exportData() {
   } catch (err) {
     // didn't exist in the first place. fine
   }
+  try {
+    // remove any existing tar file to prevent interference with newly created tars
+    await Deno.remove("exported.tar", { recursive: true });
+  } catch (err) {
+    // didn't exist in the first place. fine
+  }
 
   await Deno.mkdir("exported", { recursive: true });
   await Deno.mkdir("static/posts", { recursive: true });
