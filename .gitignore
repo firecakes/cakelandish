@@ -9,6 +9,8 @@ database.json
 exported.tar
 static/feed.atom
 static/archive/**
+log.txt
+exported/**
 
 # macOS
 .DS_Store

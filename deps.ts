@@ -11,6 +11,7 @@ export { cryptoRandomString } from "https://deno.land/x/crypto_random_string@1.1
 export * as jwt from "https://deno.land/x/djwt@v2.8/mod.ts";
 export { timingSafeEqual } from "https://deno.land/std@0.168.0/crypto/timing_safe_equal.ts";
 export { tar } from "https://deno.land/x/compress@v0.4.4/mod.ts";
+export * as log from "https://deno.land/std@0.216.0/log/mod.ts";
 
 // NPM modules
 import Koa from "npm:koa@2.14.2";

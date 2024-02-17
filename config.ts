@@ -22,7 +22,7 @@ export let config = {
   serverCodeLength: Number(envs.SERVER_CODE_LENGTH) || 256,
   sslCertificateLocation: envs.HTTPS_CERTIFICATE_LOCATION,
   sslKeyLocation: envs.HTTPS_KEY_LOCATION,
-  version: "0.8.0"
+  version: "0.9.0"
 };
 
 if (config.title === undefined) {

@@ -1,5 +1,6 @@
 import { config } from "../config.ts";
 import { generatePostFileStructure } from "./post.ts";
+import { logger } from "./log.ts";
 
 let memory = {
   feeds: [], // store xml and js parsed data in memory to avoid read/write collisions
@@ -14,7 +15,7 @@ export async function init() {
   try {
     db = await readDb();
   } catch {
-    console.log(
+    logger.info(
       "No database.json found in root directory. Initializing new file.",
     );
     await saveDb({
@@ -35,7 +36,7 @@ export async function init() {
   try {
     await initializeFeeds(db);
   } catch (err) {
-    console.log(err); // don't hard fail here
+    logger.warn(err); // don't hard fail here
   }
 
   // initialize globalIndex
@@ -261,7 +262,7 @@ export async function feedGetHelper(feed) {
         resolve(Object.assign(feed, { xml: result }));
       })
       .catch((err) => {
-        console.log(err);
+        logger.error(err);
         resolve(Object.assign(feed, { xml: null }));
       });
   });
