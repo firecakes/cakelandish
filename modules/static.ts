@@ -2,7 +2,7 @@
 import { setPages } from "./db.ts";
 
 export const EDITABLE_EXTENSIONS = ["html", "css", "js"];
-const BLACKLISTED_FOLDERS = ["archive", "files", "lib", "posts", "tmp"];
+const BLACKLISTED_FOLDERS = ["archive", "lib", "posts", "tmp"];
 const IMPORTANT_FILES = [ // files the user should really not mess with unless they know what they're doing
   "components", // this is a directory, technically.
   "feed.atom",
@@ -11,7 +11,6 @@ const IMPORTANT_FILES = [ // files the user should really not mess with unless t
   "feed-extras.png",
   "favicon.ico",
   "admin.html",
-  "files.html",
   "index.html",
   "layout.html",
   "login.html",

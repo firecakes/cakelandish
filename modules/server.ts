@@ -12,20 +12,17 @@ import { cleaner } from "./ammonia.ts";
 import { config } from "../config.ts";
 import {
   addFeed,
-  addFile,
   addOrEditPage,
   addPageFile,
   addPost,
   changeDomains,
   deleteFeed,
-  deleteFile,
   deletePage,
   deletePost,
   editFeed,
   editPost,
   feedGetHelper,
   getFeeds,
-  getFiles,
   getLastDateExported,
   getLayout,
   getPages,
@@ -534,57 +531,6 @@ export async function startServer() {
       currentVersion: config.version,
       remoteVersion: remoteVersion,
     };
-  });
-
-  // return all files
-  router.get("/api/file", jwtMiddleware, async (ctx, next) => {
-    // read from database
-    ctx.body = {
-      files: await getFiles(),
-    };
-  });
-
-  // add a new file
-  router.post("/api/file", jwtMiddleware, async (ctx, next) => {
-    // enforce its existence
-    await Deno.mkdir(
-      `static/files`,
-      { recursive: true },
-    );
-
-    if (!Array.isArray(ctx.request.files.myFile)) {
-      ctx.request.files.myFile = [ctx.request.files.myFile];
-    }
-
-    // rename the files to what they were originally and move them to the correct location
-    for await (let file of ctx.request.files.myFile) {
-      await Deno.rename(
-        `static/tmp/${file.newFilename}`,
-        `static/files/${file.originalFilename}`,
-      );
-    }
-
-    for (let i = 0; i < ctx.request.files.myFile.length; i++) {
-      // add to database
-      await addFile(`files/${ctx.request.files.myFile[i].originalFilename}`);
-    }
-
-    ctx.body = {
-      files: ctx.request.files.myFile.map((file) =>
-        `files/${file.originalFilename}`
-      ),
-    };
-  });
-
-  // delete an existing file
-  router.delete("/api/file", jwtMiddleware, async (ctx, next) => {
-    const input: Feed = ctx.request.body;
-
-    // delete from database
-    await Deno.remove(`static/${input.file}`);
-    await deleteFile(input.file);
-
-    ctx.body = {};
   });
 
   // performs a string replacement of all instances of the old domain passed in with the new one
