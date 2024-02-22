@@ -14,6 +14,7 @@ import {
   addFeed,
   addFile,
   addOrEditPage,
+  addPageFile,
   addPost,
   changeDomains,
   deleteFeed,
@@ -45,6 +46,11 @@ import {
 } from "./auth.ts";
 import { exportData, importData } from "./zip.ts";
 import { getPostLocations } from "./post.ts";
+import {
+  EDITABLE_EXTENSIONS,
+  isBlacklistedPath,
+  isEditableExtension,
+} from "./static.ts";
 
 const defaultHTML = `
 <!DOCTYPE html>
@@ -475,10 +481,11 @@ export async function startServer() {
 
   // bundle user data in a zip and send it to the client
   router.get("/api/export", jwtMiddleware, async (ctx, next) => {
+    // update the last date data was exported from the server, before putting it into a tar
+    await updateLastDateExported();
+
     const zipName = await exportData();
 
-    // update the last date data was exported from the server
-    await updateLastDateExported();
     ctx.body = createReadStream(zipName);
   });
 
@@ -496,10 +503,6 @@ export async function startServer() {
     }
 
     await importData(`static/tmp/${ctx.request.files.exported.newFilename}`);
-    // remove tar file
-    await Deno.remove(
-      `static/tmp/${ctx.request.files.exported.newFilename}`,
-    );
 
     ctx.body = {};
   });
@@ -613,47 +616,78 @@ export async function startServer() {
       ctx.status = 400;
       return;
     }
+    input.name = input.name.trim();
+    const extension = input.name.split(".").pop();
+    const fullPath = `static/${input.name}`;
+    if (isBlacklistedPath(fullPath)) {
+      ctx.status = 400;
+      ctx.body = {
+        error: "This is a reserved location and cannot be written to.",
+      };
+      return;
+    }
+    if (!isEditableExtension(input.name)) {
+      ctx.status = 400;
+      ctx.body = {
+        error:
+          `Only the following file extensions are supported through pages: ${
+            EDITABLE_EXTENSIONS.join(", ")
+          }`,
+      };
+      return;
+    }
 
-    // enforce its existence
-    await Deno.mkdir(
-      `static/pages`,
-      { recursive: true },
-    );
+    // avoid overwriting files
+    const foundExistingFile = await addOrEditPage({
+      url: input.name,
+      content: extension === "html" ? defaultHTML : "",
+      directory: false,
+      isImportant: false,
+      extension: extension,
+      editable: isEditableExtension(input.name),
+    }, false);
 
-    // save the contents to an html file
-    await Deno.writeTextFile(
-      `static/pages/${input.name}.html`,
-      defaultHTML,
-    );
-
-    await addOrEditPage({
-      name: input.name,
-      url: `pages/${input.name}.html`,
-      content: defaultHTML,
-    });
+    if (foundExistingFile) {
+      ctx.status = 400;
+      ctx.body = {
+        error: "A file with the same name already exists here.",
+      };
+      return;
+    }
 
     ctx.body = {};
   });
 
   // edit an existing page
   router.put("/api/page", jwtMiddleware, async (ctx, next) => {
-    const input = ctx.request.body;
-    if (!input.page.name || input.page.name === "") {
+    const input = ctx.request.body.page ? ctx.request.body.page : {};
+    if (!input.url || input.url === "") {
       ctx.status = 400;
       return;
     }
+    input.url = input.url.trim();
+    const extension = input.url.split(".").pop();
+    const fullPath = `static/${input.url}`;
+    if (isBlacklistedPath(fullPath)) {
+      ctx.status = 400;
+      ctx.body = {
+        error: "This is a reserved location and cannot be written to.",
+      };
+      return;
+    }
+    if (!isEditableExtension(input.url)) {
+      ctx.status = 400;
+      ctx.body = {
+        error:
+          `Only the following file extensions are supported through pages: ${
+            EDITABLE_EXTENSIONS.join(", ")
+          }`,
+      };
+      return;
+    }
 
-    // save the contents to an html file
-    await Deno.writeTextFile(
-      `static/pages/${input.page.name}.html`,
-      input.page.content,
-    );
-
-    await addOrEditPage({
-      name: input.page.name,
-      url: `pages/${input.page.name}.html`,
-      content: input.page.content,
-    });
+    // allow overwriting files
+    await addOrEditPage(input, true);
 
     ctx.body = {};
   });
@@ -661,14 +695,66 @@ export async function startServer() {
   // delete an existing page
   router.delete("/api/page", jwtMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
+    if (!input.page.url || input.page.url === "") {
+      ctx.status = 400;
+      return;
+    }
 
     // get the location of the page
     const pageUrl = `static/${input.page.url}`;
 
     await deletePage(input.page);
-    await Deno.remove(pageUrl);
+    await Deno.remove(
+      pageUrl,
+      { recursive: true },
+    );
 
     ctx.body = {};
+  });
+
+  // add a file toe a page
+  router.post("/api/page/file", jwtMiddleware, async (ctx, next) => {
+    const input = ctx.request.body;
+    if (!Array.isArray(ctx.request.files.myFile)) {
+      ctx.request.files.myFile = [ctx.request.files.myFile];
+    }
+    if (!input.pageUrl) {
+      input.pageUrl = ""; // empty string is fine. it means add file to static folder
+    }
+    input.pageUrl = input.pageUrl.trim();
+
+    const fullPath = (input.pageUrl === "")
+      ? "static"
+      : `static/${input.pageUrl}`;
+    if (isBlacklistedPath(fullPath)) {
+      ctx.status = 400;
+      ctx.body = {
+        error: "This is a reserved location and cannot be written to.",
+      };
+      return;
+    }
+
+    // rename the files to what they were originally and move them to the correct location
+    for await (let file of ctx.request.files.myFile) {
+      await Deno.rename(
+        `static/tmp/${file.newFilename}`,
+        (input.pageUrl === "")
+          ? `static/${file.originalFilename}`
+          : `static/${input.pageUrl}/${file.originalFilename}`,
+      );
+
+      // add to database
+      await addPageFile(
+        input.pageUrl,
+        (input.pageUrl === "")
+          ? file.originalFilename
+          : `${input.pageUrl}/${file.originalFilename}`,
+      );
+    }
+
+    ctx.body = {
+      files: ctx.request.files.myFile.map((file) => file.originalFilename),
+    };
   });
 
   // get the last date data was exported from the server

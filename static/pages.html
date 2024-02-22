@@ -10,20 +10,21 @@
 
   <body id="bg">
     <div id="app" class="flex-v" v-cloak>
-      <p v-if="isAuthenticated === true" class="title center">Your custom HTML pages</p>
+      <p v-if="isAuthenticated === true" class="title center">Your Custom Pages</p>
       <a v-if="isAuthenticated === true" class="button submit-button" href="index.html"><p class="return-main">Return to Main Page</p></a>
 
       <div v-if="isAuthenticated === true && selectedPage">
         <div class="flex page">
           <!-- edit a page -->
-          <div class="half">
+          <div class="half flex-v">
             <!-- HTML input -->
-            <p class="center title">HTML Layout goes here!</p>
+            <p class="center title">File goes here!</p>
             <textarea class="html-input" cols="60" rows="30" v-model="selectedPage.content"></textarea>
           </div>
 
-          <div class="half">
+          <div class="half flex-v">
             <!-- HTML input -->
+            <p class="center title">Rendering goes here!</p>
             <iframe :srcdoc="selectedPage.content" title="Layout Render"></iframe> 
           </div>
         </div>
@@ -38,20 +39,44 @@
         <!-- make a new page -->
         <p class="title center">Make a New Page</p>
         <div class="form flex">
-          <label for="title" class="title">Page Name</label>
+          <label for="title" class="title">URL Name</label>
           <input class="textbox" id="title" v-model="pageName">
           <button @click="makeNewPage" class="button">Create new page</button>
         </div>
-
+        <p class="small-title">Use "/" in the name to make new directories</p>
       </div>
 
       <!-- page list --> 
-      <div v-if="isAuthenticated === true" class="post" v-for="page in pages">
+      <div v-if="isAuthenticated === true">
+        <p class="title center">Page List</p>
+        <div class="center">
+          <p class="small-title red" style="display:inline">Show files critical to Cakelandish (editing carelessly may permanently break your server!)</p>
+          <input type="checkbox" class="checkbox center" v-model="showImportantFiles">
+        </div>
 
-        <div class="third form"><a :href="page.url">{{ page.name }}</a></div>
-        <div class="third form"><button class="button" @click="editPage(page)">Edit page</button></div>
-        <div v-if="!page.requestDeletion" class="third form"><button class="button" @click="deletePage(page)">Delete page</button></div>
-        <div v-if="page.requestDeletion" class="third form"><button class="button" @click="deletePage(page)">Are you sure?</button></div>
+        <div class="form">
+          <label for="file-upload-static" class="form file-upload button">
+            <p class="flex-center">Upload file to static folder</p>
+          </label>
+          <input id="file-upload-static" accept="image/*" class="hidden" type="file" @change="uploadFile($event, {url: ''})" multiple/>
+        </div>
+
+        <p v-if="uploadsInProgress.size !== 0" class="tiny-text center">Currently uploading:</p>
+        <div v-for="upload in Array.from(uploadsInProgress)">
+          <p class="tiny-text center">{{ upload }}</p>
+        </div>
+
+        <!-- list each file and directory -->
+        <!-- use :key binding passing in properties unique to the page, to tell Vue how to render the hierarchy of pages when a change happens -->
+        <static-file
+          :key="page.url"
+          :page="page"
+          @edit-page="editPage"
+          @delete-page="deletePage"
+          @upload-file="uploadFile"
+          :show-important-files="showImportantFiles"
+          v-for="page in pages">
+        </static-file>
 
       </div>
 
@@ -63,7 +88,12 @@
   </body>
 
   <script type="module">
+    import StaticFile from "./components/StaticFile.js";
+
     Vue.createApp({
+      components: {
+        StaticFile
+      },
       data () {
         return {
           pageName: "",
@@ -72,6 +102,8 @@
           oldPageContents: "",
           performAction: false,
           isAuthenticated: null,
+          showImportantFiles: false,
+          uploadsInProgress: new Set(),
         }
       },
       async created () {
@@ -101,6 +133,9 @@
             await this.getPages();
           } catch (err) {
             console.log(err);
+            if (err.response.data.error) { 
+              alert(err.response.data.error);
+            }
           }
         },
         async editPage (page) {
@@ -142,11 +177,33 @@
             await axios.put('/api/page', {
               page: this.selectedPage,
             });
-            await this.discardPage();
+            this.selectedPage = null;
+            this.oldPageContents = "";
             await this.getPages();
           } catch (err) {
             console.log(err);
           }
+        },
+        async uploadFile (event, page) {
+          const formData = new FormData();
+          for (let i = 0; i < event.target.files.length; i++) {
+            const file = event.target.files[i];
+            formData.append('myFile', file);
+            this.uploadsInProgress.add(file.name);
+          }
+          formData.append('pageUrl', page.url);
+
+          const results = await axios.post('/api/page/file', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+
+          for (let file of results.data.files) {
+            this.uploadsInProgress.delete(file);
+          }
+          
+          await this.getPages();
         },
         returnToMain () {
           window.location.href = '/index.html';
@@ -157,9 +214,22 @@
   </script>
 
   <style>
+    .hidden {
+      display: none;
+    }
+
+    .file-upload {
+      border-radius: 8px;
+      font-family: Inika;
+      background-color: #382f27;
+      color: #d2d2d2;
+      border: 0px;
+      align-items: center;
+    }
+
     .post {
-      margin-top: 30px;
-      margin-bottom: 30px;
+      margin-top: 15px;
+      margin-bottom: 15px;
       font-family: Inika;
       background-color: #ECF8FF;
       border: 0px;
@@ -201,8 +271,10 @@
     .html-input {
       background: #273038;
       flex-grow: 1;
+      margin-right: 10px;
       color: #d2d2d2;
       margin-bottom: 10px;
+      resize: vertical;
     }
 
     .html-output {
@@ -223,9 +295,19 @@
       background: #273038;
     }
 
+    .checkbox {
+      width: 20px;
+      height: 20px;
+    }
+
+    .red {
+      color: #FF0000;
+    }
+
     iframe {
       height: 100%;
-      width: 100%;
+      flex-grow: 1;
+      margin-right: 10px;
       background: #FFFFFF;
     }
 
@@ -255,16 +337,16 @@
         font-size: 20px;
       }
 
+      .small-title {
+        font-size: 16px;
+      }
+
       .textbox {
         font-size: 20px;
       }
 
       .button {
         font-size: 11px;
-      }
-
-      .html-input {
-        width: 100%;
       }
 
       iframe {
@@ -277,6 +359,10 @@
         font-size: 16px;
       }
 
+      .small-title {
+        font-size: 12px;
+      }
+
       .textbox {
         font-size: 16px;
       }
@@ -286,9 +372,6 @@
         padding-right: 5px;
       }
 
-      .post {
-        flex-direction: column;
-      }
     }
 
   </style>

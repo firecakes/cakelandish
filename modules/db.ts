@@ -383,26 +383,147 @@ export async function getPages() {
   return db.pages;
 }
 
-export async function addOrEditPage(page: Page) {
+export async function setPages(pages) {
+  const db = await readDb();
+  db.pages = pages;
+  await saveDb(db);
+}
+
+export async function addOrEditPage(page: Page, overwrite = false) {
   const db = await readDb();
 
-  // pages can be overwritten
-  const existingPageIndex = db.pages.findIndex((other) =>
-    other.name === page.name
-  );
+  const directoryChain = page.url.split("/").slice(0, -1);
+  let currentPathArray = [];
+  let currentPage = db.pages;
+  // find the location of the page to add or edit in the database
+  for (let directory of directoryChain) {
+    currentPathArray.push(directory);
+    let foundPage = currentPage.find((element) =>
+      element.url === currentPathArray.join("/")
+    );
+    if (!foundPage) {
+      foundPage = {
+        url: currentPathArray.join("/"),
+        content: null,
+        directory: [],
+        isImportant: false,
+        extension: null,
+        editable: true,
+      };
+      currentPage.push(foundPage);
+    }
+    currentPage = foundPage.directory;
 
-  if (existingPageIndex !== -1) {
-    db.pages[existingPageIndex] = page;
+    await Deno.mkdir(
+      `static/${currentPathArray.join("/")}`,
+      { recursive: true },
+    );
+  }
+
+  // add the page itself
+  let fileAlreadyExists = false;
+  let foundPage = currentPage.find((element) => element.url === page.url);
+  if (!foundPage) {
+    foundPage = page;
+    currentPage.push(foundPage);
+
+    await Deno.writeTextFile(
+      `static/${page.url}`,
+      page.content,
+    );
   } else {
-    db.pages.push(page);
+    fileAlreadyExists = true;
+  }
+
+  if (overwrite) { // allow overwriting of the file
+    const pageIndex = currentPage.findIndex((element) =>
+      element.url === page.url
+    );
+    currentPage[pageIndex] = page;
+    await Deno.writeTextFile(
+      `static/${page.url}`,
+      page.content,
+    );
   }
 
   await saveDb(db);
+  return fileAlreadyExists;
 }
 
 export async function deletePage(page: Page) {
   let db = await readDb();
-  db.pages = db.pages.filter((target) => target.url !== page.url);
+
+  const directoryChain = page.url.split("/").slice(0, -1);
+  let currentPathArray = [];
+  let currentPage = db.pages;
+  // find the location of the page to delete in the database
+  for (let directory of directoryChain) {
+    currentPathArray.push(directory);
+    let foundPage = currentPage.find((element) =>
+      element.url === currentPathArray.join("/")
+    );
+    if (!foundPage) {
+      return;
+    }
+    currentPage = foundPage.directory;
+  }
+  const foundIndex = currentPage.findIndex((target) => target.url === page.url);
+  if (foundIndex >= 0) {
+    currentPage.splice(foundIndex, 1);
+  }
+  await saveDb(db);
+}
+
+export async function addPageFile(pageUrl, file) {
+  const db = await readDb();
+
+  // pageUrl is a directory in this case
+  const directoryChain = (pageUrl === "") ? [] : pageUrl.split("/");
+  let currentPathArray = [];
+  let currentPage = db.pages;
+  // find the location of the page to add or edit in the database
+  for (let directory of directoryChain) {
+    currentPathArray.push(directory);
+    let foundPage = currentPage.find((element) =>
+      element.url === currentPathArray.join("/")
+    );
+    if (!foundPage) {
+      foundPage = {
+        url: currentPathArray.join("/"),
+        content: null,
+        directory: [],
+        isImportant: false,
+        extension: null,
+        editable: true,
+      };
+      currentPage.push(foundPage);
+    }
+    currentPage = foundPage.directory;
+
+    await Deno.mkdir(
+      `static/${currentPathArray.join("/")}`,
+      { recursive: true },
+    );
+  }
+
+  // add the page to the database
+  let fileAlreadyExists = false;
+  let foundPage = currentPage.find((element) => element.url === file);
+  if (!foundPage) {
+    foundPage = {
+      url: file,
+      content: null,
+      directory: null,
+      isImportant: false,
+      extension: file.split(".").pop(),
+      editable: false,
+    };
+    currentPage.push(foundPage);
+    // file is already written
+  } else {
+    fileAlreadyExists = true;
+  }
+
   await saveDb(db);
 }
 
@@ -459,8 +580,11 @@ export interface Feed {
   index: number;
 }
 
-export interface Page {
-  name: string;
+export interface StaticFile {
   url: URL;
   content: string;
+  extension: string;
+  directory: StaticFile[];
+  isImportant: boolean;
+  editable: boolean;
 }

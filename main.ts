@@ -1,5 +1,6 @@
 import * as xml from "./modules/xml.ts";
 import * as db from "./modules/db.ts";
+import { parseStaticFolder } from "./modules/static.ts";
 import { startServer } from "./modules/server.ts";
 import { generateCode, generateJwtSecret, deleteCode } from "./modules/auth.ts";
 import { logger } from "./modules/log.ts";
@@ -30,7 +31,11 @@ if (Deno.args[0] === "code") { // create temporary auth code
   // initialize a database if it doesn't exist yet
   logger.info("Initializing database...");
   await db.init();
-  logger.info("Database ready");
+  logger.info("Database ready. Generating feeds...");
   // generate and save the ATOM feed from the database contents
   await xml.saveJsonToAtom();
+  logger.info("Feeds ready. Synchronizing database with static contents...");
+  // read static folder contents and update database with the changes
+  await parseStaticFolder();
+  logger.info("Synchronization complete. Cakelandish ready for use!");
 }

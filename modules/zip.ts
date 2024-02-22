@@ -18,22 +18,11 @@ export async function exportData() {
   }
 
   await Deno.mkdir("exported", { recursive: true });
-  await Deno.mkdir("static/posts", { recursive: true });
-  await Deno.mkdir("static/files", { recursive: true });
-  await Deno.mkdir("static/pages", { recursive: true });
 
   // move content to the exported folder and then tar it
   await copyDirectory(
-    "static/posts",
-    "exported/posts",
-  );
-  await copyDirectory(
-    "static/files",
-    "exported/files",
-  );
-  await copyDirectory(
-    "static/pages",
-    "exported/pages",
+    "static",
+    "exported/static",
   );
   await Deno.copyFile("database.json", "exported/database.json");
   await tar.compress("exported", EXPORTED_ZIP_NAME);
@@ -43,39 +32,25 @@ export async function exportData() {
 }
 
 export async function importData(tarLocation) {
-  let locationPrefix = "static/tmp/exported";
-  await tar.uncompress(tarLocation, `static/tmp/`);
+  let locationPrefix = "tmp/exported";
+
+  await Deno.mkdir("tmp", { recursive: true });
+  await tar.uncompress(tarLocation, `tmp/`);
 
   await Deno.remove(
-    "static/posts",
-    { recursive: true },
-  );
-  await Deno.remove(
-    "static/files",
-    { recursive: true },
-  );
-  await Deno.remove(
-    "static/pages",
+    "static",
     { recursive: true },
   );
 
   // move content from the imported folder
   await copyDirectory(
-    `${locationPrefix}/posts`,
-    "static/posts",
-  );
-  await copyDirectory(
-    `${locationPrefix}/files`,
-    "static/files",
-  );
-  await copyDirectory(
-    `${locationPrefix}/pages`,
-    "static/pages",
+    `${locationPrefix}/static`,
+    "static",
   );
   await Deno.copyFile(`${locationPrefix}/database.json`, "database.json");
 
   await Deno.remove(
-    locationPrefix,
+    "tmp",
     { recursive: true },
   );
 
