@@ -5,7 +5,7 @@
   <head>
     <script src="/lib/vue.js"></script>
     <script src="/lib/axios.min.js"></script>
-    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="/main.css">
   </head>
 
   <body id="bg">
@@ -54,6 +54,8 @@
           <input class="textbox" id="title" v-model="newDomain">
         </div>
         <button v-if="oldDomain && newDomain" class="button small-button margin-center" @click="changeDomain()">Replace RSS Links with New Domains</button>
+
+        <img style="image-rendering: pixelated; padding-top: 50px;" src="/curssor/curssor-hunting.png"></img>
 
       </div>
 

@@ -6,7 +6,7 @@
     <script src="/lib/vue.js"></script>
     <script src="/lib/axios.min.js"></script>
     <link rel="alternate" type="application/atom+xml" href="/feed.atom">
-    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="/main.css">
   </head>
 
   <body id="bg" class="no-space">
@@ -101,6 +101,7 @@
         <p v-if="isLoading" class="small-title center margin-center">
           Updating feed content...
         </p>
+        <img style="image-rendering: pixelated;" v-if="isLoading" src="/curssor/curssor-searching.gif"></img>
 
         <!-- Search posts -->
         <p @click="toggleSearch" class="button sidebar-button small-title center margin-center">Search Posts</p>
@@ -132,12 +133,13 @@
         </div>
 
         <!-- Version information -->
-        <div v-if="currentVersion">
+        <div v-if="currentVersion" class="flex-v form">
           <p class="version center">Current version: {{ currentVersion }}</p>
           <p v-if="!onNewestVersion" class="version center"> 
             <a href="https://github.com/firecakes/cakelandish/releases">Newer version available: {{ remoteVersion }}</a>
           </p>
           <p v-if="lastExportDateDays" class="version center">You have last exported your data {{ lastExportDateDays }} {{ lastExportDateDays == 1 ? "day" : "days" }} ago.</p>
+          <img style="image-rendering: pixelated;" :src="curssorStatus"></img>
         </div>
       </div>
 
@@ -146,6 +148,7 @@
         <p v-if="isLoading && (screen !== 'lg' && currentView === 'posts')" class="small-title center margin-center">
           Updating feed content...
         </p>
+        <img style="image-rendering: pixelated;" v-if="isLoading && (screen !== 'lg' && currentView === 'posts')" src="/curssor/curssor-searching.gif"></img>
         <!-- render each post -->
         <feed-post 
           @render-reply-to="renderReplyTo"
@@ -276,6 +279,25 @@
             return false;
           }
           return true;
+        },
+        curssorStatus: function () {
+          let badThings = 0;
+          if (!this.onNewestVersion) {
+            badThings++;
+          }
+          if (this.lastExportDateDays > 30) {
+            badThings++;
+          }
+          if (this.lastExportDateDays > 90) {
+            badThings++;
+          }
+          if (badThings === 0) {
+            return "/curssor/curssor-approved.png";
+          } else if (badThings === 1) {
+            return "/curssor/curssor-grumpy.png";
+          } else {
+            return "/curssor/curssor-fainted.png";
+          }
         }
       },
       methods: {

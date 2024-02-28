@@ -1,10 +1,11 @@
 // responsible for syncing and management of data under static folder and database.json
 import { setPages } from "./db.ts";
 
-export const EDITABLE_EXTENSIONS = ["html", "css", "js"];
+export const EDITABLE_EXTENSIONS = ["html", "css", "js", "txt"];
 const BLACKLISTED_FOLDERS = ["archive", "lib", "posts", "tmp"];
 const IMPORTANT_FILES = [ // files the user should really not mess with unless they know what they're doing
   "components", // this is a directory, technically.
+  "curssor", // this is a directory, technically.
   "feed.atom",
   "eye-open.png",
   "eye-closed.png",
@@ -18,6 +19,7 @@ const IMPORTANT_FILES = [ // files the user should really not mess with unless t
   "manage.html",
   "pages.html",
   "upload.html",
+  "404.html",
   "util.js",
 ].map((f) => `static/${f}`);
 

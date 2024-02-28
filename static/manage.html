@@ -5,7 +5,7 @@
   <head>
     <script src="/lib/vue.js"></script>
     <script src="/lib/axios.min.js"></script>
-    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="/main.css">
   </head>
 
   <body id="bg">
@@ -23,6 +23,8 @@
         <button v-if="!post.requestDeletion" class="button" @click="deletePost(post)">Delete post</button>
         <button v-if="post.requestDeletion" class="button" @click="deletePost(post)">Are you sure?</button>
       </div>
+
+      <img style="image-rendering: pixelated;" src="/curssor/curssor-sleeping.png"></img>
 
       <div v-if="isAuthenticated === false" class="fourth flex-v">
         <p class="title center margin-center">You are not authorized to view this page</p>

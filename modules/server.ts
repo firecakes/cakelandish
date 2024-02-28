@@ -716,6 +716,27 @@ export async function startServer() {
   app.use(router.routes());
   app.use(router.allowedMethods());
 
+  // 404 catcher
+  app.use(async function pageNotFound(ctx) {
+    // https://github.com/koajs/examples/blob/master/404/app.js
+    ctx.status = 404;
+
+    switch (ctx.accepts("html", "json")) {
+      case "html":
+        ctx.type = "html";
+        ctx.body = await Deno.readTextFile("./static/404.html");
+        break;
+      case "json":
+        ctx.body = {
+          message: "Not Found",
+        };
+        break;
+      default:
+        ctx.type = "text";
+        ctx.body = "Not Found";
+    }
+  });
+
   // for enabling HTTPS connections
   if (config.sslCertificateLocation && config.sslKeyLocation) {
     const options = {
