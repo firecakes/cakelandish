@@ -2,7 +2,6 @@ import { cryptoRandomString, jwt, timingSafeEqual } from "../deps.ts";
 import { config } from "../config.ts";
 
 let jwtAccessKey;
-let jwtRefreshKey;
 
 // generates a temporarily usable code that can be used in the browser to authenticate it with this server
 export async function generateCode(minutes = 20) {
@@ -30,11 +29,6 @@ export async function deleteCode() {
 // generates a secret string for use with JWT signing for access and refresh tokens
 export async function generateJwtSecret() {
   jwtAccessKey = await crypto.subtle.generateKey(
-    { name: "HMAC", hash: "SHA-512" },
-    true,
-    ["sign", "verify"],
-  );
-  jwtRefreshKey = await crypto.subtle.generateKey(
     { name: "HMAC", hash: "SHA-512" },
     true,
     ["sign", "verify"],
