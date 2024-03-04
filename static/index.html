@@ -299,6 +299,18 @@
         }
       },
       methods: {
+        // I hate Date objects
+        convertInputDate (dateString) {
+          let output = new Date();
+          output.setYear(dateString.split('-')[0]);
+          output.setMonth(dateString.split('-')[1] - 1);
+          output.setDate(dateString.split('-')[2]);
+          output.setHours(0);
+          output.setMinutes(0);
+          output.setSeconds(0);
+          output.setMilliseconds(0);
+          return output;
+        },
         toggleSearch () {
           this.showSearch = !this.showSearch;
         },
@@ -359,9 +371,9 @@
                   return false;
                 }
                 if (searchType === "Date" && searchValue.from !== "" && searchValue.to !== "") {
-                  const postDate = new Date(post.entry.date)
-                  const fromDate = new Date(searchValue.from)
-                  const toDate = new Date(searchValue.to)
+                  const postDate = new Date(post.entry.date);
+                  const fromDate = this.convertInputDate(searchValue.from);
+                  const toDate = this.convertInputDate(searchValue.to);
                   if (postDate < fromDate || postDate > toDate) {
                     return false;
                   }

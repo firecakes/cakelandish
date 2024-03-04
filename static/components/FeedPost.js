@@ -60,7 +60,7 @@ export default {
       </div>
       <!-- date at the bottom -->
       <div class="date">
-        <p class="center time-ago">{{ post.entry.date }}</p>
+        <p class="center time-ago">{{ new Date(post.entry.date).toLocaleString() }} ({{ new Date(post.entry.date).toString().match(/\\\([A-z\\\s]+\\\)/)[0].match(/[A-z\\\s]+/)[0].split(' ').map(s => s[0]).join('')  }})</p>
         <p class="center time-ago">{{ computeRelativeTime(post.entry.date) }}</p>
       </div>
       <button class="button reply-button" @click="startReply(post)">Reply to post</button>
