@@ -10,6 +10,7 @@ exported.tar
 static/feed.atom
 static/archive/**
 log.txt
+traffic.json
 exported/**
 
 # macOS

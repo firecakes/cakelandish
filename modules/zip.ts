@@ -25,6 +25,10 @@ export async function exportData() {
     "exported/static",
   );
   await Deno.copyFile("database.json", "exported/database.json");
+  try { // may not exist
+    await Deno.copyFile("traffic.json", "exported/traffic.json");
+  } catch (err) {
+  }
   await tar.compress("exported", EXPORTED_ZIP_NAME);
   await Deno.remove("exported", { recursive: true });
 
@@ -49,6 +53,14 @@ export async function importData(tarLocation) {
   );
   await Deno.copyFile(`${locationPrefix}/database.json`, "database.json");
 
+  try { // may not exist
+    await Deno.remove("traffic.json");
+  } catch (err) {
+  }
+  try { // may not exist
+    await Deno.copyFile(`${locationPrefix}/traffic.json`, "traffic.json");
+  } catch (err) {
+  }
   await Deno.remove(
     "tmp",
     { recursive: true },

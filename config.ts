@@ -22,7 +22,8 @@ export let config = {
   serverCodeLength: Number(envs.SERVER_CODE_LENGTH) || 256,
   sslCertificateLocation: envs.HTTPS_CERTIFICATE_LOCATION,
   sslKeyLocation: envs.HTTPS_KEY_LOCATION,
-  version: "0.9.0"
+  enableTrafficLogs: envs.ENABLE_TRAFFIC_LOGS || false,
+  version: "0.10.0"
 };
 
 if (config.title === undefined) {
@@ -67,4 +68,5 @@ config.link = `${config.https ? "https" : "http"}://${config.host}${
   SERVER_CODE_LENGTH: Determines how many characters the generated server code is for initial authorization. Defaults to 256.
   HTTPS_CERTIFICATE_LOCATION: An SSL cert path used to enable HTTPS connections with the server. HTTPS_KEY_LOCATION also needed.
   HTTPS_KEY_LOCATION: An SSL key path used to enable HTTPS connections with the server. HTTPS_CERTIFICATE_LOCATION also needed.
+  ENABLE_TRAFFIC_LOGS: The server will start tracking IPs and HTML files accessed over time, viewable in the admin page. Defaults to false.
 */

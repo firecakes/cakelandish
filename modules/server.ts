@@ -48,6 +48,7 @@ import {
   isBlacklistedPath,
   isEditableExtension,
 } from "./static.ts";
+import { clearTrafficData, parseTrafficData } from "./traffic.ts";
 
 const defaultHTML = `
 <!DOCTYPE html>
@@ -121,6 +122,18 @@ export async function startServer() {
     // access token invalid. unauthorized
     ctx.status = 401; // unauthorized
   };
+
+  if (config.enableTrafficLogs) {
+    // traffic tracker
+    app.use(async (ctx, next) => {
+      const data = {
+        ip: ctx.request.ip,
+        path: ctx.request.path,
+      };
+      parseTrafficData(data); // do not wait here
+      await next();
+    });
+  }
 
   // quick auth check route
   router.get("/api/auth", jwtMiddleware, async (ctx, next) => {
@@ -708,6 +721,22 @@ export async function startServer() {
     ctx.body = {
       exportDate: await getLastDateExported(),
     };
+  });
+
+  // get traffic data if it exists
+  router.get("/api/traffic", jwtMiddleware, async (ctx, next) => {
+    try {
+      const trafficText = await Deno.readTextFile("traffic.json");
+      ctx.body = JSON.parse(trafficText);
+    } catch (err) {
+      ctx.body = []; // nothing here
+    }
+  });
+
+  // clear traffic data
+  router.delete("/api/traffic", jwtMiddleware, async (ctx, next) => {
+    await clearTrafficData();
+    ctx.body = {};
   });
 
   // get files under static folder, and resolve "/" to index.html

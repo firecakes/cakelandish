@@ -18,7 +18,7 @@
         <div class="margin"></div>
 
         <!-- export data -->
-        <p class="small-title center">Creates a tar of all your posts, your global files, and your database.json for you to download</p>
+        <p class="small-title center">Creates a tar of all your posts, your traffic data, and your database.json for you to download</p>
         <button v-if="!exportedData && !exportInProgress" class="button small-button margin-center" @click="exportData()">Export Data</button>
         <button v-if="!exportedData && exportInProgress" class="button small-button margin-center">Your data is exporting! This may take a long time. Do not leave the page!</button>
         <a v-if="exportedData" 
@@ -46,14 +46,80 @@
         <!-- change domain name -->
         <p class="small-title center">Attempts to replace all instances of a domain name with another one. It's literally just a string replacement method going through all your RSS posts, but intended for migrating over to a new domain. Please back up your data before trying this feature out!</p>
         <div>
-          <label for="title" class="title">Old Domain</label>
-          <input class="textbox" id="title" v-model="oldDomain">
+          <label for="oldDomain" class="title">Old Domain</label>
+          <input class="textbox" id="oldDomain" v-model="oldDomain">
         </div>
         <div>
-          <label for="title" class="title">New Domain</label>
-          <input class="textbox" id="title" v-model="newDomain">
+          <label for="newDomain" class="title">New Domain</label>
+          <input class="textbox" id="newDomain" v-model="newDomain">
         </div>
         <button v-if="oldDomain && newDomain" class="button small-button margin-center" @click="changeDomain()">Replace RSS Links with New Domains</button>
+
+        <!-- traffic data -->
+        <div v-if="trafficData.length > 0" style="width: 100%" class="center">
+
+          <div class="margin"></div>
+
+          <p class="title center">Time Data</p>
+          <div>
+            <div v-for="(data, index) in timeData.data" :style="{
+                background: `linear-gradient(90deg, #d2d2d2 ${(100 * data / timeData.max) + '%'}, #273038 0)`,
+                backgroundColor: '#d2d2d2' 
+              }">
+              {{ new Date(timeData.ranges[index].start).toLocaleString()}} - {{ new Date(timeData.ranges[index].end).toLocaleString() }} ({{ data }} visits)
+            </div>
+          </div>
+
+          <div class="margin"></div>
+
+          <p class="title center">Page Data</p>
+          <div>
+            <div v-for="data in pageData.data" :style="{
+                background: `linear-gradient(90deg, #d2d2d2 ${(100 * data.count / pageData.max) + '%'}, #273038 0)`,
+                backgroundColor: '#d2d2d2' 
+              }">
+              {{ data.page }} ({{ data.count }} visits)
+            </div>
+          </div>
+
+          <div class="margin"></div>
+
+          <p class="title center">IP Data</p>
+          <div>
+            <div v-for="data in ipData.data" :style="{
+                background: `linear-gradient(90deg, #d2d2d2 ${(100 * data.count / ipData.max) + '%'}, #273038 0)`,
+                backgroundColor: '#d2d2d2' 
+              }">
+              {{ data.page }} ({{ data.count }} visits)
+            </div>
+          </div>
+
+          <div class="margin"></div>
+
+          <p class="title center">IP Blacklist</p>
+          <div class="center">
+            <p class="small-title center">You likely want to remove your own IP addresses when you're viewing the statistics. Put in a comma-separated list of IPs to remove from the results</p>
+            <label for="ip" class="small-title">Put Your IP Here</label>
+            <input class="textbox" id="ip" v-model="yourIps">
+          </div>
+
+          <div class="margin"></div>
+
+          <p class="title center">Filter Date Range</p>
+          <div class="flex-h">
+            <div>
+              <p class="center small-title">From</p>
+              <input class="select" type="date" v-model="dateStartFilter">
+            </div>
+            <div>
+              <p class="center small-title">To</p>
+              <input class="select" type="date" v-model="dateEndFilter">
+            </div>
+          </div>
+
+          <button v-if="!requestTrafficDeletion" class="button small-button" @click="deleteTraffic()">Delete Traffic History</button>
+          <button v-if="requestTrafficDeletion" class="button small-button" @click="deleteTraffic()">Are you sure?</button>
+        </div>
 
         <img style="image-rendering: pixelated; padding-top: 50px;" src="/curssor/curssor-hunting.png"></img>
 
@@ -77,6 +143,12 @@
           isAuthenticated: null,
           exportInProgress: false,
           importInProgress: false,
+          trafficData: [],
+          chunkCount: 20,
+          yourIps: "",
+          dateStartFilter: null,
+          dateEndFilter: null,
+          requestTrafficDeletion: false,
         }
       },
       async created () {
@@ -90,8 +162,123 @@
         }
       },
       async mounted () {
+        const data = (await axios.get('/api/traffic')).data;
+        data.sort((a, b) => a.date - b.date);
+        this.trafficData = data;
+      },
+      computed: {
+        filteredTrafficData: function () {
+          const blacklistedIps = this.yourIps.split(",").map(s => s.trim());
+          return this.trafficData.filter(data => !blacklistedIps.includes(data.ip)).filter(data => {
+            if (!this.dateStartFilter || !this.dateEndFilter) {
+              return true;
+            }
+            const postDate = new Date(data.date);
+            let fromDate = this.convertInputDate(this.dateStartFilter);
+            let toDate = this.convertInputDate(this.dateEndFilter);
+            if (postDate < fromDate || postDate > toDate) {
+              return false;
+            }
+            return true;
+          });
+        },
+        timeData: function () {
+          if (this.filteredTrafficData.length === 0) {
+            return [];
+          }
+          // split into chunks of time
+          const timeStart = this.filteredTrafficData[0].date;
+          const timeRange = this.filteredTrafficData[this.filteredTrafficData.length - 1].date - timeStart + 1; // the + 1 is so the final data point can be in the final chunk
+          const timeChunks = [];
+          const timeRanges = [];
+          for (let i = 0; i < this.chunkCount; i++) {
+            const chunkStart = timeStart + (timeRange / this.chunkCount) * i;
+            const chunkEnd = timeStart + (timeRange / this.chunkCount) * (i + 1);
+            timeChunks.push(this.filteredTrafficData.filter(data => data.date >= chunkStart && data.date < chunkEnd).length);
+            timeRanges.push({
+              start: chunkStart,
+              end: chunkEnd,
+            });
+          }
+          return {
+            data: timeChunks,
+            max: Math.max(...timeChunks),
+            ranges: timeRanges
+          };
+        },
+        pageData: function () {
+          if (this.filteredTrafficData.length === 0) {
+            return [];
+          }
+          // return top pages visited
+          const pageHash = {};
+          this.filteredTrafficData.forEach(data => {
+            if (!pageHash[data.path]) {
+              pageHash[data.path] = 0;
+            }
+            pageHash[data.path]++;
+          });
+          let orderedPageData = [];
+          for (let page in pageHash) {
+            orderedPageData.push({
+              page: page,
+              count: pageHash[page]
+            });
+          }
+          orderedPageData = orderedPageData.sort((a, b) => b.count - a.count).filter((d, index) => index < this.chunkCount);
+          return {
+            data: orderedPageData,
+            max: orderedPageData[0].count
+          }
+        },
+        ipData: function () {
+          if (this.filteredTrafficData.length === 0) {
+            return [];
+          }
+          // return top IPs visiting
+          const ipHash = {};
+          this.filteredTrafficData.forEach(data => {
+            if (!ipHash[data.ip]) {
+              ipHash[data.ip] = 0;
+            }
+            ipHash[data.ip]++;
+          });
+          let orderedIpData = [];
+          for (let page in ipHash) {
+            orderedIpData.push({
+              page: page,
+              count: ipHash[page]
+            });
+          }
+          orderedIpData = orderedIpData.sort((a, b) => b.count - a.count).filter((d, index) => index < this.chunkCount);
+          return {
+            data: orderedIpData,
+            max: orderedIpData[0].count
+          }
+        }
       },
       methods: {
+        // I hate Date objects
+        convertInputDate (dateString) {
+          let output = new Date();
+          output.setYear(dateString.split('-')[0]);
+          output.setMonth(dateString.split('-')[1] - 1);
+          output.setDate(dateString.split('-')[2]);
+          output.setHours(0);
+          output.setMinutes(0);
+          output.setSeconds(0);
+          output.setMilliseconds(0);
+          return output;
+        },
+        async deleteTraffic () {
+          if (!this.requestTrafficDeletion) {
+            this.requestTrafficDeletion = true;
+          } else {
+            // prepare deletion
+            await axios.delete('/api/traffic', {});
+            window.location.href = '/admin.html';
+          }
+        },
         async exportData () {
           this.exportInProgress = true;
           // retrieve a zip of the user's data from the server
@@ -143,6 +330,12 @@
       display: none;
     }
 
+    .flex-h {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+    }
+
     .flex {
       display: flex;
       flex-direction: column;
@@ -180,6 +373,16 @@
       border: 0px;
       align-items: center;
       width: 200px;
+    }
+
+    .select {
+      margin-left: 10px;
+      margin-right: 10px;
+      color: #d2d2d2;
+      font-family: Inika;
+      font-size: 18px;
+      background: #273038;
+      border: 0px;
     }
 
   </style>
