@@ -30,7 +30,7 @@
       <!-- right side -->
       <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'output')" class="half flex-v">
         <p class="center title">How it renders on your site:</p>
-        <iframe :srcdoc="htmlInput" title="Layout Render"></iframe> 
+        <iframe :srcdoc="htmlInputLayoutApplied" title="Layout Render"></iframe> 
       </div>
 
       <div v-if="isAuthenticated === false" class="half flex-v">
@@ -52,6 +52,53 @@
           screen: "lg",
           currentView: "input",
           currentViewText: "Show Output",
+          defaultInjections: {
+            title: "Sample Title",
+            tags: "art,drawing",
+            localUrl: "http://localhost:8000/",
+            replyFeedUrl: "http://localhost:8000/feed.atom",
+            replyPostIdUrl: "http://localhost:8000/posts/first/index.html",
+            content: "Sample content"
+          }
+        }
+      },
+      computed: {
+        htmlInputLayoutApplied: function () {
+          // perform replacements for various metadata in the post object
+          let modifiedContent = this.htmlInput.replace(
+            new RegExp("%%%content%%%", "g"),
+            this.defaultInjections.content,
+          );
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%published%%%", "g"),
+            new Date(Date.now()),
+          );
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%updated%%%", "g"),
+            new Date(Date.now()),
+          );
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%categories%%%", "g"),
+            this.defaultInjections.tags,
+          );
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%title%%%", "g"),
+            this.defaultInjections.title,
+          );
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%localUrl%%%", "g"),
+            this.defaultInjections.localUrl,
+          );
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%replyFeedUrl%%%", "g"),
+            this.defaultInjections.replyFeedUrl,
+          );
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%replyPostIdUrl%%%", "g"),
+            this.defaultInjections.replyPostIdUrl,
+          );
+
+          return modifiedContent;
         }
       },
       async created () {

@@ -223,10 +223,41 @@
       },
       computed: {
         htmlInputLayoutApplied: function () {
-          return this.layout.replace(
+          // perform replacements for various metadata in the post object
+          let modifiedContent = this.layout.replace(
             new RegExp("%%%content%%%", "g"),
             this.htmlInput,
           );
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%published%%%", "g"),
+            new Date(Date.now()),
+          );
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%updated%%%", "g"),
+            new Date(Date.now()),
+          );
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%categories%%%", "g"),
+            this.tags,
+          );
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%title%%%", "g"),
+            this.title,
+          );
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%localUrl%%%", "g"),
+            this.localUrl,
+          );
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%replyFeedUrl%%%", "g"),
+            this.replyFeedUrl,
+          );
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%replyPostIdUrl%%%", "g"),
+            this.replyPostIdUrl,
+          );
+
+          return modifiedContent;
         }
       },
       methods: {

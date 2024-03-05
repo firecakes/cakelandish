@@ -50,22 +50,39 @@ import {
 } from "./static.ts";
 import { clearTrafficData, parseTrafficData } from "./traffic.ts";
 
-const defaultHTML = `
-<!DOCTYPE html>
+const defaultHTML = `<!DOCTYPE html>
 <html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <head>
+    <script src="/lib/vue.js"></script>
+    <script src="/lib/axios.min.js"></script>
+    <link rel="stylesheet" href="/main.css">
     <link rel="alternate" type="application/atom+xml" href="/feed.atom">
   </head>
 
-  <body class="no-space">
+  <body id="bg" class="no-space">
+    <div id="app">
+    </div>
   </body>
 
-  <script type="module">
+<script type="module">
+    Vue.createApp({
+      components: {
+      },
+      data () {
+        return {
+        }
+      },
+      methods: {
+      },
+    }).mount('#app');
   </script>
 
   <style>
+    #app {
+      color: #d2d2d2;
+    }
   </style>
 </html>
 `;
