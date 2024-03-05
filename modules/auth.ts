@@ -26,6 +26,14 @@ export async function deleteCode() {
   }
 }
 
+export function setJwtSecret(key) {
+  jwtAccessKey = key;
+}
+
+export function getJwtSecret() {
+  return jwtAccessKey;
+}
+
 // generates a secret string for use with JWT signing for access and refresh tokens
 export async function generateJwtSecret() {
   jwtAccessKey = await crypto.subtle.generateKey(
