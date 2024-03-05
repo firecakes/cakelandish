@@ -1,5 +1,4 @@
 import { config as loadEnv } from "./deps.ts";
-import { FeedDatabase } from "./modules/db.ts";
 
 // checks for required information before allowing the server to start
 const envs = loadEnv();
