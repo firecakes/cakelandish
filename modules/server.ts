@@ -592,7 +592,7 @@ export async function startServer() {
       ctx.status = 400;
       return;
     }
-    input.name = input.name.trim();
+    input.name = input.name.trim().split("/").filter((e) => e !== "").join("/"); // disallow leading or extra /'s
     const extension = input.name.split(".").pop();
     const fullPath = `static/${input.name}`;
     if (isBlacklistedPath(fullPath)) {
