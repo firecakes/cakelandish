@@ -1,14 +1,14 @@
 const dataQueue = [];
 let saveTimer;
 
-export async function parseTrafficData (data) {
+export async function parseTrafficData(data) {
   if (!shouldReport(data)) {
     return;
   }
   dataQueue.push({
     ip: data.ip,
     path: data.path,
-    date: Date.now()
+    date: Date.now(),
   });
   if (!saveTimer) {
     saveTimer = setInterval(async () => {
@@ -17,11 +17,11 @@ export async function parseTrafficData (data) {
         db.push(dataQueue.shift());
       }
       await saveDb(db);
-    }, 60*1000); // save data to disk every minute
+    }, 60 * 1000); // save data to disk every minute
   }
 }
 
-export async function clearTrafficData () {
+export async function clearTrafficData() {
   await Deno.remove("traffic.json");
 }
 
@@ -39,6 +39,8 @@ async function saveDb(db) {
   return Deno.writeTextFile("traffic.json", JSON.stringify(db, null, 2));
 }
 
-function shouldReport (data) {
-  return (data.path.endsWith(".html") || !data.path.includes(".")) && !data.path.startsWith("/api/"); // HTML files only, no file paths, no API paths
+function shouldReport(data) {
+  // HTML and ATOM files only, no file paths, no API paths
+  return (data.path.endsWith(".html") || !data.path.includes(".") ||
+    data.path.endsWith(".atom")) && !data.path.startsWith("/api/");
 }
