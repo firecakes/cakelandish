@@ -98,7 +98,7 @@
       <!-- right side -->
       <div id="side" v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'output')" class="half flex-v">
         <p class="center title">How it renders on your site:</p>
-        <iframe :srcdoc="htmlInputLayoutApplied" class="html-output iframe" title="Layout Render"></iframe> 
+        <iframe :srcdoc="debouncedHtmlInputLayoutApplied" class="html-output iframe" title="Layout Render"></iframe> 
         <p class="center title">How it renders on your server's RSS reader:</p>
         <p class="tiny-text">Dangerous / unnecessary tags such as script and style are removed in sanitiation. Be aware of this as this is how users will see your post using this server's RSS reader. Style whitelists can be made in the future but the sanitation library being used limits to explicit values set for styling. Only basic colors are supported with inline styling for certain tags.</p>
         <span v-html="htmlOutput" class="html-output"></span>
@@ -149,6 +149,8 @@
           currentReplyPostIdUrl: null,
           showEmbedButton: true,
           isRunningEmbedReply: false,
+          debounceTimer: null,
+          debouncedHtmlInputLayoutApplied: "",
         }
       },
       watch: {
@@ -162,6 +164,14 @@
           this.showEmbedButton = true;
           this.currentReplyFeedUrl = null;
           this.currentReplyPostIdUrl = null;
+        },
+        htmlInputLayoutApplied() {
+          if (this.debounceTimer) {
+            clearTimeout(this.debounceTimer);
+          }
+          this.debounceTimer = setTimeout(() => {
+            this.debouncedHtmlInputLayoutApplied = this.htmlInputLayoutApplied;
+          }, 1000);
         }
       },
       async created () {

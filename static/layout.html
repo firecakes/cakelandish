@@ -30,7 +30,7 @@
       <!-- right side -->
       <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'output')" class="half flex-v">
         <p class="center title">How it renders on your site:</p>
-        <iframe :srcdoc="htmlInputLayoutApplied" title="Layout Render"></iframe> 
+        <iframe :srcdoc="debouncedHtmlInputLayoutApplied" title="Layout Render"></iframe> 
       </div>
 
       <div v-if="isAuthenticated === false" class="half flex-v">
@@ -59,7 +59,19 @@
             replyFeedUrl: "http://localhost:8000/feed.atom",
             replyPostIdUrl: "http://localhost:8000/posts/first/index.html",
             content: "Sample content"
+          },
+          debounceTimer: null,
+          debouncedHtmlInputLayoutApplied: "",
+        }
+      },
+      watch: {
+        htmlInputLayoutApplied() {
+          if (this.debounceTimer) {
+            clearTimeout(this.debounceTimer);
           }
+          this.debounceTimer = setTimeout(() => {
+            this.debouncedHtmlInputLayoutApplied = this.htmlInputLayoutApplied;
+          }, 1000);
         }
       },
       computed: {

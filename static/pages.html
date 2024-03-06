@@ -25,7 +25,7 @@
           <div class="half flex-v">
             <!-- HTML input -->
             <p class="center title">Rendering goes here!</p>
-            <iframe :srcdoc="selectedPage.content" title="Layout Render"></iframe> 
+            <iframe :srcdoc="debouncedSelectedPageContent" title="Layout Render"></iframe> 
           </div>
         </div>
 
@@ -104,6 +104,18 @@
           isAuthenticated: null,
           showImportantFiles: false,
           uploadsInProgress: new Set(),
+          debounceTimer: null,
+          debouncedSelectedPageContent: "",
+        }
+      },
+      watch: {
+        'selectedPage.content'() {
+          if (this.debounceTimer) {
+            clearTimeout(this.debounceTimer);
+          }
+          this.debounceTimer = setTimeout(() => {
+            this.debouncedSelectedPageContent = this.selectedPage.content;
+          }, 1000);
         }
       },
       async created () {
