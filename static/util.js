@@ -256,7 +256,7 @@ async function parseAtom (xml, sanitizeHash) {
     subtitle: xmlGetOne(feed, ["subtitle"], true),
     author: xmlGetOne(feed, ["author", "name"], true),
     id: xmlGetOne(feed, ["id"], true),
-    categories: xmlGetMany(feed, ["category"]).map(extractAttribute("term")),
+    categories: xmlGetMany(feed, ["category"]).map(extractAttribute("term")).map(decodeURIComponent),
     feedLink: rssLinks.length > 0 ? rssLinks[0] : null,
     prevArchive: null,
   };
@@ -274,7 +274,7 @@ async function parseAtom (xml, sanitizeHash) {
   const entries = xmlGetMany(feed, ["entry"]).map((entry, index) => ({
     title: xmlGetOne(entry, ["title"], true) ? xmlGetOne(entry, ["title"], true) : xmlGetOne(feed, ["title"], true),
     author: xmlGetOne(entry, ["author", "name"], true),
-    categories: xmlGetMany(entry, ["category"]).map(extractAttribute("term")),
+    categories: xmlGetMany(entry, ["category"]).map(extractAttribute("term")).map(decodeURIComponent),
     id: xmlGetOne(entry, ["link"], true) ? xmlGetOne(entry, ["link"], true) : extractAttribute("href")(xmlGetOne(entry, ["link"])),
     // get only links who have a "related" attribute value for "rel"
     links: xmlGetMany(entry, ["link"])
