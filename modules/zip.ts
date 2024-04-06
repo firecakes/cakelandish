@@ -1,3 +1,4 @@
+import { generatePostFileStructure } from "./post.ts";
 import { copyDirectory, tar } from "../deps.ts";
 import { refreshFeedIntervals } from "./db.ts";
 import * as xml from "./xml.ts";
@@ -71,4 +72,7 @@ export async function importData(tarLocation) {
 
   // force the feeds to refresh
   await refreshFeedIntervals();
+
+  // regenerate the data that unauthenticated users see on the index.html page
+  await generatePostFileStructure();
 }
