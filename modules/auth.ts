@@ -14,7 +14,12 @@ export async function generateCode(minutes = 20) {
   await Deno.writeTextFile("code.txt", code);
 
   console.log(code);
-  await new Promise((resolve) => setTimeout(deleteCode, minutes * 60 * 1000));
+  await new Promise((resolve) =>
+    setTimeout(async () => {
+      await deleteCode();
+      resolve();
+    }, minutes * 60 * 1000)
+  );
 }
 
 // removes the code file immediately
