@@ -22,7 +22,7 @@ export let config = {
   sslCertificateLocation: envs.HTTPS_CERTIFICATE_LOCATION,
   sslKeyLocation: envs.HTTPS_KEY_LOCATION,
   enableTrafficLogs: envs.ENABLE_TRAFFIC_LOGS || false,
-  version: "0.11.4"
+  version: "0.11.5"
 };
 
 if (config.title === undefined) {
