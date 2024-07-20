@@ -1,3 +1,5 @@
+import { logger } from "./log.ts";
+import { config } from "../config.ts";
 import {
   copyDirectory,
   createReadStream,
@@ -9,7 +11,12 @@ import {
   serve,
 } from "../deps.ts";
 import { cleaner } from "./ammonia.ts";
-import { config } from "../config.ts";
+import {
+  compareStrings,
+  deleteCode,
+  generateJwtAccessToken,
+  verifyJwtAccessToken,
+} from "./auth.ts";
 import {
   addFeed,
   addOrEditPage,
@@ -32,16 +39,6 @@ import {
   saveLayout,
   updateLastDateExported,
 } from "./db.ts";
-import * as xml from "./xml.ts";
-import {
-  compareStrings,
-  deleteCode,
-  generateJwtAccessToken,
-  generateJwtRefreshToken,
-  verifyJwtAccessToken,
-  verifyJwtRefreshToken,
-} from "./auth.ts";
-import { exportData, importData } from "./zip.ts";
 import { getPostLocations } from "./post.ts";
 import {
   EDITABLE_EXTENSIONS,
@@ -49,6 +46,10 @@ import {
   isEditableExtension,
 } from "./static.ts";
 import { clearTrafficData, parseTrafficData } from "./traffic.ts";
+import * as xml from "./xml.ts";
+import { exportData, importData } from "./zip.ts";
+import { rateLimiter } from "./ratelimit.ts";
+import { handleError, restoreRequsterIP } from "./utils.ts";
 
 const defaultHTML = `<!DOCTYPE html>
 <html>
@@ -105,6 +106,9 @@ export async function startServer() {
   const app = new Koa();
   const router = new Router();
 
+  app.use(restoreRequsterIP);
+  app.use(rateLimiter);
+
   app.use(koaBody({
     parsedMethods: ["POST", "PUT", "PATCH", "DELETE"], // add DELETE as parsed method
     multipart: true, // parse multipart form data
@@ -144,7 +148,7 @@ export async function startServer() {
     // traffic tracker
     app.use(async (ctx, next) => {
       const data = {
-        ip: ctx.request.ip,
+        ip: ctx.state.originIP,
         path: ctx.request.path,
       };
       parseTrafficData(data); // do not wait here
@@ -164,6 +168,7 @@ export async function startServer() {
     try {
       text = await Deno.readTextFile("code.txt");
     } catch (err) {
+      // Code does not exist
     }
 
     if (!text) {
@@ -764,23 +769,11 @@ export async function startServer() {
 
   // 404 catcher
   app.use(async function pageNotFound(ctx) {
-    // https://github.com/koajs/examples/blob/master/404/app.js
     ctx.status = 404;
+    ctx.state.errorMessage = "Not Found";
+    ctx.state.errorPage = "./static/404.html";
 
-    switch (ctx.accepts("html", "json")) {
-      case "html":
-        ctx.type = "html";
-        ctx.body = await Deno.readTextFile("./static/404.html");
-        break;
-      case "json":
-        ctx.body = {
-          message: "Not Found",
-        };
-        break;
-      default:
-        ctx.type = "text";
-        ctx.body = "Not Found";
-    }
+    await handleError(ctx);
   });
 
   // for enabling HTTPS connections
@@ -822,7 +815,7 @@ async function deleteTmpFolders() {
       }
     }
   } catch {
-    console.error("Error deleting temporary posts");
+    logger.error("Error deleting temporary posts");
   }
 }
 
