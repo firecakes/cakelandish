@@ -49,7 +49,7 @@ Compile for macos:
 
 `deno compile --target x86_64-apple-darwin --output out/cakelandish-mac-x86_64 --no-check --allow-net --allow-read --allow-write=./ --allow-env main.ts`
 
-A compile all script is also included in the [scripts directory](scripts/)
+A build all script is also included in the [scripts directory](scripts/)
 
 All compiled binaries are outputted to the [out directory](out/)
 
