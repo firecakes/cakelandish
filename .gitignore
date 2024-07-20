@@ -21,3 +21,6 @@ exported/**
 
 # Vscode
 .vscode/
+
+# tmp folder
+static/tmp/
