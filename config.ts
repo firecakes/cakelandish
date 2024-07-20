@@ -3,7 +3,7 @@ import { config as loadEnv } from "./deps.ts";
 // checks for required information before allowing the server to start
 const envs = loadEnv();
 
-export let config = {
+export const config = {
   title: envs.TITLE || "Cakelandish Feed",
   subtitle: envs.SUBTITLE,
   author: envs.AUTHOR || "Anonymous",
@@ -22,7 +22,8 @@ export let config = {
   sslCertificateLocation: envs.HTTPS_CERTIFICATE_LOCATION,
   sslKeyLocation: envs.HTTPS_KEY_LOCATION,
   enableTrafficLogs: envs.ENABLE_TRAFFIC_LOGS || false,
-  version: "0.11.5"
+  version: "0.11.5",
+  link: "",
 };
 
 if (config.title === undefined) {
