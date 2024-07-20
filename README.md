@@ -39,15 +39,15 @@ Compile for current os:
 
 Compile for linux:
 
-`deno compile --target x86_64-unknown-linux-gnu --output out/cakelandish-linux-x86_64 --no-check --allow-net --allow-read --allow-write=./ --allow-env main.ts`
+`deno compile --target x86_64-unknown-linux-gnu --output out/cakelandish-linux-x86_64 --no-check --allow-net --allow-read --allow-write=./ --allow-env --unstable-kv main.ts`
 
 Compile for windows:
 
-`deno compile --target x86_64-pc-windows-msvc --output out/cakelandish-windows-x86_64 --no-check --allow-net --allow-read --allow-write=./ --allow-env main.ts`
+`deno compile --target x86_64-pc-windows-msvc --output out/cakelandish-windows-x86_64 --no-check --allow-net --allow-read --allow-write=./ --allow-env --unstable-kv main.ts`
 
 Compile for macos:
 
-`deno compile --target x86_64-apple-darwin --output out/cakelandish-mac-x86_64 --no-check --allow-net --allow-read --allow-write=./ --allow-env main.ts`
+`deno compile --target x86_64-apple-darwin --output out/cakelandish-mac-x86_64 --no-check --allow-net --allow-read --allow-write=./ --allow-env --unstable-kv main.ts`
 
 A build all script is also included in the [scripts directory](scripts/)
 
