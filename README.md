@@ -35,7 +35,7 @@ NOTE: The minimum Deno version recommended is `v1.41.0`.
 
 Compile for current os:
 
-`deno compile --no-check --allow-net --allow-read --allow-write=./ --allow-env main.ts`
+`deno compile --no-check --allow-net --allow-read --allow-write=./ --allow-env --unstable-kv main.ts`
 
 Compile for linux:
 
