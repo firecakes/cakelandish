@@ -1,7 +1,18 @@
 import { config as loadEnv } from "./deps.ts";
+import { logger } from "./modules/log.ts";
 
 // checks for required information before allowing the server to start
-const envs = loadEnv();
+let envs = Deno.env.toObject();
+
+try {
+  await Deno.stat(".env");
+  logger.warn(
+    "Loading variables from .env file. It's better to define environment variables in the process environment itself to mitigate lFI vulnerabilities",
+  );
+  envs = loadEnv();
+} catch {
+  // Do nothing if .env not found
+}
 
 export const config = {
   title: envs.TITLE || "Cakelandish Feed",
@@ -24,13 +35,20 @@ export const config = {
   enableTrafficLogs: envs.ENABLE_TRAFFIC_LOGS || false,
   version: "0.11.5",
   link: "",
+  proxy: Boolean(envs.PROXY) || false,
+  proxyCount: Number(envs.PROXY_COUNT) || 0,
+  proxyRequestIP: envs.PROXY_REQ_IP || "127.0.0.1",
+  RateLimitWindow: Number(envs.RATE_LIMIT_WINDOW) || 5 * 60 * 1000, // In milliseconds, 5 minutes default
+  RateLimitMax: Number(envs.RATE_LIMIT_MAX) || 500, // Default max 500 requests in window
+  RateLimitExpire: Number(envs.RATE_LIMIT_EXPIRE) || 1 * 24 * 60 * 60 * 1000, // In milliseconds, 1 day default
+  RateLimitDuration: Number(envs.RATE_LIMIT_DURATION) || 1 * 60 * 60 * 1000, // In milliseconds, 1 hour default
 };
 
 if (config.title === undefined) {
-  throw new Error("Variable missing in .env file: TITLE");
+  throw new Error("Variable missing in environment: TITLE");
 }
 if (config.author === undefined) {
-  throw new Error("Variable missing in .env file: AUTHOR");
+  throw new Error("Variable missing in environment: AUTHOR");
 }
 if (config.https === true && config.jwt !== true) {
   throw new Error("JWT authentication must be enabled if running on HTTPS!");
@@ -52,6 +70,10 @@ if (
 config.link = `${config.https ? "https" : "http"}://${config.host}${
   config.https ? "" : ":" + config.port
 }`;
+
+if (config.proxy && config.proxyCount === 0) {
+  config.proxyCount = 1;
+}
 
 /*
   All environment variables:
