@@ -1,5 +1,6 @@
 // responsible for syncing and management of data under static folder and database.json
 import { setPages } from "./db.ts";
+import { logger } from "./log.ts";
 
 export const EDITABLE_EXTENSIONS = ["html", "css", "js", "txt"];
 const BLACKLISTED_FOLDERS = ["archive", "lib", "posts", "tmp"];
@@ -28,8 +29,8 @@ export async function parseStaticFolder() {
     const staticDirectory = await readDir("static", []);
     await setPages(staticDirectory);
   } catch (err) {
-    console.error("Error parsing static folder!");
-    console.error(err);
+    logger.error("Error parsing static folder!");
+    logger.error(err);
   }
 }
 
