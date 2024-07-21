@@ -3,15 +3,16 @@ import { config } from "../config.ts";
 export async function handleError(ctx) {
   // https://github.com/koajs/examples/blob/master/404/app.js
 
-  switch (ctx.accepts("html", "json")) {
-    case "html":
-      ctx.type = ctx.state.errorMessage;
-      ctx.body = await Deno.readTextFile(ctx.state.errorPage);
-      break;
+  switch (ctx.state.errorRespType || ctx.accepts("html", "json")) {
     case "json":
+      ctx.type = "json";
       ctx.body = {
         message: ctx.state.errorMessage,
       };
+      break;
+    case "html":
+      ctx.type = "html";
+      ctx.body = await Deno.readTextFile(ctx.state.errorPage);
       break;
     default:
       ctx.type = "text";
