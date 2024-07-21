@@ -127,21 +127,24 @@ export async function startServer() {
       await next();
       return;
     }
-    let success = false;
     // access token validation check
     try {
       const accessToken = await ctx.cookies.get("jwt-access");
       await verifyJwtAccessToken(accessToken);
       // no exceptions thrown. continue
       await next();
-      success = true;
-    } catch (err) {
+    } catch {
+      // access token invalid. unauthorized
+      ctx.status = 401; // unauthorized
+      ctx.state.errorMessage = "Unauthorized";
+      ctx.state.errorPage = "./static/401.html";
+
+      if (ctx.request.url.startsWith("/api/")) {
+        ctx.state.errorRespType = "json";
+      }
+
+      await handleError(ctx);
     }
-    if (success) {
-      return;
-    }
-    // access token invalid. unauthorized
-    ctx.status = 401; // unauthorized
   };
 
   if (config.enableTrafficLogs) {
