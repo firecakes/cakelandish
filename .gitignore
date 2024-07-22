@@ -1,6 +1,9 @@
 # Environment variable file
 .env
 
+# Built binaries
+out/
+
 # User's own content or generated files
 static/posts/**
 static/files/**
@@ -15,3 +18,9 @@ exported/**
 
 # macOS
 .DS_Store
+
+# Vscode
+.vscode/
+
+# tmp folder
+static/tmp/

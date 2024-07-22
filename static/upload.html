@@ -100,7 +100,7 @@
         <p class="center title">How it renders on your site:</p>
         <iframe :srcdoc="debouncedHtmlInputLayoutApplied" class="html-output iframe" title="Layout Render"></iframe> 
         <p class="center title">How it renders on your server's RSS reader:</p>
-        <p class="tiny-text">Dangerous / unnecessary tags such as script and style are removed in sanitiation. Be aware of this as this is how users will see your post using this server's RSS reader. Style whitelists can be made in the future but the sanitation library being used limits to explicit values set for styling. Only basic colors are supported with inline styling for certain tags.</p>
+        <p class="tiny-text">Dangerous / unnecessary tags such as script and style are removed in sanitization. Be aware of this as this is how users will see your post using this server's RSS reader. Style whitelists can be made in the future but the sanitation library being used limits to explicit values set for styling. Only basic colors are supported with inline styling for certain tags.</p>
         <span v-html="htmlOutput" class="html-output"></span>
 
         <div class="form" style="justify-content: space-around;">

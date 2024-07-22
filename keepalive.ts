@@ -4,8 +4,9 @@
 // deno compile --target x86_64-apple-darwin --output keepalive-mac-x86_64 --no-check --allow-read --allow-run --allow-write --allow-env keepalive.ts
 // deno run --allow-read --allow-run --allow-write --allow-env keepalive.ts
 import { generateJwtSecret, getJwtSecret } from "./modules/auth.ts";
+import { logger } from "./modules/log.ts";
 
-async function keepAlive () {
+async function keepAlive() {
   const command = new Deno.Command("./Cakelandish", {
     args: ["keepalive"],
   });
@@ -13,13 +14,13 @@ async function keepAlive () {
   await child.status;
 }
 
-async function main () {
+async function main() {
   await generateJwtSecret(); // generate only once
-  let rawKey = await crypto.subtle.exportKey("raw", getJwtSecret())
+  let rawKey = await crypto.subtle.exportKey("raw", getJwtSecret());
   const exportedKeyBuffer = new Uint8Array(rawKey);
   // force Cakelandish to always stay running
   while (true) {
-    console.log("kick");
+    logger.info("kick");
     // null bytes in key string can crash this process. save to a file instead of passing it as an argument and have Cakelandish read it... UGH
     await Deno.writeFile("key", exportedKeyBuffer);
     await keepAlive();

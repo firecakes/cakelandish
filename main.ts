@@ -2,7 +2,12 @@ import * as xml from "./modules/xml.ts";
 import * as db from "./modules/db.ts";
 import { parseStaticFolder } from "./modules/static.ts";
 import { startServer } from "./modules/server.ts";
-import { generateCode, generateJwtSecret, deleteCode, setJwtSecret } from "./modules/auth.ts";
+import {
+  deleteCode,
+  generateCode,
+  generateJwtSecret,
+  setJwtSecret,
+} from "./modules/auth.ts";
 import { logger } from "./modules/log.ts";
 
 if (Deno.args[0] === "code") { // create temporary auth code
@@ -21,7 +26,15 @@ if (Deno.args[0] === "code") { // create temporary auth code
   // this mode relies on the parent process to write a raw key to read from
   const exportedKeyBuffer = await Deno.readFile("key");
   await Deno.remove("key");
-  setJwtSecret(await crypto.subtle.importKey("raw", exportedKeyBuffer, { name: "HMAC", hash: "SHA-512" }, true, ["sign", "verify"]));
+  setJwtSecret(
+    await crypto.subtle.importKey(
+      "raw",
+      exportedKeyBuffer,
+      { name: "HMAC", hash: "SHA-512" },
+      true,
+      ["sign", "verify"],
+    ),
+  );
   // creates a tmp directory if one does not already exist
   await Deno.mkdir(
     `static/tmp/`,
@@ -64,4 +77,3 @@ if (Deno.args[0] === "code") { // create temporary auth code
   await parseStaticFolder();
   logger.info("Synchronization complete. Cakelandish ready for use!");
 }
-

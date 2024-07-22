@@ -1,9 +1,21 @@
 import { config as loadEnv } from "./deps.ts";
+import { logger } from "./modules/log.ts";
 
 // checks for required information before allowing the server to start
-const envs = loadEnv();
+let envs = Deno.env.toObject();
 
-export let config = {
+try {
+  await Deno.stat(".env");
+  logger.warn(
+    "Loading variables from .env file. It's better to define environment variables in the process environment itself to mitigate lFI vulnerabilities",
+  );
+  envs = loadEnv();
+} catch {
+  // Do nothing if .env not found
+}
+
+export const config = {
+  version: "0.12.0",
   title: envs.TITLE || "Cakelandish Feed",
   subtitle: envs.SUBTITLE,
   author: envs.AUTHOR || "Anonymous",
@@ -15,21 +27,29 @@ export let config = {
     : [],
   host: envs.HOST || "localhost",
   port: Number(envs.PORT) || 8000,
-  https: !!envs.HTTPS || false,
-  jwt: !!envs.JWT || false,
+  https: Boolean(envs.HTTPS) || false,
+  jwt: Boolean(envs.JWT) || false,
   refreshTokenDays: Number(envs.REFRESH_TOKEN_DAYS) || 120,
   serverCodeLength: Number(envs.SERVER_CODE_LENGTH) || 256,
   sslCertificateLocation: envs.HTTPS_CERTIFICATE_LOCATION,
   sslKeyLocation: envs.HTTPS_KEY_LOCATION,
-  enableTrafficLogs: envs.ENABLE_TRAFFIC_LOGS || false,
-  version: "0.11.5"
+  enableTrafficLogs: Boolean(envs.ENABLE_TRAFFIC_LOGS) || false,
+  link: "",
+  proxy: Boolean(envs.PROXY) || false,
+  proxyCount: Number(envs.PROXY_COUNT) || 0,
+  proxyRequestIP: envs.PROXY_REQ_IP || "127.0.0.1",
+  cloudflared: Boolean(envs.CLOUDFLARED) || false,
+  rateLimitWindow: Number(envs.RATE_LIMIT_WINDOW) || 5 * 60 * 1000, // In milliseconds, 5 minutes default
+  rateLimitMax: Number(envs.RATE_LIMIT_MAX) || 500, // Default max 500 requests in window
+  rateLimitExpire: Number(envs.RATE_LIMIT_EXPIRE) || 1 * 24 * 60 * 60 * 1000, // In milliseconds, 1 day default
+  rateLimitDuration: Number(envs.RATE_LIMIT_DURATION) || 1 * 60 * 60 * 1000, // In milliseconds, 1 hour default
 };
 
 if (config.title === undefined) {
-  throw new Error("Variable missing in .env file: TITLE");
+  throw new Error("Variable missing in environment: TITLE");
 }
 if (config.author === undefined) {
-  throw new Error("Variable missing in .env file: AUTHOR");
+  throw new Error("Variable missing in environment: AUTHOR");
 }
 if (config.https === true && config.jwt !== true) {
   throw new Error("JWT authentication must be enabled if running on HTTPS!");
@@ -51,6 +71,28 @@ if (
 config.link = `${config.https ? "https" : "http"}://${config.host}${
   config.https ? "" : ":" + config.port
 }`;
+
+if (config.proxy && config.proxyCount === 0) {
+  config.proxyCount = 1;
+}
+
+if (!config.proxy && config.cloudflared) {
+  throw new Error(
+    "Cloudflared status cannot be true if not being proxied!",
+  );
+}
+
+if (config.proxy) {
+  logger.info("Server is running behind proxy");
+}
+
+if (config.cloudflared) {
+  logger.info("Cloudflared mode enabled");
+}
+
+if (config.proxyCount > 0) {
+  logger.info(`Allowed maximum ${config.proxyCount} proxies`);
+}
 
 /*
   All environment variables:

@@ -1,5 +1,6 @@
-import { cryptoRandomString, jwt, timingSafeEqual } from "../deps.ts";
 import { config } from "../config.ts";
+import { cryptoRandomString, jwt, timingSafeEqual } from "../deps.ts";
+import { logger } from "./log.ts";
 
 let jwtAccessKey;
 
@@ -13,7 +14,7 @@ export async function generateCode(minutes = 20) {
   // write one code to this file that the server can read from
   await Deno.writeTextFile("code.txt", code);
 
-  console.log(code);
+  logger.info(code);
   await new Promise((resolve) =>
     setTimeout(async () => {
       await deleteCode();
