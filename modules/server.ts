@@ -49,7 +49,7 @@ import { clearTrafficData, parseTrafficData } from "./traffic.ts";
 import * as xml from "./xml.ts";
 import { exportData, importData } from "./zip.ts";
 import { rateLimiter } from "./ratelimit.ts";
-import { handleError, restoreRequsterIP } from "./utils.ts";
+import { handleError, restoreRequesterIP } from "./utils.ts";
 
 const defaultHTML = `<!DOCTYPE html>
 <html>
@@ -106,7 +106,7 @@ export async function startServer() {
   const app = new Koa();
   const router = new Router();
 
-  app.use(restoreRequsterIP);
+  app.use(restoreRequesterIP);
   app.use(rateLimiter);
 
   app.use(koaBody({

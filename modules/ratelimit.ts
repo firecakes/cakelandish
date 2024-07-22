@@ -19,17 +19,16 @@ export async function rateLimiter(ctx, next) {
     const currentClient: clientObj = {
       ip: ctx.state.originIP,
       reqsMade: 1,
-      expires: Date.now() + config.RateLimitWindow,
+      expires: Date.now() + config.rateLimitWindow,
       banned: false,
       bannedFor: 0,
     };
-    ctx.state.ratelimited = false;
     await kvRateLimit.set([ctx.state.originIP], currentClient);
     await next();
     return;
   }
 
-  let currentClient: clientObj = client.value;
+  const currentClient: clientObj = client.value;
 
   if (currentClient.banned) {
     if (Date.now() > currentClient.bannedFor) {
@@ -46,14 +45,14 @@ export async function rateLimiter(ctx, next) {
 
   if (Date.now() > currentClient.expires) {
     currentClient.reqsMade = 0;
-    currentClient.expires = Date.now() + config.RateLimitWindow;
+    currentClient.expires = Date.now() + config.rateLimitWindow;
   }
 
   currentClient.reqsMade += 1;
 
-  if (currentClient.reqsMade >= config.RateLimitMax) {
+  if (currentClient.reqsMade >= config.rateLimitMax) {
     currentClient.banned = true;
-    currentClient.bannedFor = Date.now() + config.RateLimitDuration;
+    currentClient.bannedFor = Date.now() + config.rateLimitDuration;
     logger.info(
       `Rate limited ${ctx.state.originIP} for ${currentClient.bannedFor}`,
     );
@@ -62,10 +61,9 @@ export async function rateLimiter(ctx, next) {
   await kvRateLimit.atomic()
     .check(client)
     .set([ctx.state.originIP], currentClient, {
-      expireIn: config.RateLimitExpire,
+      expireIn: config.rateLimitExpire,
     })
     .commit();
 
-  ctx.state.ratelimited = false;
   await next();
 }

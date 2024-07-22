@@ -20,7 +20,10 @@ const IMPORTANT_FILES = [ // files the user should really not mess with unless t
   "manage.html",
   "pages.html",
   "upload.html",
+  "401.html",
+  "403.html",
   "404.html",
+  "429.html",
   "util.js",
 ].map((f) => `static/${f}`);
 

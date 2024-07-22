@@ -15,6 +15,7 @@ try {
 }
 
 export const config = {
+  version: "0.12.0",
   title: envs.TITLE || "Cakelandish Feed",
   subtitle: envs.SUBTITLE,
   author: envs.AUTHOR || "Anonymous",
@@ -33,15 +34,15 @@ export const config = {
   sslCertificateLocation: envs.HTTPS_CERTIFICATE_LOCATION,
   sslKeyLocation: envs.HTTPS_KEY_LOCATION,
   enableTrafficLogs: Boolean(envs.ENABLE_TRAFFIC_LOGS) || false,
-  version: "0.11.5",
   link: "",
   proxy: Boolean(envs.PROXY) || false,
   proxyCount: Number(envs.PROXY_COUNT) || 0,
   proxyRequestIP: envs.PROXY_REQ_IP || "127.0.0.1",
-  RateLimitWindow: Number(envs.RATE_LIMIT_WINDOW) || 5 * 60 * 1000, // In milliseconds, 5 minutes default
-  RateLimitMax: Number(envs.RATE_LIMIT_MAX) || 500, // Default max 500 requests in window
-  RateLimitExpire: Number(envs.RATE_LIMIT_EXPIRE) || 1 * 24 * 60 * 60 * 1000, // In milliseconds, 1 day default
-  RateLimitDuration: Number(envs.RATE_LIMIT_DURATION) || 1 * 60 * 60 * 1000, // In milliseconds, 1 hour default
+  cloudflared: Boolean(envs.CLOUDFLARED) || false,
+  rateLimitWindow: Number(envs.RATE_LIMIT_WINDOW) || 5 * 60 * 1000, // In milliseconds, 5 minutes default
+  rateLimitMax: Number(envs.RATE_LIMIT_MAX) || 500, // Default max 500 requests in window
+  rateLimitExpire: Number(envs.RATE_LIMIT_EXPIRE) || 1 * 24 * 60 * 60 * 1000, // In milliseconds, 1 day default
+  rateLimitDuration: Number(envs.RATE_LIMIT_DURATION) || 1 * 60 * 60 * 1000, // In milliseconds, 1 hour default
 };
 
 if (config.title === undefined) {
@@ -73,6 +74,24 @@ config.link = `${config.https ? "https" : "http"}://${config.host}${
 
 if (config.proxy && config.proxyCount === 0) {
   config.proxyCount = 1;
+}
+
+if (!config.proxy && config.cloudflared) {
+  throw new Error(
+    "Cloudflared status cannot be true if not being proxied!",
+  );
+}
+
+if (config.proxy) {
+  logger.info("Server is running behind proxy");
+}
+
+if (config.cloudflared) {
+  logger.info("Cloudflared mode enabled");
+}
+
+if (config.proxyCount > 0) {
+  logger.info(`Allowed maximum ${config.proxyCount} proxies`);
 }
 
 /*
