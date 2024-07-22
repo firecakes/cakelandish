@@ -3,7 +3,12 @@ import { config } from "../config.ts";
 export async function handleError(ctx) {
   // https://github.com/koajs/examples/blob/master/404/app.js
 
-  switch (ctx.state.errorRespType || ctx.accepts("html", "json")) {
+  let errorRespType = "";
+  if (ctx.request.url.startsWith("/api/")) {
+    errorRespType = "json";
+  }
+
+  switch (errorRespType || ctx.accepts("html", "json")) {
     case "json":
       ctx.type = "json";
       ctx.body = {

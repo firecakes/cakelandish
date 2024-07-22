@@ -139,10 +139,6 @@ export async function startServer() {
       ctx.state.errorMessage = "Unauthorized";
       ctx.state.errorPage = "./static/401.html";
 
-      if (ctx.request.url.startsWith("/api/")) {
-        ctx.state.errorRespType = "json";
-      }
-
       await handleError(ctx);
     }
   };
