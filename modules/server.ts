@@ -123,7 +123,7 @@ export async function startServer() {
 
   // body parsing, but does not allow multipart file uploads
   const koaBodyNoAuthMiddleware = koaBody({
-    parsedMethods: ["POST", "PUT", "PATCH", "DELETE"], // add DELETE as parsed method
+    parsedMethods: ["POST"],
   });
 
   // JWT middleware function
