@@ -109,7 +109,8 @@ export async function startServer() {
   app.use(restoreRequesterIP);
   app.use(rateLimiter);
 
-  app.use(koaBody({
+  // Koa body parsing + file uploading middleware function
+  const koaBodyMiddleware = koaBody({
     parsedMethods: ["POST", "PUT", "PATCH", "DELETE"], // add DELETE as parsed method
     multipart: true, // parse multipart form data
     formidable: { // modify where the form data gets saved
@@ -118,7 +119,12 @@ export async function startServer() {
       maxFileSize: 10 * 1024 * 1024 * 1024, // allow uploads of up to 10 GB. only the site owner can call this anyway. 10 GB seems very reasonable
     },
     jsonLimit: "10mb", // used for sending very large bodies sent to api/sanitize/bulk
-  }));
+  });
+
+  // body parsing, but does not allow multipart file uploads
+  const koaBodyNoAuthMiddleware = koaBody({
+    parsedMethods: ["POST"],
+  });
 
   // JWT middleware function
   const jwtMiddleware = async (ctx, next) => {
@@ -161,7 +167,7 @@ export async function startServer() {
   });
 
   // authorization route
-  router.post("/api/auth", async (ctx, next) => {
+  router.post("/api/auth", koaBodyNoAuthMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
     let text;
     try {
@@ -170,7 +176,7 @@ export async function startServer() {
       // Code does not exist
     }
 
-    if (!text) {
+    if (!text || !input || !input.code) {
       ctx.body = {
         success: false,
       };
@@ -205,13 +211,13 @@ export async function startServer() {
   });
 
   // sanitize HTML input
-  router.post("/api/sanitize", jwtMiddleware, async (ctx, next) => {
+  router.post("/api/sanitize", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
     ctx.body = cleaner.clean(input.html);
   });
 
   // sanitize HTML input
-  router.post("/api/sanitize/bulk", jwtMiddleware, async (ctx, next) => {
+  router.post("/api/sanitize/bulk", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
     const htmlHash = input.html;
     for (let i in htmlHash) {
@@ -223,7 +229,7 @@ export async function startServer() {
   });
 
   // upload files to the server
-  router.post("/api/upload", jwtMiddleware, async (ctx, next) => {
+  router.post("/api/upload", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     let folderName = await getTmpFolder();
 
     if (!Array.isArray(ctx.request.files.myFile)) {
@@ -262,7 +268,7 @@ export async function startServer() {
   });
 
   // initialize a new post. if a tmp folder already exists then return that one's name instead
-  router.post("/api/post/init", jwtMiddleware, async (ctx, next) => {
+  router.post("/api/post/init", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
     let folderName;
     let post;
@@ -303,7 +309,7 @@ export async function startServer() {
   });
 
   // creating a post
-  router.post("/api/post", jwtMiddleware, async (ctx, next) => {
+  router.post("/api/post", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
     const regex = new RegExp(`/tmp/${input.tmpTitle}`, "g");
 
@@ -358,7 +364,7 @@ export async function startServer() {
   });
 
   // updating an existing post
-  router.put("/api/post", jwtMiddleware, async (ctx, next) => {
+  router.put("/api/post", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
     const regex = new RegExp(`/tmp/${input.tmpTitle}`, "g");
 
@@ -417,7 +423,7 @@ export async function startServer() {
   });
 
   // delete an existing post
-  router.delete("/api/post", jwtMiddleware, async (ctx, next) => {
+  router.delete("/api/post", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input: Feed = ctx.request.body;
 
     // get the folder location of the post
@@ -444,7 +450,7 @@ export async function startServer() {
   });
 
   // add a new feed to watch
-  router.post("/api/feed", jwtMiddleware, async (ctx, next) => {
+  router.post("/api/feed", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input: Feed = ctx.request.body;
     if (typeof input.updateMinutes !== "number" || input.updateMinutes < 1) {
       input.updateMinutes = 5; // default
@@ -458,7 +464,7 @@ export async function startServer() {
   });
 
   // update an existing feed
-  router.put("/api/feed", jwtMiddleware, async (ctx, next) => {
+  router.put("/api/feed", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input: Feed = ctx.request.body;
     if (typeof input.index !== "number" || input.index < 0) {
       ctx.status = 400;
@@ -475,7 +481,7 @@ export async function startServer() {
   });
 
   // delete an existing feed
-  router.delete("/api/feed", jwtMiddleware, async (ctx, next) => {
+  router.delete("/api/feed", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input: Feed = ctx.request.body;
     if (typeof input.index !== "number" || input.index < 0) {
       ctx.status = 400;
@@ -488,7 +494,7 @@ export async function startServer() {
   });
 
   // swap the order of a feed item
-  router.put("/api/feed/reorder", jwtMiddleware, async (ctx, next) => {
+  router.put("/api/feed/reorder", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
     if (typeof input.from !== "number" || typeof input.to !== "number") {
       ctx.status = 400;
@@ -498,7 +504,7 @@ export async function startServer() {
   });
 
   // checks if the URL passed in matched a feed that is followed
-  router.post("/api/query/feed", jwtMiddleware, async (ctx, next) => {
+  router.post("/api/query/feed", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
     // check the local cache and return the xml that way. query URL as last resort
     let feed = (await getFeeds()).find((feed) => feed.url === input.url);
@@ -546,7 +552,7 @@ export async function startServer() {
   });
 
   // save the post layout
-  router.post("/api/layout", jwtMiddleware, async (ctx, next) => {
+  router.post("/api/layout", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
     await saveLayout(input.layout);
     ctx.body = {};
@@ -568,7 +574,7 @@ export async function startServer() {
   });
 
   // performs a string replacement of all instances of the old domain passed in with the new one
-  router.post("/api/domain", jwtMiddleware, async (ctx, next) => {
+  router.post("/api/domain", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
     await changeDomains(input.oldDomain, input.newDomain);
 
@@ -590,7 +596,7 @@ export async function startServer() {
   });
 
   // add a new page
-  router.post("/api/page", jwtMiddleware, async (ctx, next) => {
+  router.post("/api/page", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
     if (!input.name || input.name === "") {
       ctx.status = 400;
@@ -639,7 +645,7 @@ export async function startServer() {
   });
 
   // edit an existing page
-  router.put("/api/page", jwtMiddleware, async (ctx, next) => {
+  router.put("/api/page", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input = ctx.request.body.page ? ctx.request.body.page : {};
     if (!input.url || input.url === "") {
       ctx.status = 400;
@@ -673,7 +679,7 @@ export async function startServer() {
   });
 
   // delete an existing page
-  router.delete("/api/page", jwtMiddleware, async (ctx, next) => {
+  router.delete("/api/page", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
     if (!input.page.url || input.page.url === "") {
       ctx.status = 400;
@@ -692,8 +698,8 @@ export async function startServer() {
     ctx.body = {};
   });
 
-  // add a file toe a page
-  router.post("/api/page/file", jwtMiddleware, async (ctx, next) => {
+  // add a file to a page
+  router.post("/api/page/file", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
     if (!Array.isArray(ctx.request.files.myFile)) {
       ctx.request.files.myFile = [ctx.request.files.myFile];
