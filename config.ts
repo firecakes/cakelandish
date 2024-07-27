@@ -31,6 +31,7 @@ export const config = {
   jwt: Boolean(envs.JWT) || false,
   refreshTokenDays: Number(envs.REFRESH_TOKEN_DAYS) || 120,
   serverCodeLength: Number(envs.SERVER_CODE_LENGTH) || 256,
+  useBasicAuthCode: Boolean(envs.USE_BASIC_AUTH_CODE) || false,
   sslCertificateLocation: envs.HTTPS_CERTIFICATE_LOCATION,
   sslKeyLocation: envs.HTTPS_KEY_LOCATION,
   enableTrafficLogs: Boolean(envs.ENABLE_TRAFFIC_LOGS) || false,
@@ -106,8 +107,17 @@ if (config.proxyCount > 0) {
   HTTPS: Whether HTTPS is enabled. Defaults to false
   JWT: Whether JWT is enabled. Required for using HTTPS or a domain other than localhost. Defaults to false
   REFRESH_TOKEN_DAYS: How many days until another code needs to be generated on the server for authorization. Defaults to 120.
-  SERVER_CODE_LENGTH: Determines how many characters the generated server code is for initial authorization. Defaults to 256.
+  SERVER_CODE_LENGTH: Determines how many characters the generated server code is for basic authorization. Defaults to 256.
+  USE_BASIC_AUTH_CODE: If true, code is sent in console to be pasted in login form. If false (default), prints QR code to console for consumption by OTP app
   HTTPS_CERTIFICATE_LOCATION: An SSL cert path used to enable HTTPS connections with the server. HTTPS_KEY_LOCATION also needed.
   HTTPS_KEY_LOCATION: An SSL key path used to enable HTTPS connections with the server. HTTPS_CERTIFICATE_LOCATION also needed.
   ENABLE_TRAFFIC_LOGS: Whether the server will start tracking IPs and HTML files accessed over time, viewable in the admin page. Defaults to false.
+  PROXY: Whether the server is going to run behind at least one proxy. Defaults to false.
+  PROXY_COUNT: How many proxies are handling traffic in series to the server. Defaults to 1 if proxy is enabled.
+  PROXY_REQ_IP: The IP address of the front-facing proxy server where requests come in. Defaults to 127.0.0.1
+  CLOUDFLARED: Whether CloudFlare is being used to direct traffic to the server. Defaults to false.
+  RATE_LIMIT_WINDOW: The window of time in which requests are being counted per IP. Defaults to 5 minutes.
+  RATE_LIMIT_MAX: The maximum number of requests allowed in the rate limit window. Defaults to 500 requests.
+  RATE_LIMIT_EXPIRE: For cleaning up client data in rate limiting algorithm. Defaults to 1 day for each IP.
+  RATE_LIMIT_DURATION: How long to ban clients who surpass the max rate limit. Defaults to 1 hour.
 */
