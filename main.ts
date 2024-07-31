@@ -5,24 +5,23 @@ import { parseStaticFolder } from "./modules/static.ts";
 import { startServer } from "./modules/server.ts";
 import { logger } from "./modules/log.ts";
 import { generateJwtSecret, initAuth, setJwtSecret } from "./modules/auth.ts";
+import { connectToSocket, openSocket } from "./modules/socket.ts";
 import { config } from "./config.ts";
 import { OTPAuth } from "./deps.ts";
 
 if (Deno.args[0] === "code") { // create temporary auth code
-  const result = await fetch(`http://localhost:${config.port}/api/code`);
-  if (config.useBasicAuthCode) {
-    const code = (await result.json()).code;
-    logger.info(
-      "Authorization mode active. Input the following code into the login form",
-    );
-    logger.warn(
-      "Authorization mode will expire in 10 minutes or once log in succeeds.",
-    );
-    console.log(code);
-  } else {
-    logger.info(
-      "Authorization mode active. Use your authenticator app to input the code into the login form.",
-    );
+  if (config.jwt) {
+    const code = await connectToSocket();
+    if (config.useBasicAuthCode) {
+      logger.info(
+        "Authorization mode active. Input the following code into the login form",
+      );
+      console.log(code);
+    } else {
+      logger.info(
+        "Authorization mode active. Use your authenticator app to input the code into the login form.",
+      );
+    }
     logger.warn(
       "Authorization mode will expire in 10 minutes or once log in succeeds.",
     );
@@ -62,6 +61,9 @@ async function initCakelandish() {
     `static/tmp/`,
     { recursive: true },
   );
+  // starts the unix socket server
+  // used purely for verifying a user owns the server by using sockets to activate authentication
+  await openSocket();
   // starts the web server. this must run before initializing the database in case
   // we are querying a feed from the server itself
   startServer();

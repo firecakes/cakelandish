@@ -27,6 +27,8 @@ import { koaBody } from "npm:koa-body@6.0.1";
 export { koaBody };
 import koaCompose from "npm:koa-compose@4.1.0";
 export { koaCompose };
+import net from "node:net";
+export { net };
 
 // Node modules
 import { createReadStream } from "node:fs";

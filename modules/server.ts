@@ -16,7 +16,6 @@ import {
   checkToken,
   compareStrings,
   disableAuth,
-  enableAuth,
   generateJwtAccessToken,
   isAuthActive,
   verifyJwtAccessToken,
@@ -109,23 +108,6 @@ export async function startServer() {
   // start the web server initialization
   const app = new Koa();
   const router = new Router();
-
-  // code generation activation route. can only be called locally
-  app.use(async (ctx, next) => {
-    if (ctx.request.url !== "/api/code" || ctx.request.ip !== "127.0.0.1") {
-      await next();
-      return;
-    }
-    if (config.jwt) {
-      const code = enableAuth();
-      ctx.status = 200;
-      ctx.body = {
-        code: code,
-      };
-    } else {
-      ctx.status = 400;
-    }
-  });
 
   app.use(restoreRequesterIP);
   app.use(rateLimiter);
