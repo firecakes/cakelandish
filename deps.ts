@@ -29,6 +29,8 @@ import koaCompose from "npm:koa-compose@4.1.0";
 export { koaCompose };
 import net from "node:net";
 export { net };
+import protobuf from "npm:protobufjs@7.3.2";
+export { protobuf };
 
 // Node modules
 import { createReadStream } from "node:fs";

@@ -1,24 +1,5 @@
 import { config } from "../config.ts";
 
-// specially written to be passed to command line arguments without sending null bytes
-export function convertUint8ToString(buffer8) {
-  // perform an absolutely cursed transformation so we aren't sending null bytes as an argument
-  const buffer16 = new Uint16Array(buffer8);
-  for (let i = 0; i < buffer16.length; i++) {
-    buffer16[i] += 256;
-  }
-  return new TextDecoder("utf-16").decode(buffer16);
-}
-
-// inverse of convertUint8ToString
-export function convertStringToUint8(string) {
-  const restoredBuffer = new Uint8Array(string.length);
-  for (let i = 0; i < string.length; i++) {
-    restoredBuffer[i] = string.charCodeAt(i) - 256;
-  }
-  return restoredBuffer;
-}
-
 export async function handleError(ctx) {
   // https://github.com/koajs/examples/blob/master/404/app.js
 

@@ -6,17 +6,27 @@
 import { generateJwtSecret, getJwtSecret } from "./modules/auth.ts";
 import { logger } from "./modules/log.ts";
 import { OTPAuth } from "./deps.ts";
-import { convertUint8ToString } from "./modules/utils.ts";
+import { putSecretDataToSocket } from "./modules/socket.ts";
 
 async function keepAlive(keyBuffer, otpSecret) {
   const command = new Deno.Command("./Cakelandish", {
     args: [
       "keepalive",
-      convertUint8ToString(keyBuffer),
-      convertUint8ToString(otpSecret.bytes),
     ],
   });
   const child = command.spawn();
+
+  // use polling to send the secret data through sockets
+  let success = false;
+  while (!success) {
+    try {
+      await putSecretDataToSocket(keyBuffer, otpSecret);
+      success = true;
+    } catch (err) {
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250)); // try every 1/4 second
+  }
+
   await child.status;
 }
 
