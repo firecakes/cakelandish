@@ -33,23 +33,13 @@ NOTE: The minimum Deno version recommended is `v1.41.0`.
 
 ## Compiling
 
-Compile for current os:
+Compile for current OS:
 
-`deno compile --no-check --allow-net --allow-read --allow-write=./ --allow-env --unstable-kv main.ts`
+`deno task compile`
 
-Compile for linux:
+Compile for Windows, MacOS, Linux platforms:
 
-`deno compile --target x86_64-unknown-linux-gnu --output out/cakelandish-linux-x86_64 --no-check --allow-net --allow-read --allow-write=./ --allow-env --unstable-kv main.ts`
-
-Compile for windows:
-
-`deno compile --target x86_64-pc-windows-msvc --output out/cakelandish-windows-x86_64 --no-check --allow-net --allow-read --allow-write=./ --allow-env --unstable-kv main.ts`
-
-Compile for macos:
-
-`deno compile --target x86_64-apple-darwin --output out/cakelandish-mac-x86_64 --no-check --allow-net --allow-read --allow-write=./ --allow-env --unstable-kv main.ts`
-
-A build all script is also included in the [scripts directory](scripts/)
+`deno task compile-all`
 
 All compiled binaries are outputted to the [out directory](out/)
 

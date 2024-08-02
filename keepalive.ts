@@ -5,12 +5,28 @@
 // deno run --allow-read --allow-run --allow-write --allow-env keepalive.ts
 import { generateJwtSecret, getJwtSecret } from "./modules/auth.ts";
 import { logger } from "./modules/log.ts";
+import { OTPAuth } from "./deps.ts";
+import { putSecretDataToSocket } from "./modules/socket.ts";
 
-async function keepAlive() {
+async function keepAlive(keyBuffer, otpSecret) {
   const command = new Deno.Command("./Cakelandish", {
-    args: ["keepalive"],
+    args: [
+      "keepalive",
+    ],
   });
   const child = command.spawn();
+
+  // use polling to send the secret data through sockets
+  let success = false;
+  while (!success) {
+    try {
+      await putSecretDataToSocket(keyBuffer, otpSecret);
+      success = true;
+    } catch (err) {
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250)); // try every 1/4 second
+  }
+
   await child.status;
 }
 
@@ -18,12 +34,11 @@ async function main() {
   await generateJwtSecret(); // generate only once
   let rawKey = await crypto.subtle.exportKey("raw", getJwtSecret());
   const exportedKeyBuffer = new Uint8Array(rawKey);
+  const otpSecret = new OTPAuth.Secret(); // generate only once
   // force Cakelandish to always stay running
   while (true) {
     logger.info("kick");
-    // null bytes in key string can crash this process. save to a file instead of passing it as an argument and have Cakelandish read it... UGH
-    await Deno.writeFile("key", exportedKeyBuffer);
-    await keepAlive();
+    await keepAlive(exportedKeyBuffer, otpSecret);
   }
 }
 main();

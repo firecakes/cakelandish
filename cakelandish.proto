@@ -1,0 +1,22 @@
+package cakelandish;
+syntax = "proto3";
+
+enum MessageRequestType {
+	AUTH_CODE = 0;
+	KEEP_ALIVE = 1;
+}
+
+message MessageRequest {
+	MessageRequestType type = 1;
+	optional bytes keyBuffer = 2;
+	optional bytes otpSecret = 3;
+}
+
+message MessageResponseAuth {
+	bool success = 1;
+	optional string code = 2;
+}
+
+message MessageResponseKeepAlive {
+	bool success = 1;
+}
