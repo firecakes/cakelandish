@@ -30,36 +30,39 @@ if (Deno.args[0] === "code") { // create temporary auth code
   // this mode relies on the parent process to pass a raw key and OTP secret to read from
   // starts the unix socket server
   // waits for secret input from the keepalive process first
-  logger.info(
-    "Starting server in keepalive mode. Waiting for keepalive process input...",
-  );
+  logger.info("Starting server in keepalive mode.");
 
-  const { keyBuffer, otpSecret } = await openSocket(true);
-  const restoredOtpSecret = new OTPAuth.Secret({
-    buffer: otpSecret,
-  });
+  if (config.jwt) {
+    logger.info("Waiting for keepalive process input...");
+    const { keyBuffer, otpSecret } = await openSocket(true);
+    const restoredOtpSecret = new OTPAuth.Secret({
+      buffer: otpSecret,
+    });
 
-  initAuth(restoredOtpSecret);
-  setJwtSecret(
-    await crypto.subtle.importKey(
-      "raw",
-      keyBuffer,
-      { name: "HMAC", hash: "SHA-512" },
-      true,
-      ["sign", "verify"],
-    ),
-  );
+    initAuth(restoredOtpSecret);
+    setJwtSecret(
+      await crypto.subtle.importKey(
+        "raw",
+        keyBuffer,
+        { name: "HMAC", hash: "SHA-512" },
+        true,
+        ["sign", "verify"],
+      ),
+    );
+    logger.info("Input received");
+  }
 
-  logger.info("Input received");
   initCakelandish();
 } else { // no special arguments. run server normally
   logger.info("Starting server");
   initAuth();
   // creates a JWT secret for signing if one doesn't exist already
   await generateJwtSecret();
-  // starts the unix socket server
-  // used purely for verifying a user owns the server by using sockets to activate authentication
-  await openSocket(false);
+  if (config.jwt) {
+    // starts the unix socket server
+    // used purely for verifying a user owns the server by using sockets to activate authentication
+    await openSocket(false);
+  }
   initCakelandish();
 }
 

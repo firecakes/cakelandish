@@ -24,7 +24,7 @@ function decodeMessage(type, buffer) {
 
 export async function openSocket(waitForKeepAliveInput = false) {
   try { // remove if exists
-    await Deno.remove("code.sock");
+    await Deno.remove("cakelandish.sock");
   } catch (err) {
   }
   await init();
@@ -62,7 +62,7 @@ export async function openSocket(waitForKeepAliveInput = false) {
         }
       });
     });
-    unixSocketServer.listen("code.sock", () => {
+    unixSocketServer.listen("cakelandish.sock", () => {
       if (!waitForKeepAliveInput) {
         resolve(); // ready when keepalive is off
       }
@@ -74,7 +74,7 @@ export async function getCodeFromSocket() {
   await init();
 
   return new Promise((resolve) => {
-    const client = net.createConnection({ path: "code.sock" }, () => {
+    const client = net.createConnection({ path: "cakelandish.sock" }, () => {
       const buffer = encodeMessage("MessageRequest", {
         type: "AUTH_CODE",
       });
@@ -92,7 +92,7 @@ export async function putSecretDataToSocket(keyBuffer, otpSecret) {
   await init();
 
   return new Promise((resolve, reject) => {
-    const client = net.createConnection({ path: "code.sock" }, () => {
+    const client = net.createConnection({ path: "cakelandish.sock" }, () => {
       const buffer = encodeMessage("MessageRequest", {
         type: "KEEP_ALIVE",
         keyBuffer: keyBuffer,
