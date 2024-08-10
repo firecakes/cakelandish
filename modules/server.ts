@@ -688,7 +688,14 @@ export async function startServer() {
 
     // get the location of the page
     const pageUrl = `static/${input.page.url}`;
-
+    const fullPath = `static/${input.url}`;
+    if (isBlacklistedPath(fullPath)) {
+      ctx.status = 400;
+      ctx.body = {
+        error: "This is a reserved location and cannot be written to.",
+      };
+      return;
+    }
     await deletePage(input.page);
     await Deno.remove(
       pageUrl,
