@@ -121,11 +121,6 @@ a:visited.button {
   color: #d2d2d2;
 }
 
-/* Apply light grey color to our a links that set text-default in classes */
-a:visited.text-default { 
-  color: #d2d2d2;
-}
-
 /* keep at bottom of css! */
 [v-cloak] {
   display: none;
