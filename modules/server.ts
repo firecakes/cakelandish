@@ -98,7 +98,7 @@ async function getRemoteVersion() {
   } catch (err) {
   }
 }
-setInterval(getRemoteVersion, 1000 * 60 * 5); // 5 minutes
+setInterval(getRemoteVersion, 1000 * 60 * 60); // 1 hour interval
 getRemoteVersion();
 
 export async function startServer() {
