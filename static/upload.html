@@ -359,12 +359,13 @@
             } else {
               await axios.post("/api/post", postObj);
             }
+
+            window.location.href = '/'; // only take to main page if upload is successful
           } catch (err) {
+            alert(err);
             console.error(err);
             this.performAction = false;
           }
-
-          window.location.href = '/'; // take back to main page when finished
         },
         async discardPost () {
           if (this.performAction) {
