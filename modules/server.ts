@@ -143,11 +143,37 @@ export async function startServer() {
       // access token invalid. unauthorized
       ctx.status = 401; // unauthorized
       ctx.state.errorMessage = "Unauthorized";
-      ctx.state.errorPage = "./static/401.html";
 
       await handleError(ctx);
     }
   };
+
+  // restricted page checker
+  app.use(async (ctx, next) => {
+    const pages = ["/admin.html", "/layout.html", "/manage.html", "/pages.html", "/upload.html"];
+
+    // check if JWT is enabled. check the access token specifically
+    if (!config.jwt) { // JWT is disabled
+      await next();
+      return;
+    }
+    // access token validation check
+    try {
+      const accessToken = await ctx.cookies.get("jwt-access");
+      await verifyJwtAccessToken(accessToken);
+      // no exceptions thrown. continue
+      await next();
+    } catch {
+      // access token invalid. check if on restricted route
+      for (let i = 0; i < pages.length; i++) {
+        if (ctx.request.url.startsWith(pages[i])) {
+          ctx.body = await Deno.readTextFile("./static/401.html");
+          return;
+        }
+      }
+      await next();
+    }
+  });
 
   if (config.enableTrafficLogs) {
     // traffic tracker
