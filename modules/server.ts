@@ -553,7 +553,7 @@ export async function startServer() {
   });
 
   // import a tar of the server's state
-  router.post("/api/import", jwtMiddleware, async (ctx, next) => {
+  router.post("/api/import", koaBodyMiddleware, jwtMiddleware, async (ctx, next) => {
     // enforce its existence
     await Deno.mkdir(
       `static/files`,
