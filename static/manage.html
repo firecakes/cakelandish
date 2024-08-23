@@ -10,8 +10,23 @@
 
   <body id="bg">
     <div id="app" class="flex-v" v-cloak>
-      <p v-if="isAuthenticated === true" class="title center">Your posts</p>
+      <!-- Drafts -->
       <a v-if="isAuthenticated === true" class="button submit-button" href="index.html">Return to Main Page</a>
+      <p v-if="isAuthenticated === true" class="title center">Your drafts</p>
+      
+      <div v-if="isAuthenticated === true" class="post" v-for="post in drafts">
+        <div class="post-contents">
+          <a :href="post.link" target="_blank"> {{ post.title }}</a>
+          <br>
+          <pre>{{ post.originalContent }}</pre>
+        </div>
+        <a class="button flex" :href="`/upload.html?localUrl=${post.localUrl}`"><p class="edit-post-text">Edit draft</p></a>
+        <button v-if="!post.requestDeletion" class="button" @click="deleteDraft(post)">Delete draft</button>
+        <button v-if="post.requestDeletion" class="button" @click="deleteDraft(post)">Are you sure?</button>
+      </div>
+
+      <!-- Posts -->
+      <p v-if="isAuthenticated === true" class="title center">Your posts</p>
 
       <div v-if="isAuthenticated === true" class="post" v-for="post in orderedPosts">
         <div class="post-contents">
@@ -38,6 +53,7 @@
       data () {
         return {
           posts: [],
+          drafts: [],
           performAction: false,
           isAuthenticated: null,
         }
@@ -53,8 +69,10 @@
         }
       },
       async mounted () {
-        const result = await axios.get("/api/post", {});
-        this.posts = result.data.posts
+        const resultPosts = await axios.get("/api/post", {});
+        this.posts = resultPosts.data.posts
+        const resultDrafts = await axios.get("/api/post/draft", {});
+        this.drafts = resultDrafts.data.posts
       },
       computed: {
         orderedPosts: function () {
@@ -64,6 +82,23 @@
         }
       },
       methods: {
+        async deleteDraft (post) {
+          if (this.performAction) {
+            return;
+          }
+          if (!post.requestDeletion) {
+            post.requestDeletion = true;
+          } else {
+            // prepare deletion. prevent pressing delete button again
+            this.performAction = true;
+            await axios.delete('/api/post/discard', {
+              data: {
+                post: post,
+              }
+            });
+            window.location.href = '/manage.html';
+          }
+        },
         async deletePost (post) {
           if (this.performAction) {
             return;

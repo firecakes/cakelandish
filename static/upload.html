@@ -100,13 +100,18 @@
         <p class="center title">How it renders on your site:</p>
         <iframe :srcdoc="debouncedHtmlInputLayoutApplied" class="html-output iframe" title="Layout Render"></iframe> 
         <p class="center title">How it renders on your server's RSS reader:</p>
-        <p class="tiny-text">Dangerous / unnecessary tags such as script and style are removed in sanitization. Be aware of this as this is how users will see your post using this server's RSS reader. Style whitelists can be made in the future but the sanitation library being used limits to explicit values set for styling. Only basic colors are supported with inline styling for certain tags.</p>
+        <p class="tiny-text">Dangerous / unnecessary tags such as script and style are removed in sanitization. Be aware of this as this is how users will see your post using this server's RSS reader.</p>
         <span v-html="htmlOutput" class="html-output"></span>
 
         <div class="form" style="justify-content: space-around;">
-          <button v-if="!localUrl" class="button submit-button" @click="submitPost">Submit Post</button>
-          <button v-if="localUrl" class="button submit-button" @click="submitPost">Update Post</button>
-          <button class="button discard-button" @click="discardPost">Discard Post</button>
+          <button v-if="!localUrl || localUrl && localUrl.startsWith('/tmp/')" class="button submit-button" @click="submitPost">Publish Post</button>
+          <button v-else class="button submit-button" @click="submitPost">Update Post</button>
+
+          <button v-if="!localUrl || localUrl && localUrl.startsWith('/tmp/')" class="button discard-draft-button" @click="saveDraft">Save as Draft</button>
+          <button v-else class="button discard-draft-button" @click="saveDraft">Copy as Draft</button>
+
+          <button v-if="localUrl && localUrl.startsWith('/tmp/')" class="button discard-draft-button" @click="discardPost">Cancel</button>
+          <button v-else class="button discard-draft-button" @click="discardPost">Discard</button>
         </div>
       </div>
 
@@ -300,6 +305,7 @@
           let videoTypes = ["webm", "mp4"];
 
           const formData = new FormData();
+          formData.append('folder', this.tmpTitle)
           const contentTypes = [];
           for (let i = 0; i < event.target.files.length; i++) {
             const file = event.target.files[i];
@@ -340,26 +346,31 @@
             return;
           }
           this.performAction = true;
-          let postObj = {
-            htmlContent: this.htmlInput,
-            // sanitizing the html input can change its typing out of string. apparently
-            rssContent: "" + this.htmlOutput,
-            title: this.title,
-            tmpTitle: this.tmpTitle,
-            replyFeedUrl: this.replyFeedUrl,
-            replyPostIdUrl: this.replyPostIdUrl,
-            tags: this.tags,
-            localUrl: this.localUrl, // for editing a post
-            published: this.published,
-          }
+          let postObj = this.createPostObj();
 
           try {
-            if (this.localUrl) { // edit an existing post
+            if (this.localUrl && !this.localUrl.startsWith("/tmp/")) { // edit an existing post if published
               await axios.put("/api/post", postObj);
-            } else {
+            } else { // publish if it's a draft or has no saved local URL
               await axios.post("/api/post", postObj);
             }
 
+            window.location.href = '/'; // only take to main page if upload is successful
+          } catch (err) {
+            alert(err);
+            console.error(err);
+            this.performAction = false;
+          }
+        },
+        async saveDraft () {
+          if (this.performAction) {
+            return;
+          }
+          this.performAction = true;
+          let postObj = this.createPostObj();
+
+          try {
+            await axios.post("/api/post/draft", postObj);
             window.location.href = '/'; // only take to main page if upload is successful
           } catch (err) {
             alert(err);
@@ -373,14 +384,37 @@
           }
           this.performAction = true;
 
-          try {
-            await axios.delete("/api/post/discard", {});
-          } catch (err) {
-            console.error(err);
-            this.performAction = false;
+          let postObj = this.createPostObj();
+
+          if (this.localUrl && this.localUrl.startsWith('/tmp/')) { 
+            // don't allow deleting drafts from this page
+          } else {
+            try {
+              await axios.delete("/api/post/discard", {
+                data: {
+                  post: postObj
+                }
+              });
+            } catch (err) {
+              console.error(err);
+              this.performAction = false;
+            }
           }
-          
           window.location.href = '/'; // take back to main page when finished
+        },
+        createPostObj () {
+          return {
+            htmlContent: this.htmlInput,
+            // sanitizing the html input can change its typing out of string. apparently
+            rssContent: "" + this.htmlOutput,
+            title: this.title,
+            tmpTitle: this.tmpTitle,
+            replyFeedUrl: this.replyFeedUrl,
+            replyPostIdUrl: this.replyPostIdUrl,
+            tags: this.tags,
+            localUrl: this.localUrl, // for editing a post
+            published: this.published,
+          }
         },
         chooseTag (event) {
           this.tag = event.target.value;
@@ -560,10 +594,10 @@
 
     .submit-button {
       margin-top: 15px;
-      width: 300px;
+      width: 200px;
     }
 
-    .discard-button {
+    .discard-draft-button {
       margin-top: 15px;
       width: 150px;
       font-size: 14px;

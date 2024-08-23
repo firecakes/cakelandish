@@ -18,14 +18,17 @@ import {
   verifyJwtAccessToken,
 } from "./auth.ts";
 import {
+  addDraft,
   addFeed,
   addOrEditPage,
   addPageFile,
   addPost,
   changeDomains,
+  deleteDraft,
   deleteFeed,
   deletePage,
   deletePost,
+  editDraft,
   editFeed,
   editPost,
   feedGetHelper,
@@ -38,6 +41,7 @@ import {
   reorderFeed,
   saveLayout,
   updateLastDateExported,
+  getDrafts,
 } from "./db.ts";
 import { getPostLocations } from "./post.ts";
 import {
@@ -103,6 +107,9 @@ getRemoteVersion();
 
 export async function startServer() {
   // start the web server initialization
+  await deleteTmpFiles();
+  await deleteUntrackedTmpFolders();
+
   const app = new Koa();
   const router = new Router();
 
@@ -256,7 +263,12 @@ export async function startServer() {
 
   // upload files to the server
   router.post("/api/upload", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
-    let folderName = await getTmpFolder();
+    const input = ctx.request.body;
+    if (!input.folder || typeof input.folder !== "string") {
+      ctx.status = 400;
+    }
+
+    let folderName = input.folder;
 
     if (!Array.isArray(ctx.request.files.myFile)) {
       ctx.request.files.myFile = [ctx.request.files.myFile];
@@ -293,15 +305,21 @@ export async function startServer() {
     };
   });
 
+  // get all drafts the user made
+  router.get("/api/post/draft", jwtMiddleware, async (ctx, next) => {
+    ctx.body = {
+      posts: await getDrafts(),
+    };
+  });
+
   // initialize a new post. if a tmp folder already exists then return that one's name instead
   router.post("/api/post/init", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
     let folderName;
     let post;
 
-    // if localUrl is defined then move contents from an existing post over to tmp
-    if (input.localUrl) {
-      await deleteTmpFolders(); // start with no tmp folders
+    // if localUrl is defined and not a draft then move contents from an existing post over to tmp
+    if (input.localUrl && !input.localUrl.startsWith("/tmp/")) {
       folderName = crypto.randomUUID();
 
       const foundPost = (await getPosts()).find((post) =>
@@ -316,10 +334,15 @@ export async function startServer() {
           `static/tmp/${folderName}/`,
         );
       } else { // no post found. fallback
-        folderName = await getTmpFolder();
+        folderName = await makeTmpFolder();
       }
+    } else if (postIsDraft(input)) {
+      folderName = input.localUrl.split("/tmp/")[1];
+      post = (await getDrafts()).find((draft) =>
+        draft.localUrl === input.localUrl
+      );
     } else {
-      folderName = await getTmpFolder();
+      folderName = await makeTmpFolder();
     }
 
     ctx.body = {
@@ -329,8 +352,21 @@ export async function startServer() {
   });
 
   // deletes temporary posts that exist
-  router.delete("/api/post/discard", jwtMiddleware, async (ctx, next) => {
-    let folderName = await deleteTmpFolders();
+  router.delete("/api/post/discard", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+    const input = ctx.request.body;
+
+    if (!input.post || !input.post.localUrl) {
+      ctx.status = 400;
+    }
+
+    await deleteDraft(input.post);
+    if (postIsDraft(input.post)) {
+      // delete the draft
+      await deleteTmpFolder(input.post.localUrl.split("/tmp/")[1]);
+    } else { // not a draft. discard by tmpTitle
+      await deleteTmpFolder(input.post.tmpTitle);
+    }
+
     ctx.body = {};
   });
 
@@ -343,7 +379,7 @@ export async function startServer() {
     input.tmpTitle = input.tmpTitle.trim();
     const regex = new RegExp(`/tmp/${input.tmpTitle}`, "g");
 
-    const folderName = await generatePostFolderName(input.title);
+    const folderName = await generatePostFolderName(input.title, false);
     // replace all links with the absolute urls for RSS and relative for the HTML post
     input.htmlContent = input.htmlContent.replace(
       regex,
@@ -384,6 +420,11 @@ export async function startServer() {
 
     await addPost(entry);
 
+    // if this post came from a draft, delete it
+    if (postIsDraft(input)) {
+      await deleteDraft(input);
+    }
+
     // generate and save the ATOM feed from the database contents
     await xml.saveJsonToAtom();
 
@@ -393,7 +434,67 @@ export async function startServer() {
     ctx.body = {};
   });
 
-  // updating an existing post
+  // creating a draft
+  router.post("/api/post/draft", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+    const input = ctx.request.body;
+    // do not allow whitespace after the title. if the title loads in the url the space 
+    // is ignored and causes problems
+    input.title = input.title.trim();
+    input.tmpTitle = input.tmpTitle.trim();
+    const regex = new RegExp(`/tmp/${input.tmpTitle}`, "g");
+
+
+    const folderName = await generatePostFolderName(input.title, true);
+    // replace all links with the absolute urls for RSS and relative for the HTML post
+    input.htmlContent = input.htmlContent.replace(
+      regex,
+      `/tmp/${folderName}`,
+    );
+    input.rssContent = input.rssContent.replace(
+      regex,
+      `${config.link}/tmp/${folderName}`,
+    );
+
+    // save the post contents in an index.html file
+    await Deno.writeTextFile(
+      `static/tmp/${input.tmpTitle}/index.html`,
+      input.htmlContent,
+    );
+
+    // save the draft in the database.json
+    const entry = {
+      title: input.title,
+      author: config.author,
+      link: `${config.link}/tmp/${folderName}`,
+      categories: input.tags,
+      published: new Date().toISOString(),
+      updated: new Date().toISOString(),
+      content: input.rssContent, // rss sanitized input
+      originalContent: input.htmlContent, // raw input
+      localUrl: `/tmp/${folderName}`,
+      sources: [],
+      replyFeedUrl: input.replyFeedUrl,
+      replyPostIdUrl: input.replyPostIdUrl,
+    };
+
+    await addDraft(entry);
+
+    // move post to drafted folder
+    await Deno.rename(
+      `static/tmp/${input.tmpTitle}`,
+      `static/tmp/${folderName}`,
+    );
+
+    // delete the old draft if this post being saved is already a draft
+    if (postIsDraft(input)) {
+      await deleteDraft(input);
+      // old folder is renamed already. no need to delete anything
+    }
+
+    ctx.body = {};
+  });
+
+  // updating an existing post OR draft
   router.put("/api/post", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
     const regex = new RegExp(`/tmp/${input.tmpTitle}`, "g");
@@ -415,14 +516,19 @@ export async function startServer() {
       input.htmlContent,
     );
 
-    // "move" post to the original post's location
-    const originalPostUrl = `static/${input.localUrl}`;
+    if (postIsDraft(input)) { // draft
+      // drafts dont get moved or deleted
+    } else { // published post
+      // "move" post to the original post's location
+      const originalPostUrl = `static${input.localUrl}`;
 
-    await Deno.remove(originalPostUrl, { recursive: true });
-    await Deno.rename(
-      `static/tmp/${input.tmpTitle}`,
-      originalPostUrl,
-    );
+      await Deno.remove(originalPostUrl, { recursive: true });
+      await Deno.rename(
+        `static/tmp/${input.tmpTitle}`,
+        originalPostUrl,
+      );
+    }
+
     // edit the existing post in the database.json
     const entry = {
       title: input.title,
@@ -442,12 +548,16 @@ export async function startServer() {
       replyPostIdUrl: input.replyPostIdUrl,
     };
 
-    await editPost(entry);
-    // generate and save the ATOM feed from the database contents
-    await xml.saveJsonToAtom();
+    if (postIsDraft(input)) { // draft
+      await editDraft(entry);
+    } else { // published post
+      await editPost(entry);
+      // generate and save the ATOM feed from the database contents
+      await xml.saveJsonToAtom();
 
-    // find current saved feeds for the local feed and update specifically that one
-    await updateLocalFeed();
+      // find current saved feeds for the local feed and update specifically that one
+      await updateLocalFeed();
+    }
 
     ctx.body = {};
   });
@@ -830,26 +940,59 @@ export async function startServer() {
   }
 }
 
+function postIsDraft (post) {
+  return post.localUrl && post.localUrl.startsWith("/tmp/");
+}
+
 // smartly creates a name for the folder to put your post in. also makes it if it doesn't exist already
-async function generatePostFolderName(postName) {
+async function generatePostFolderName(postName, isDraft = false) {
   const date = new Date();
   const parentFolderName = `${date.getFullYear()}-${date.getMonth() + 1}`;
   const postFolderName = `${Math.floor(Date.now() / 1000)}-${postName}`;
   const fullName = `${parentFolderName}/${postFolderName}`;
   await Deno.mkdir(
-    `static/posts/${fullName}`,
+    isDraft ? `static/tmp/${postFolderName}` : `static/posts/${fullName}`,
     { recursive: true },
   );
-  return fullName;
+  return isDraft ? postFolderName : fullName;
 }
 
 // only reads inside static folder
+async function deleteTmpFolder(name) {
+  try {
+    await Deno.remove(
+      `static/tmp/${name}`,
+      { recursive: true },
+    );
+  } catch {
+    logger.error("Error deleting temporary folders");
+  }
+}
 
-async function deleteTmpFolders() {
+// only reads inside static folder
+async function deleteTmpFiles() {
   try {
     const files = await Deno.readDir("static/tmp");
     for await (let file of files) {
-      if (file.isDirectory) { // delete tmp directories
+      if (!file.isDirectory) { // delete tmp files
+        await Deno.remove(
+          `static/tmp/${file.name}`
+        );
+      }
+    }
+  } catch {
+    logger.error("Error deleting temporary files");
+  }
+}
+
+// sometimes tmp folders get made and aren't deleted due to shenanigans outside the server's control
+async function deleteUntrackedTmpFolders() {
+  const draftFolderNames = (await getDrafts()).map(draft => draft.localUrl.split("/tmp/")[1]);
+  // delete all folders inside /tmp not catalogued in database.json
+  try {
+    const files = await Deno.readDir("static/tmp");
+    for await (let file of files) {
+      if (file.isDirectory && !draftFolderNames.includes(file.name)) {
         await Deno.remove(
           `static/tmp/${file.name}`,
           { recursive: true },
@@ -861,28 +1004,13 @@ async function deleteTmpFolders() {
   }
 }
 
-// creates a new post inside /static/tmp if one does not exist already and returns its folder name
-async function getTmpFolder() {
-  let folderName;
-  try {
-    const files = await Deno.readDir("static/tmp");
-    for await (let file of files) {
-      if (file.isDirectory) {
-        folderName = file.name;
-        break;
-      }
-    }
-    if (!folderName) {
-      // no folders found. make a new one
-      throw new Error("No folders found.");
-    }
-  } catch {
-    folderName = crypto.randomUUID();
-    await Deno.mkdir(
-      `static/tmp/${folderName}`,
-      { recursive: true },
-    );
-  }
+// creates a new post inside /static/tmp
+async function makeTmpFolder() {
+  let folderName = crypto.randomUUID();
+  await Deno.mkdir(
+    `static/tmp/${folderName}`,
+    { recursive: true },
+  );
   return folderName;
 }
 
