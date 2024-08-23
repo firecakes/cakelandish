@@ -337,6 +337,10 @@ export async function startServer() {
   // creating a post
   router.post("/api/post", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
+    // do not allow whitespace after the title. if the title loads in the url the space 
+    // is ignored and causes problems
+    input.title = input.title.trim();
+    input.tmpTitle = input.tmpTitle.trim();
     const regex = new RegExp(`/tmp/${input.tmpTitle}`, "g");
 
     const folderName = await generatePostFolderName(input.title);
