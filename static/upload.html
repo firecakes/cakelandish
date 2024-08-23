@@ -73,7 +73,7 @@
             <!-- upload media form -->
             <div class="form">
               <label for="file-upload" class="file form file-upload-images">
-                <p class="flex-center">Upload media</p>
+                <p class="cursor flex-center">Upload media</p>
               </label>
               <input id="file-upload" accept="image/*" type="file" @change="filesSubmitted" multiple/>
             </div>
@@ -617,6 +617,10 @@
 
     .iframe {
       height: 600px; /* best easy option atm */
+    }
+
+    .cursor {
+      cursor: pointer;
     }
 
     /* media queries + changing layout of HTML based on screen size */
