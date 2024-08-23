@@ -17,7 +17,7 @@
         <div class="post-contents">
           <a :href="post.link" target="_blank"> {{ post.title }}</a>
           <br>
-          <pre>{{ post.content }}</pre>
+          <pre>{{ post.originalContent }}</pre>
         </div>
         <a class="button flex" :href="`/upload.html?localUrl=${post.localUrl}`"><p class="edit-post-text">Edit post</p></a>
         <button v-if="!post.requestDeletion" class="button" @click="deletePost(post)">Delete post</button>
