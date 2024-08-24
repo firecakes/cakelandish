@@ -261,6 +261,21 @@ export async function startServer() {
     ctx.body = input;
   });
 
+  // finds all files loaded at a location
+  router.get("/api/upload", jwtMiddleware, async (ctx, next) => {
+    const input = ctx.request.query;
+    let tmpUrl = `static/tmp/${input.tmpTitle}`;
+    // in the special case of editing a published post, there will be both temporary and published files!
+    // only show the temporary files. this way the user doesn't accidentally delete a published file
+    let tmpFiles = (await getFilesInDirectory(tmpUrl))
+      .map(file => `${tmpUrl.split('static')[1]}/${file}`);
+
+    ctx.body = {
+      // send back the full paths of where these uploaded files are stored
+      files: tmpFiles
+    };
+  });
+
   // upload files to the server
   router.post("/api/upload", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
@@ -289,6 +304,20 @@ export async function startServer() {
       ),
       address: config.link,
     };
+  });
+
+  // deletes a file uploaded
+  router.delete("/api/upload", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+    const input = ctx.request.body;
+    if (!input.fileName) {
+      ctx.status = 400;
+    }
+
+    await Deno.remove(
+      `static${input.fileName}`
+    );
+    
+    ctx.body = {};
   });
 
   // get all posts in static folder. this is public, and does not read from the database to get the info
@@ -441,18 +470,30 @@ export async function startServer() {
     // is ignored and causes problems
     input.title = input.title.trim();
     input.tmpTitle = input.tmpTitle.trim();
-    const regex = new RegExp(`/tmp/${input.tmpTitle}`, "g");
-
+    const tmpRegex = new RegExp(`/tmp/${input.tmpTitle}`, "g");
 
     const folderName = await generatePostFolderName(input.title, true);
-    // replace all links with the absolute urls for RSS and relative for the HTML post
+    const publishedContentRegex = new RegExp(`${input.localUrl}`, "g");
+    const publishedRssRegex = new RegExp(`${config.link}${input.localUrl}`, "g");
+
+    // replace all temporary links with the copied over urls for the HTML post
     input.htmlContent = input.htmlContent.replace(
-      regex,
+      tmpRegex,
       `/tmp/${folderName}`,
     );
     input.rssContent = input.rssContent.replace(
-      regex,
-      `${config.link}/tmp/${folderName}`,
+      tmpRegex,
+      `/tmp/${folderName}`,
+    );
+
+    // published files need their absolute URLs removed and set back to relative
+    input.htmlContent = input.htmlContent.replace(
+      publishedContentRegex,
+      `/tmp/${folderName}`,
+    );
+    input.rssContent = input.rssContent.replace(
+      publishedRssRegex,
+      `/tmp/${folderName}`,
     );
 
     // save the post contents in an index.html file
@@ -942,6 +983,24 @@ export async function startServer() {
 
 function postIsDraft (post) {
   return post.localUrl && post.localUrl.startsWith("/tmp/");
+}
+
+async function getFilesInDirectory (dir) {
+  const storedFiles = [];
+  try {
+    const files = await Deno.readDir(dir);
+    for await (let file of files) {
+      if (file.name === "index.html") {
+        continue; // don't care about the index.html
+      }
+      if (!file.isDirectory) {
+        storedFiles.push(file.name)
+      }
+    }
+  } catch (err) {
+    logger.error("Error getting uploaded files");
+  }
+  return storedFiles;
 }
 
 // smartly creates a name for the folder to put your post in. also makes it if it doesn't exist already

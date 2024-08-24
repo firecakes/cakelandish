@@ -83,6 +83,12 @@
               <p class="tiny-text">{{ upload }}</p>
             </div>
 
+            <p v-if="uploadedFiles.length !== 0" class="tiny-text">All uploaded files. Click on one to embed it into the post automatically.</p>
+            <div class="flex uploaded-file" v-for="fileName in uploadedFiles">
+              <p class="cursor tiny-text half" @click="insertEmbedFromFile(fileName)">{{ fileName }}</p>
+              <p class="cursor center tiny-text" @click="deleteUpload(fileName)">Delete</p>
+            </div>
+
           </div>
 
           <div class="two-third">
@@ -156,6 +162,7 @@
           isRunningEmbedReply: false,
           debounceTimer: null,
           debouncedHtmlInputLayoutApplied: "",
+          uploadedFiles: [],
         }
       },
       watch: {
@@ -235,6 +242,8 @@
           this.title = result.data.name;
           this.tmpTitle = this.title;
         }
+        // get uploaded files
+        await this.getUploadedFiles();
       },
       computed: {
         htmlInputLayoutApplied: function () {
@@ -276,6 +285,12 @@
         }
       },
       methods: {
+        async getUploadedFiles () {
+          this.uploadedFiles = (await axios.get('/api/upload', {params: {
+            tmpTitle: this.tmpTitle,
+            localUrl: this.localUrl,
+          }})).data.files.sort();
+        },
         toggleRssOverride () {
           this.showRssOverride = !this.showRssOverride;
         },
@@ -299,11 +314,28 @@
         removeTag (index) {
           this.tags.splice(index, 1);
         },
-        async filesSubmitted (event) {
+        insertEmbedFromFile (fileName) {
+          // smartly create different elements depending on the file type submitted
           let imageTypes = ["apng", "avif", "gif", "jpeg", "jpg", "png", "svg", "webp", "bmp"];
           let audioTypes = ["wav", "ogg", "mp3"];
           let videoTypes = ["webm", "mp4"];
+          const extension = fileName.split(".").reverse()[0];
 
+          if (imageTypes.includes(extension)) {
+            this.htmlInput += `\n<img src="${fileName}"></img>`
+          } else if (audioTypes.includes(extension)) {
+            this.htmlInput += `\n<audio controls>
+<source src="${fileName}">
+</audio>`
+          } else if (videoTypes.includes(extension)) {
+            this.htmlInput += `\n<video controls>
+<source src="${fileName}" type="video/${extension}">
+</video>`
+          } else {
+            this.htmlInput += `\n<a href="${fileName}">${fileName.split("/").reverse()[0]}</a>` // default to using a link
+          }
+        },
+        async filesSubmitted (event) {
           const formData = new FormData();
           formData.append('folder', this.tmpTitle)
           const contentTypes = [];
@@ -319,27 +351,19 @@
               'Content-Type': 'multipart/form-data',
             }
           });
+          this.getUploadedFiles();
+
           for (let file of results.data.files) {
             this.uploadsInProgress.delete(file.split("/")[file.split("/").length - 1]);
-            // smartly create different elements depending on the file type submitted
-            const extension = file.split(".").reverse()[0];
-
-            if (imageTypes.includes(extension)) {
-              this.htmlInput += `\n<img src="${file}"></img>`
-            } else if (audioTypes.includes(extension)) {
-              this.htmlInput += `\n<audio controls>
-  <source src="${file}">
-</audio>`
-            } else if (videoTypes.includes(extension)) {
-              this.htmlInput += `\n<video controls>
-  <source src="${file}" type="video/${extension}">
-</video>`
-            } else {
-              this.htmlInput += `\n<a href="${file}">${file.split("/").reverse()[0]}</a>` // default to using a link
-            }
-            
+            this.insertEmbedFromFile(file);
           }
           this.sanitizeHtml();
+        },
+        async deleteUpload (fileName) {
+          await axios.delete('/api/upload', {data: {
+            fileName: fileName
+          }});
+          this.getUploadedFiles();
         },
         async submitPost () {
           if (this.performAction) {
@@ -655,6 +679,12 @@
 
     .cursor {
       cursor: pointer;
+    }
+
+    .uploaded-file {
+      width: 100%;
+      justify-content: space-around;
+      margin-top: 10px;
     }
 
     /* media queries + changing layout of HTML based on screen size */
