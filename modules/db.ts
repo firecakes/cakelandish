@@ -132,7 +132,7 @@ export async function deletePost(post: Entry) {
 // draft functions
 export async function getDrafts(): Object {
   const file = await Deno.readTextFile("database.json");
-  return JSON.parse(file).drafts;
+  return JSON.parse(file).drafts ? JSON.parse(file).drafts : [];
 }
 
 export async function addDraft(post: Entry) {
