@@ -387,7 +387,7 @@
             .map(post => { // reset hide reply state since replies get wiped on change
               post.entry.hideReplyToButton = false;
               // nsfw category check
-              if (post.entry.categories.map(c => c.includes("nsfw")).includes(true)) {
+              if (post.entry.categories.map(c => c.toLowerCase().includes("nsfw")).includes(true)) {
                 post.entry.nsfw = true;
               }
               return post;
