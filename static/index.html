@@ -104,29 +104,45 @@
         <!-- Search posts -->
         <p @click="toggleSearch" class="button sidebar-button small-title center margin-center">Search Posts</p>
 
-        <div v-if="showSearch" class="flex search">
-          <div class="flex-v half form space-to-edges">
-            <p class="small-title center margin-center">Type</p>
-            <select class="center select" v-model="searchType">
-              <option v-for="type in searchTypeList"> {{ type }} </option>
-            </select>
-          </div>
-          <div class="flex-v half form space-to-edges">
-            <p class="small-title center margin-center">Value</p>
-            <input v-if="searchType === 'Category'" class="select" v-model="searchValues[0].value" @change="feedToList()">
-            <input v-if="searchType === 'Title'" class="select" v-model="searchValues[1].value" @change="feedToList()">
-            <input v-if="searchType === 'Content'" class="select" v-model="searchValues[2].value" @change="feedToList()">
-            <div class="flex" v-if="searchType === 'Date'">
-              <div>
-                <p class="date-field-text center margin-center">From</p>
-                <input class="select small-side-margin" type="date" v-model="searchValues[3].value.from" @change="feedToList()">
-              </div>
-              <div>
-                <p class="date-field-text center margin-center">To</p>
-                <input class="select small-side-margin" type="date" v-model="searchValues[3].value.to" @change="feedToList()">
-              </div>
+        <div v-if="showSearch" class="flex-v search">
+
+          <div class="flex" style="margin-bottom: 10px">
+            <div class="flex-v half form space-to-edges">
+              <p class="small-title center margin-center">Type</p>
+              <select class="center select" v-model="searchType">
+                <option v-for="type in searchTypeList"> {{ type }} </option>
+              </select>
             </div>
-            <input v-if="searchType === 'Has Image'" type="checkbox" class="select checkbox" v-model="searchValues[4].value" @change="feedToList()">
+            <div class="flex-v half form space-to-edges">
+              <p class="small-title center margin-center">Value</p>
+              <input v-if="searchType === 'Category'" class="select" v-model="searchValues[0].value">
+              <input v-if="searchType === 'Title'" class="select" v-model="searchValues[1].value">
+              <input v-if="searchType === 'Content'" class="select" v-model="searchValues[2].value">
+              <div class="flex" v-if="searchType === 'Date'">
+                <div>
+                  <p class="date-field-text center margin-center">From</p>
+                  <input class="select small-side-margin" type="date" v-model="searchValues[3].value.from">
+                </div>
+                <div>
+                  <p class="date-field-text center margin-center">To</p>
+                  <input class="select small-side-margin" type="date" v-model="searchValues[3].value.to">
+                </div>
+              </div>
+              <input v-if="searchType === 'Has Image'" type="checkbox" class="select checkbox" v-model="searchValues[4].value">
+            </div>
+          </div>
+
+          <div class="flex form">
+            <p class="small-title center margin-center">Invert filter</p>
+            <input type="checkbox" class="select checkbox" v-model="invertFilter">
+          </div>
+
+          <button class="button add-feed-option-button" @click="addFilter()">Add Filter</button>
+
+          <div class="flex form" v-for="(filter, index) in filters" 
+            style="margin-left: 10px; margin-right: 10px;">
+            <p class="tiny-text half">{{ filter.type }}:{{ filter.value }}{{ filter.inverted ? " (not)" : "" }}</p>
+            <p class="cursor center tiny-text" @click="deleteFilter(index)">Delete</p>
           </div>
         </div>
 
@@ -192,6 +208,7 @@
           },
           isLoading: false,
           focusedFeedIndex: null,
+          filters: [], // { type: "" , value: string/obj/bool}
           searchType: "Category",
           searchValues: [{
             type: "Category",
@@ -212,6 +229,7 @@
             type: "Has Image",
             value: false,
           },],
+          invertFilter: false,
           searchTypeList: ["Category", "Title", "Content", "Date", "Has Image"],
           searchingForExtraFeed: false,
           isAuthenticated: null,
@@ -358,28 +376,41 @@
             .flat()
             // per-post filters....
             .filter(post => {
-              for (let i = 0; i < this.searchValues.length; i++) {
-                const searchType = this.searchValues[i].type;
-                const searchValue = this.searchValues[i].value;
-                if (searchType === "Category" && searchValue !== "" && !post.entry.categories.map(c => c.toLowerCase()).includes(searchValue.toLowerCase())) {
-                  return false;
+              // content can be null
+              if (post.entry.content === null) {
+                post.entry.content = "";
+              }
+              for (let i = 0; i < this.filters.length; i++) {
+                const searchType = this.filters[i].type;
+                const searchValue = this.filters[i].value;
+                const isInverted = this.filters[i].inverted;
+                if (searchType === "Category") {
+                  if (post.entry.categories.map(c => c.toLowerCase()).includes(searchValue.toLowerCase()) === isInverted) {
+                    return false;
+                  }
                 }
-                if (searchType === "Title" && searchValue !== "" && !post.entry.title.toLowerCase().includes(searchValue.toLowerCase())) {
-                  return false;
+                if (searchType === "Title") {
+                  if (post.entry.title.toLowerCase().includes(searchValue.toLowerCase()) === isInverted) {
+                    return false;
+                  }
                 }
-                if (searchType === "Content" && searchValue !== "" && !post.entry.content.toLowerCase().includes(searchValue.toLowerCase())) {
-                  return false;
+                if (searchType === "Content") {
+                  if (post.entry.content.toLowerCase().includes(searchValue.toLowerCase()) === isInverted) {
+                    return false;
+                  }
                 }
                 if (searchType === "Date" && searchValue.from !== "" && searchValue.to !== "") {
                   const postDate = new Date(post.entry.date);
                   const fromDate = this.convertInputDate(searchValue.from);
                   const toDate = this.convertInputDate(searchValue.to);
-                  if (postDate < fromDate || postDate > toDate) {
+                  if (!(postDate < fromDate || postDate > toDate) === isInverted) {
                     return false;
                   }
                 }
-                if (searchType === "Has Image" && searchValue === true && !post.entry.content.includes("<img src=")) {
-                  return false;
+                if (searchType === "Has Image") {
+                  if ( (post.entry.content.includes("<img src=") === searchValue) === isInverted) {
+                    return false;
+                  }
                 }
               }
               return true;
@@ -412,6 +443,29 @@
             this.feed.updateMinutes = this.feeds[index].updateMinutes;
           }
           this.selectedIndex = index;
+        },
+        addFilter () {
+          const filter = this.searchValues.find(obj => obj.type === this.searchType);
+          if (!filter) {
+            return;
+          }
+          const filterCopy = JSON.parse(JSON.stringify(filter));
+          filterCopy.inverted = this.invertFilter;
+          this.filters.push(filterCopy);
+          this.searchValues[0].value = "";
+          this.searchValues[1].value = "";
+          this.searchValues[2].value = "";
+          this.searchValues[3].value = {
+            from: "",
+            to: "",
+          };
+          this.searchValues[4].value = false;
+          this.invertFilter = false;
+          this.feedToList();
+        },
+        deleteFilter (index) {
+          this.filters.splice(index, 1);
+          this.feedToList();
         },
         async addFeed () {
           this.showingAddFeedForm = !this.showingAddFeedForm;
@@ -831,6 +885,10 @@
     .small-side-margin {
       margin-left: 4px;
       margin-right: 4px;
+    }
+
+    .cursor {
+      cursor: pointer;
     }
 
     /* Rules that allow for better resizing of the content */
