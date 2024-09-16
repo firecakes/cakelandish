@@ -59,6 +59,11 @@ export async function init() {
     db.lastDateExported = Date.now();
   }
 
+  // initialize drafts
+  if (db.drafts === undefined) {
+    db.drafts = [];
+  }
+
   await saveDb(db);
   await generatePostFileStructure();
   return db;
@@ -122,6 +127,42 @@ export async function deletePost(post: Entry) {
   db.entries = db.entries.filter((target) => target.localUrl !== post.localUrl);
   await saveDb(db);
   await generatePostFileStructure();
+}
+
+// draft functions
+export async function getDrafts(): Object {
+  const file = await Deno.readTextFile("database.json");
+  return JSON.parse(file).drafts ? JSON.parse(file).drafts : [];
+}
+
+export async function addDraft(post: Entry) {
+  const db = await readDb();
+  if (!Array.isArray(db.drafts)) {
+    db.drafts = [];
+  }
+  db.drafts.push(post);
+  await saveDb(db);
+}
+
+export async function editDraft(post: Entry) {
+  const db = await readDb();
+  if (!Array.isArray(db.drafts)) {
+    db.drafts = [];
+  }
+  const foundPostIndex = db.drafts.findIndex((target) =>
+    target.localUrl === post.localUrl
+  );
+  if (foundPostIndex === -1) {
+    return;
+  }
+  db.drafts[foundPostIndex] = post;
+  await saveDb(db);
+}
+
+export async function deleteDraft(post: Entry) {
+  let db = await readDb();
+  db.drafts = db.drafts.filter((target) => target.localUrl !== post.localUrl);
+  await saveDb(db);
 }
 
 // feed functions

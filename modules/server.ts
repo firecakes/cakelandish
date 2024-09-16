@@ -21,14 +21,17 @@ import {
   verifyJwtAccessToken,
 } from "./auth.ts";
 import {
+  addDraft,
   addFeed,
   addOrEditPage,
   addPageFile,
   addPost,
   changeDomains,
+  deleteDraft,
   deleteFeed,
   deletePage,
   deletePost,
+  editDraft,
   editFeed,
   editPost,
   feedGetHelper,
@@ -41,6 +44,7 @@ import {
   reorderFeed,
   saveLayout,
   updateLastDateExported,
+  getDrafts,
 } from "./db.ts";
 import { getPostLocations } from "./post.ts";
 import {
@@ -101,11 +105,14 @@ async function getRemoteVersion() {
   } catch (err) {
   }
 }
-setInterval(getRemoteVersion, 1000 * 60 * 5); // 5 minutes
+setInterval(getRemoteVersion, 1000 * 60 * 60); // 1 hour interval
 getRemoteVersion();
 
 export async function startServer() {
   // start the web server initialization
+  await deleteTmpFiles();
+  await deleteUntrackedTmpFolders();
+
   const app = new Koa();
   const router = new Router();
 
@@ -146,13 +153,39 @@ export async function startServer() {
       // access token invalid. unauthorized
       ctx.status = 401; // unauthorized
       ctx.state.errorMessage = "Unauthorized";
-      ctx.state.errorPage = "./static/401.html";
 
       await handleError(ctx);
     }
   };
 
   const jwtAndBodyParser = koaCompose([jwtMiddleware, koaBodyMiddleware]);
+  
+  // restricted page checker
+  app.use(async (ctx, next) => {
+    const pages = ["/admin.html", "/layout.html", "/manage.html", "/pages.html", "/upload.html"];
+
+    // check if JWT is enabled. check the access token specifically
+    if (!config.jwt) { // JWT is disabled
+      await next();
+      return;
+    }
+    // access token validation check
+    try {
+      const accessToken = await ctx.cookies.get("jwt-access");
+      await verifyJwtAccessToken(accessToken);
+      // no exceptions thrown. continue
+      await next();
+    } catch {
+      // access token invalid. check if on restricted route
+      for (let i = 0; i < pages.length; i++) {
+        if (ctx.request.url.startsWith(pages[i])) {
+          ctx.body = await Deno.readTextFile("./static/401.html");
+          return;
+        }
+      }
+      await next();
+    }
+  });
 
   if (config.enableTrafficLogs) {
     // traffic tracker
@@ -228,9 +261,29 @@ export async function startServer() {
     ctx.body = input;
   });
 
+  // finds all files loaded at a location
+  router.get("/api/upload", jwtMiddleware, async (ctx, next) => {
+    const input = ctx.request.query;
+    let tmpUrl = `static/tmp/${input.tmpTitle}`;
+    // in the special case of editing a published post, there will be both temporary and published files!
+    // only show the temporary files. this way the user doesn't accidentally delete a published file
+    let tmpFiles = (await getFilesInDirectory(tmpUrl))
+      .map(file => `${tmpUrl.split('static')[1]}/${file}`);
+
+    ctx.body = {
+      // send back the full paths of where these uploaded files are stored
+      files: tmpFiles
+    };
+  });
+
   // upload files to the server
   router.post("/api/upload", jwtAndBodyParser, async (ctx, next) => {
-    let folderName = await getTmpFolder();
+    const input = ctx.request.body;
+    if (!input.folder || typeof input.folder !== "string") {
+      ctx.status = 400;
+    }
+
+    let folderName = input.folder;
 
     if (!Array.isArray(ctx.request.files.myFile)) {
       ctx.request.files.myFile = [ctx.request.files.myFile];
@@ -253,6 +306,20 @@ export async function startServer() {
     };
   });
 
+  // deletes a file uploaded
+  router.delete("/api/upload", jwtAndBodyParser, async (ctx, next) => {
+    const input = ctx.request.body;
+    if (!input.fileName) {
+      ctx.status = 400;
+    }
+
+    await Deno.remove(
+      `static${input.fileName}`
+    );
+    
+    ctx.body = {};
+  });
+
   // get all posts in static folder. this is public, and does not read from the database to get the info
   router.get("/api/post/all", async (ctx, next) => {
     ctx.body = {
@@ -267,15 +334,21 @@ export async function startServer() {
     };
   });
 
+  // get all drafts the user made
+  router.get("/api/post/draft", jwtMiddleware, async (ctx, next) => {
+    ctx.body = {
+      posts: await getDrafts(),
+    };
+  });
+
   // initialize a new post. if a tmp folder already exists then return that one's name instead
   router.post("/api/post/init", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
     let folderName;
     let post;
 
-    // if localUrl is defined then move contents from an existing post over to tmp
-    if (input.localUrl) {
-      await deleteTmpFolders(); // start with no tmp folders
+    // if localUrl is defined and not a draft then move contents from an existing post over to tmp
+    if (input.localUrl && !input.localUrl.startsWith("/tmp/")) {
       folderName = crypto.randomUUID();
 
       const foundPost = (await getPosts()).find((post) =>
@@ -290,10 +363,15 @@ export async function startServer() {
           `static/tmp/${folderName}/`,
         );
       } else { // no post found. fallback
-        folderName = await getTmpFolder();
+        folderName = await makeTmpFolder();
       }
+    } else if (postIsDraft(input)) {
+      folderName = input.localUrl.split("/tmp/")[1];
+      post = (await getDrafts()).find((draft) =>
+        draft.localUrl === input.localUrl
+      );
     } else {
-      folderName = await getTmpFolder();
+      folderName = await makeTmpFolder();
     }
 
     ctx.body = {
@@ -303,17 +381,34 @@ export async function startServer() {
   });
 
   // deletes temporary posts that exist
-  router.delete("/api/post/discard", jwtMiddleware, async (ctx, next) => {
-    let folderName = await deleteTmpFolders();
+  router.delete("/api/post/discard", jwtAndBodyParser, async (ctx, next) => {
+    const input = ctx.request.body;
+
+    if (!input.post || !input.post.localUrl) {
+      ctx.status = 400;
+    }
+
+    await deleteDraft(input.post);
+    if (postIsDraft(input.post)) {
+      // delete the draft
+      await deleteTmpFolder(input.post.localUrl.split("/tmp/")[1]);
+    } else { // not a draft. discard by tmpTitle
+      await deleteTmpFolder(input.post.tmpTitle);
+    }
+
     ctx.body = {};
   });
 
   // creating a post
   router.post("/api/post", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
+    // do not allow whitespace after the title. if the title loads in the url the space 
+    // is ignored and causes problems
+    input.title = input.title.trim();
+    input.tmpTitle = input.tmpTitle.trim();
     const regex = new RegExp(`/tmp/${input.tmpTitle}`, "g");
 
-    const folderName = await generatePostFolderName(input.title);
+    const folderName = await generatePostFolderName(input.title, false);
     // replace all links with the absolute urls for RSS and relative for the HTML post
     input.htmlContent = input.htmlContent.replace(
       regex,
@@ -354,6 +449,11 @@ export async function startServer() {
 
     await addPost(entry);
 
+    // if this post came from a draft, delete it
+    if (postIsDraft(input)) {
+      await deleteDraft(input);
+    }
+
     // generate and save the ATOM feed from the database contents
     await xml.saveJsonToAtom();
 
@@ -363,7 +463,79 @@ export async function startServer() {
     ctx.body = {};
   });
 
-  // updating an existing post
+  // creating a draft
+  router.post("/api/post/draft", jwtAndBodyParser, async (ctx, next) => {
+    const input = ctx.request.body;
+    // do not allow whitespace after the title. if the title loads in the url the space 
+    // is ignored and causes problems
+    input.title = input.title.trim();
+    input.tmpTitle = input.tmpTitle.trim();
+    const tmpRegex = new RegExp(`/tmp/${input.tmpTitle}`, "g");
+
+    const folderName = await generatePostFolderName(input.title, true);
+    const publishedContentRegex = new RegExp(`${input.localUrl}`, "g");
+    const publishedRssRegex = new RegExp(`${config.link}${input.localUrl}`, "g");
+
+    // replace all temporary links with the copied over urls for the HTML post
+    input.htmlContent = input.htmlContent.replace(
+      tmpRegex,
+      `/tmp/${folderName}`,
+    );
+    input.rssContent = input.rssContent.replace(
+      tmpRegex,
+      `/tmp/${folderName}`,
+    );
+
+    // published files need their absolute URLs removed and set back to relative
+    input.htmlContent = input.htmlContent.replace(
+      publishedContentRegex,
+      `/tmp/${folderName}`,
+    );
+    input.rssContent = input.rssContent.replace(
+      publishedRssRegex,
+      `/tmp/${folderName}`,
+    );
+
+    // save the post contents in an index.html file
+    await Deno.writeTextFile(
+      `static/tmp/${input.tmpTitle}/index.html`,
+      input.htmlContent,
+    );
+
+    // save the draft in the database.json
+    const entry = {
+      title: input.title,
+      author: config.author,
+      link: `${config.link}/tmp/${folderName}`,
+      categories: input.tags,
+      published: new Date().toISOString(),
+      updated: new Date().toISOString(),
+      content: input.rssContent, // rss sanitized input
+      originalContent: input.htmlContent, // raw input
+      localUrl: `/tmp/${folderName}`,
+      sources: [],
+      replyFeedUrl: input.replyFeedUrl,
+      replyPostIdUrl: input.replyPostIdUrl,
+    };
+
+    await addDraft(entry);
+
+    // move post to drafted folder
+    await Deno.rename(
+      `static/tmp/${input.tmpTitle}`,
+      `static/tmp/${folderName}`,
+    );
+
+    // delete the old draft if this post being saved is already a draft
+    if (postIsDraft(input)) {
+      await deleteDraft(input);
+      // old folder is renamed already. no need to delete anything
+    }
+
+    ctx.body = {};
+  });
+
+  // updating an existing post OR draft
   router.put("/api/post", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
     const regex = new RegExp(`/tmp/${input.tmpTitle}`, "g");
@@ -385,14 +557,19 @@ export async function startServer() {
       input.htmlContent,
     );
 
-    // "move" post to the original post's location
-    const originalPostUrl = `static/${input.localUrl}`;
+    if (postIsDraft(input)) { // draft
+      // drafts dont get moved or deleted
+    } else { // published post
+      // "move" post to the original post's location
+      const originalPostUrl = `static${input.localUrl}`;
 
-    await Deno.remove(originalPostUrl, { recursive: true });
-    await Deno.rename(
-      `static/tmp/${input.tmpTitle}`,
-      originalPostUrl,
-    );
+      await Deno.remove(originalPostUrl, { recursive: true });
+      await Deno.rename(
+        `static/tmp/${input.tmpTitle}`,
+        originalPostUrl,
+      );
+    }
+
     // edit the existing post in the database.json
     const entry = {
       title: input.title,
@@ -412,12 +589,16 @@ export async function startServer() {
       replyPostIdUrl: input.replyPostIdUrl,
     };
 
-    await editPost(entry);
-    // generate and save the ATOM feed from the database contents
-    await xml.saveJsonToAtom();
+    if (postIsDraft(input)) { // draft
+      await editDraft(entry);
+    } else { // published post
+      await editPost(entry);
+      // generate and save the ATOM feed from the database contents
+      await xml.saveJsonToAtom();
 
-    // find current saved feeds for the local feed and update specifically that one
-    await updateLocalFeed();
+      // find current saved feeds for the local feed and update specifically that one
+      await updateLocalFeed();
+    }
 
     ctx.body = {};
   });
@@ -527,7 +708,7 @@ export async function startServer() {
   });
 
   // import a tar of the server's state
-  router.post("/api/import", jwtMiddleware, async (ctx, next) => {
+  router.post("/api/import", jwtAndBodyParser, async (ctx, next) => {
     // enforce its existence
     await Deno.mkdir(
       `static/files`,
@@ -688,7 +869,14 @@ export async function startServer() {
 
     // get the location of the page
     const pageUrl = `static/${input.page.url}`;
-
+    const fullPath = `static/${input.url}`;
+    if (isBlacklistedPath(fullPath)) {
+      ctx.status = 400;
+      ctx.body = {
+        error: "This is a reserved location and cannot be written to.",
+      };
+      return;
+    }
     await deletePage(input.page);
     await Deno.remove(
       pageUrl,
@@ -793,26 +981,77 @@ export async function startServer() {
   }
 }
 
+function postIsDraft (post) {
+  return post.localUrl && post.localUrl.startsWith("/tmp/");
+}
+
+async function getFilesInDirectory (dir) {
+  const storedFiles = [];
+  try {
+    const files = await Deno.readDir(dir);
+    for await (let file of files) {
+      if (file.name === "index.html") {
+        continue; // don't care about the index.html
+      }
+      if (!file.isDirectory) {
+        storedFiles.push(file.name)
+      }
+    }
+  } catch (err) {
+    logger.error("Error getting uploaded files");
+  }
+  return storedFiles;
+}
+
 // smartly creates a name for the folder to put your post in. also makes it if it doesn't exist already
-async function generatePostFolderName(postName) {
+async function generatePostFolderName(postName, isDraft = false) {
   const date = new Date();
   const parentFolderName = `${date.getFullYear()}-${date.getMonth() + 1}`;
   const postFolderName = `${Math.floor(Date.now() / 1000)}-${postName}`;
   const fullName = `${parentFolderName}/${postFolderName}`;
   await Deno.mkdir(
-    `static/posts/${fullName}`,
+    isDraft ? `static/tmp/${postFolderName}` : `static/posts/${fullName}`,
     { recursive: true },
   );
-  return fullName;
+  return isDraft ? postFolderName : fullName;
 }
 
 // only reads inside static folder
+async function deleteTmpFolder(name) {
+  try {
+    await Deno.remove(
+      `static/tmp/${name}`,
+      { recursive: true },
+    );
+  } catch {
+    logger.error("Error deleting temporary folders");
+  }
+}
 
-async function deleteTmpFolders() {
+// only reads inside static folder
+async function deleteTmpFiles() {
   try {
     const files = await Deno.readDir("static/tmp");
     for await (let file of files) {
-      if (file.isDirectory) { // delete tmp directories
+      if (!file.isDirectory) { // delete tmp files
+        await Deno.remove(
+          `static/tmp/${file.name}`
+        );
+      }
+    }
+  } catch {
+    logger.error("Error deleting temporary files");
+  }
+}
+
+// sometimes tmp folders get made and aren't deleted due to shenanigans outside the server's control
+async function deleteUntrackedTmpFolders() {
+  const draftFolderNames = (await getDrafts()).map(draft => draft.localUrl.split("/tmp/")[1]);
+  // delete all folders inside /tmp not catalogued in database.json
+  try {
+    const files = await Deno.readDir("static/tmp");
+    for await (let file of files) {
+      if (file.isDirectory && !draftFolderNames.includes(file.name)) {
         await Deno.remove(
           `static/tmp/${file.name}`,
           { recursive: true },
@@ -824,28 +1063,13 @@ async function deleteTmpFolders() {
   }
 }
 
-// creates a new post inside /static/tmp if one does not exist already and returns its folder name
-async function getTmpFolder() {
-  let folderName;
-  try {
-    const files = await Deno.readDir("static/tmp");
-    for await (let file of files) {
-      if (file.isDirectory) {
-        folderName = file.name;
-        break;
-      }
-    }
-    if (!folderName) {
-      // no folders found. make a new one
-      throw new Error("No folders found.");
-    }
-  } catch {
-    folderName = crypto.randomUUID();
-    await Deno.mkdir(
-      `static/tmp/${folderName}`,
-      { recursive: true },
-    );
-  }
+// creates a new post inside /static/tmp
+async function makeTmpFolder() {
+  let folderName = crypto.randomUUID();
+  await Deno.mkdir(
+    `static/tmp/${folderName}`,
+    { recursive: true },
+  );
   return folderName;
 }
 

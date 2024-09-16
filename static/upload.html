@@ -73,7 +73,7 @@
             <!-- upload media form -->
             <div class="form">
               <label for="file-upload" class="file form file-upload-images">
-                <p class="flex-center">Upload media</p>
+                <p class="cursor flex-center">Upload media</p>
               </label>
               <input id="file-upload" accept="image/*" type="file" @change="filesSubmitted" multiple/>
             </div>
@@ -81,6 +81,12 @@
             <p v-if="uploadsInProgress.size !== 0" class="tiny-text">Currently uploading:</p>
             <div v-for="upload in Array.from(uploadsInProgress)">
               <p class="tiny-text">{{ upload }}</p>
+            </div>
+
+            <p v-if="uploadedFiles.length !== 0" class="tiny-text">All uploaded files. Click on one to embed it into the post automatically.</p>
+            <div class="flex uploaded-file" v-for="fileName in uploadedFiles">
+              <p class="cursor tiny-text half" @click="insertEmbedFromFile(fileName)">{{ fileName }}</p>
+              <p class="cursor center tiny-text" @click="deleteUpload(fileName)">Delete</p>
             </div>
 
           </div>
@@ -100,13 +106,18 @@
         <p class="center title">How it renders on your site:</p>
         <iframe :srcdoc="debouncedHtmlInputLayoutApplied" class="html-output iframe" title="Layout Render"></iframe> 
         <p class="center title">How it renders on your server's RSS reader:</p>
-        <p class="tiny-text">Dangerous / unnecessary tags such as script and style are removed in sanitization. Be aware of this as this is how users will see your post using this server's RSS reader. Style whitelists can be made in the future but the sanitation library being used limits to explicit values set for styling. Only basic colors are supported with inline styling for certain tags.</p>
+        <p class="tiny-text">Dangerous / unnecessary tags such as script and style are removed in sanitization. Be aware of this as this is how users will see your post using this server's RSS reader.</p>
         <span v-html="htmlOutput" class="html-output"></span>
 
         <div class="form" style="justify-content: space-around;">
-          <button v-if="!localUrl" class="button submit-button" @click="submitPost">Submit Post</button>
-          <button v-if="localUrl" class="button submit-button" @click="submitPost">Update Post</button>
-          <button class="button discard-button" @click="discardPost">Discard Post</button>
+          <button v-if="!localUrl || localUrl && localUrl.startsWith('/tmp/')" class="button submit-button" @click="submitPost">Publish Post</button>
+          <button v-else class="button submit-button" @click="submitPost">Update Post</button>
+
+          <button v-if="!localUrl || localUrl && localUrl.startsWith('/tmp/')" class="button discard-draft-button" @click="saveDraft">Save as Draft</button>
+          <button v-else class="button discard-draft-button" @click="saveDraft">Copy as Draft</button>
+
+          <button v-if="localUrl && localUrl.startsWith('/tmp/')" class="button discard-draft-button" @click="discardPost">Cancel</button>
+          <button v-else class="button discard-draft-button" @click="discardPost">Discard</button>
         </div>
       </div>
 
@@ -151,6 +162,7 @@
           isRunningEmbedReply: false,
           debounceTimer: null,
           debouncedHtmlInputLayoutApplied: "",
+          uploadedFiles: [],
         }
       },
       watch: {
@@ -230,6 +242,8 @@
           this.title = result.data.name;
           this.tmpTitle = this.title;
         }
+        // get uploaded files
+        await this.getUploadedFiles();
       },
       computed: {
         htmlInputLayoutApplied: function () {
@@ -271,6 +285,12 @@
         }
       },
       methods: {
+        async getUploadedFiles () {
+          this.uploadedFiles = (await axios.get('/api/upload', {params: {
+            tmpTitle: this.tmpTitle,
+            localUrl: this.localUrl,
+          }})).data.files.sort();
+        },
         toggleRssOverride () {
           this.showRssOverride = !this.showRssOverride;
         },
@@ -294,12 +314,30 @@
         removeTag (index) {
           this.tags.splice(index, 1);
         },
-        async filesSubmitted (event) {
+        insertEmbedFromFile (fileName) {
+          // smartly create different elements depending on the file type submitted
           let imageTypes = ["apng", "avif", "gif", "jpeg", "jpg", "png", "svg", "webp", "bmp"];
           let audioTypes = ["wav", "ogg", "mp3"];
           let videoTypes = ["webm", "mp4"];
+          const extension = fileName.split(".").reverse()[0];
 
+          if (imageTypes.includes(extension)) {
+            this.htmlInput += `\n<img src="${fileName}"></img>`
+          } else if (audioTypes.includes(extension)) {
+            this.htmlInput += `\n<audio controls>
+<source src="${fileName}">
+</audio>`
+          } else if (videoTypes.includes(extension)) {
+            this.htmlInput += `\n<video controls>
+<source src="${fileName}" type="video/${extension}">
+</video>`
+          } else {
+            this.htmlInput += `\n<a href="${fileName}">${fileName.split("/").reverse()[0]}</a>` // default to using a link
+          }
+        },
+        async filesSubmitted (event) {
           const formData = new FormData();
+          formData.append('folder', this.tmpTitle)
           const contentTypes = [];
           for (let i = 0; i < event.target.files.length; i++) {
             const file = event.target.files[i];
@@ -313,34 +351,83 @@
               'Content-Type': 'multipart/form-data',
             }
           });
+          this.getUploadedFiles();
+
           for (let file of results.data.files) {
             this.uploadsInProgress.delete(file.split("/")[file.split("/").length - 1]);
-            // smartly create different elements depending on the file type submitted
-            const extension = file.split(".").reverse()[0];
-
-            if (imageTypes.includes(extension)) {
-              this.htmlInput += `\n<img src="${file}"></img>`
-            } else if (audioTypes.includes(extension)) {
-              this.htmlInput += `\n<audio controls>
-  <source src="${file}">
-</audio>`
-            } else if (videoTypes.includes(extension)) {
-              this.htmlInput += `\n<video controls>
-  <source src="${file}" type="video/${extension}">
-</video>`
-            } else {
-              this.htmlInput += `\n<a href="${file}">${file.split("/").reverse()[0]}</a>` // default to using a link
-            }
-            
+            this.insertEmbedFromFile(file);
           }
           this.sanitizeHtml();
+        },
+        async deleteUpload (fileName) {
+          await axios.delete('/api/upload', {data: {
+            fileName: fileName
+          }});
+          this.getUploadedFiles();
         },
         async submitPost () {
           if (this.performAction) {
             return;
           }
           this.performAction = true;
-          let postObj = {
+          let postObj = this.createPostObj();
+
+          try {
+            if (this.localUrl && !this.localUrl.startsWith("/tmp/")) { // edit an existing post if published
+              await axios.put("/api/post", postObj);
+            } else { // publish if it's a draft or has no saved local URL
+              await axios.post("/api/post", postObj);
+            }
+
+            window.location.href = '/'; // only take to main page if upload is successful
+          } catch (err) {
+            alert(err);
+            console.error(err);
+            this.performAction = false;
+          }
+        },
+        async saveDraft () {
+          if (this.performAction) {
+            return;
+          }
+          this.performAction = true;
+          let postObj = this.createPostObj();
+
+          try {
+            await axios.post("/api/post/draft", postObj);
+            window.location.href = '/'; // only take to main page if upload is successful
+          } catch (err) {
+            alert(err);
+            console.error(err);
+            this.performAction = false;
+          }
+        },
+        async discardPost () {
+          if (this.performAction) {
+            return;
+          }
+          this.performAction = true;
+
+          let postObj = this.createPostObj();
+
+          if (this.localUrl && this.localUrl.startsWith('/tmp/')) { 
+            // don't allow deleting drafts from this page
+          } else {
+            try {
+              await axios.delete("/api/post/discard", {
+                data: {
+                  post: postObj
+                }
+              });
+            } catch (err) {
+              console.error(err);
+              this.performAction = false;
+            }
+          }
+          window.location.href = '/'; // take back to main page when finished
+        },
+        createPostObj () {
+          return {
             htmlContent: this.htmlInput,
             // sanitizing the html input can change its typing out of string. apparently
             rssContent: "" + this.htmlOutput,
@@ -352,34 +439,6 @@
             localUrl: this.localUrl, // for editing a post
             published: this.published,
           }
-
-          try {
-            if (this.localUrl) { // edit an existing post
-              await axios.put("/api/post", postObj);
-            } else {
-              await axios.post("/api/post", postObj);
-            }
-          } catch (err) {
-            console.error(err);
-            this.performAction = false;
-          }
-
-          window.location.href = '/'; // take back to main page when finished
-        },
-        async discardPost () {
-          if (this.performAction) {
-            return;
-          }
-          this.performAction = true;
-
-          try {
-            await axios.delete("/api/post/discard", {});
-          } catch (err) {
-            console.error(err);
-            this.performAction = false;
-          }
-          
-          window.location.href = '/'; // take back to main page when finished
         },
         chooseTag (event) {
           this.tag = event.target.value;
@@ -559,10 +618,10 @@
 
     .submit-button {
       margin-top: 15px;
-      width: 300px;
+      width: 200px;
     }
 
-    .discard-button {
+    .discard-draft-button {
       margin-top: 15px;
       width: 150px;
       font-size: 14px;
@@ -616,6 +675,16 @@
 
     .iframe {
       height: 600px; /* best easy option atm */
+    }
+
+    .cursor {
+      cursor: pointer;
+    }
+
+    .uploaded-file {
+      width: 100%;
+      justify-content: space-around;
+      margin-top: 10px;
     }
 
     /* media queries + changing layout of HTML based on screen size */
