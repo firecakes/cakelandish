@@ -35,6 +35,7 @@ import {
   editFeed,
   editPost,
   feedGetHelper,
+  getDrafts,
   getFeeds,
   getLastDateExported,
   getLayout,
@@ -44,7 +45,6 @@ import {
   reorderFeed,
   saveLayout,
   updateLastDateExported,
-  getDrafts,
 } from "./db.ts";
 import { getPostLocations } from "./post.ts";
 import {
@@ -159,10 +159,16 @@ export async function startServer() {
   };
 
   const jwtAndBodyParser = koaCompose([jwtMiddleware, koaBodyMiddleware]);
-  
+
   // restricted page checker
   app.use(async (ctx, next) => {
-    const pages = ["/admin.html", "/layout.html", "/manage.html", "/pages.html", "/upload.html"];
+    const pages = [
+      "/admin.html",
+      "/layout.html",
+      "/manage.html",
+      "/pages.html",
+      "/upload.html",
+    ];
 
     // check if JWT is enabled. check the access token specifically
     if (!config.jwt) { // JWT is disabled
@@ -268,11 +274,11 @@ export async function startServer() {
     // in the special case of editing a published post, there will be both temporary and published files!
     // only show the temporary files. this way the user doesn't accidentally delete a published file
     let tmpFiles = (await getFilesInDirectory(tmpUrl))
-      .map(file => `${tmpUrl.split('static')[1]}/${file}`);
+      .map((file) => `${tmpUrl.split("static")[1]}/${file}`);
 
     ctx.body = {
       // send back the full paths of where these uploaded files are stored
-      files: tmpFiles
+      files: tmpFiles,
     };
   });
 
@@ -314,9 +320,9 @@ export async function startServer() {
     }
 
     await Deno.remove(
-      `static${input.fileName}`
+      `static${input.fileName}`,
     );
-    
+
     ctx.body = {};
   });
 
@@ -402,7 +408,7 @@ export async function startServer() {
   // creating a post
   router.post("/api/post", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
-    // do not allow whitespace after the title. if the title loads in the url the space 
+    // do not allow whitespace after the title. if the title loads in the url the space
     // is ignored and causes problems
     input.title = input.title.trim();
     input.tmpTitle = input.tmpTitle.trim();
@@ -466,7 +472,7 @@ export async function startServer() {
   // creating a draft
   router.post("/api/post/draft", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
-    // do not allow whitespace after the title. if the title loads in the url the space 
+    // do not allow whitespace after the title. if the title loads in the url the space
     // is ignored and causes problems
     input.title = input.title.trim();
     input.tmpTitle = input.tmpTitle.trim();
@@ -474,7 +480,10 @@ export async function startServer() {
 
     const folderName = await generatePostFolderName(input.title, true);
     const publishedContentRegex = new RegExp(`${input.localUrl}`, "g");
-    const publishedRssRegex = new RegExp(`${config.link}${input.localUrl}`, "g");
+    const publishedRssRegex = new RegExp(
+      `${config.link}${input.localUrl}`,
+      "g",
+    );
 
     // replace all temporary links with the copied over urls for the HTML post
     input.htmlContent = input.htmlContent.replace(
@@ -981,11 +990,11 @@ export async function startServer() {
   }
 }
 
-function postIsDraft (post) {
+function postIsDraft(post) {
   return post.localUrl && post.localUrl.startsWith("/tmp/");
 }
 
-async function getFilesInDirectory (dir) {
+async function getFilesInDirectory(dir) {
   const storedFiles = [];
   try {
     const files = await Deno.readDir(dir);
@@ -994,7 +1003,7 @@ async function getFilesInDirectory (dir) {
         continue; // don't care about the index.html
       }
       if (!file.isDirectory) {
-        storedFiles.push(file.name)
+        storedFiles.push(file.name);
       }
     }
   } catch (err) {
@@ -1035,7 +1044,7 @@ async function deleteTmpFiles() {
     for await (let file of files) {
       if (!file.isDirectory) { // delete tmp files
         await Deno.remove(
-          `static/tmp/${file.name}`
+          `static/tmp/${file.name}`,
         );
       }
     }
@@ -1046,7 +1055,9 @@ async function deleteTmpFiles() {
 
 // sometimes tmp folders get made and aren't deleted due to shenanigans outside the server's control
 async function deleteUntrackedTmpFolders() {
-  const draftFolderNames = (await getDrafts()).map(draft => draft.localUrl.split("/tmp/")[1]);
+  const draftFolderNames = (await getDrafts()).map((draft) =>
+    draft.localUrl.split("/tmp/")[1]
+  );
   // delete all folders inside /tmp not catalogued in database.json
   try {
     const files = await Deno.readDir("static/tmp");
