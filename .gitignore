@@ -15,6 +15,7 @@ static/archive/**
 log.txt
 traffic.json
 exported/**
+cakelandish.sock
 
 # macOS
 .DS_Store

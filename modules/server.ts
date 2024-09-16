@@ -7,14 +7,17 @@ import {
   https,
   Koa,
   koaBody,
+  koaCompose,
   Router,
   serve,
 } from "../deps.ts";
 import { cleaner } from "./ammonia.ts";
 import {
+  checkToken,
   compareStrings,
-  deleteCode,
+  disableAuth,
   generateJwtAccessToken,
+  isAuthActive,
   verifyJwtAccessToken,
 } from "./auth.ts";
 import {
@@ -155,6 +158,8 @@ export async function startServer() {
     }
   };
 
+  const jwtAndBodyParser = koaCompose([jwtMiddleware, koaBodyMiddleware]);
+  
   // restricted page checker
   app.use(async (ctx, next) => {
     const pages = ["/admin.html", "/layout.html", "/manage.html", "/pages.html", "/upload.html"];
@@ -202,23 +207,18 @@ export async function startServer() {
   // authorization route
   router.post("/api/auth", koaBodyNoAuthMiddleware, async (ctx, next) => {
     const input = ctx.request.body;
-    let text;
-    try {
-      text = await Deno.readTextFile("code.txt");
-    } catch (err) {
-      // Code does not exist
-    }
-
-    if (!text || !input || !input.code) {
+    // auth must be active
+    if (!isAuthActive() || !input || !input.code) {
       ctx.body = {
         success: false,
       };
       return;
     }
+    // generate a token and compare against passed in code
+    let validAuth = checkToken(input.code);
 
-    // use this method to prevent timing-based attacks on authentication
-    if (compareStrings(input.code, text)) { // valid code. authenticate
-      deleteCode(); // auth code no longer needed
+    if (validAuth) { // valid code. authenticate
+      disableAuth(); // auth no longer needed
       const access = await generateJwtAccessToken();
 
       // store token in client as a cookie
@@ -244,13 +244,13 @@ export async function startServer() {
   });
 
   // sanitize HTML input
-  router.post("/api/sanitize", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.post("/api/sanitize", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
     ctx.body = cleaner.clean(input.html);
   });
 
   // sanitize HTML input
-  router.post("/api/sanitize/bulk", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.post("/api/sanitize/bulk", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
     const htmlHash = input.html;
     for (let i in htmlHash) {
@@ -277,7 +277,7 @@ export async function startServer() {
   });
 
   // upload files to the server
-  router.post("/api/upload", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.post("/api/upload", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
     if (!input.folder || typeof input.folder !== "string") {
       ctx.status = 400;
@@ -307,7 +307,7 @@ export async function startServer() {
   });
 
   // deletes a file uploaded
-  router.delete("/api/upload", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.delete("/api/upload", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
     if (!input.fileName) {
       ctx.status = 400;
@@ -342,7 +342,7 @@ export async function startServer() {
   });
 
   // initialize a new post. if a tmp folder already exists then return that one's name instead
-  router.post("/api/post/init", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.post("/api/post/init", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
     let folderName;
     let post;
@@ -381,7 +381,7 @@ export async function startServer() {
   });
 
   // deletes temporary posts that exist
-  router.delete("/api/post/discard", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.delete("/api/post/discard", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
 
     if (!input.post || !input.post.localUrl) {
@@ -400,7 +400,7 @@ export async function startServer() {
   });
 
   // creating a post
-  router.post("/api/post", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.post("/api/post", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
     // do not allow whitespace after the title. if the title loads in the url the space 
     // is ignored and causes problems
@@ -464,7 +464,7 @@ export async function startServer() {
   });
 
   // creating a draft
-  router.post("/api/post/draft", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.post("/api/post/draft", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
     // do not allow whitespace after the title. if the title loads in the url the space 
     // is ignored and causes problems
@@ -536,7 +536,7 @@ export async function startServer() {
   });
 
   // updating an existing post OR draft
-  router.put("/api/post", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.put("/api/post", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
     const regex = new RegExp(`/tmp/${input.tmpTitle}`, "g");
 
@@ -604,7 +604,7 @@ export async function startServer() {
   });
 
   // delete an existing post
-  router.delete("/api/post", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.delete("/api/post", jwtAndBodyParser, async (ctx, next) => {
     const input: Feed = ctx.request.body;
 
     // get the folder location of the post
@@ -631,7 +631,7 @@ export async function startServer() {
   });
 
   // add a new feed to watch
-  router.post("/api/feed", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.post("/api/feed", jwtAndBodyParser, async (ctx, next) => {
     const input: Feed = ctx.request.body;
     if (typeof input.updateMinutes !== "number" || input.updateMinutes < 1) {
       input.updateMinutes = 5; // default
@@ -645,7 +645,7 @@ export async function startServer() {
   });
 
   // update an existing feed
-  router.put("/api/feed", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.put("/api/feed", jwtAndBodyParser, async (ctx, next) => {
     const input: Feed = ctx.request.body;
     if (typeof input.index !== "number" || input.index < 0) {
       ctx.status = 400;
@@ -662,7 +662,7 @@ export async function startServer() {
   });
 
   // delete an existing feed
-  router.delete("/api/feed", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.delete("/api/feed", jwtAndBodyParser, async (ctx, next) => {
     const input: Feed = ctx.request.body;
     if (typeof input.index !== "number" || input.index < 0) {
       ctx.status = 400;
@@ -675,7 +675,7 @@ export async function startServer() {
   });
 
   // swap the order of a feed item
-  router.put("/api/feed/reorder", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.put("/api/feed/reorder", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
     if (typeof input.from !== "number" || typeof input.to !== "number") {
       ctx.status = 400;
@@ -685,7 +685,7 @@ export async function startServer() {
   });
 
   // checks if the URL passed in matched a feed that is followed
-  router.post("/api/query/feed", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.post("/api/query/feed", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
     // check the local cache and return the xml that way. query URL as last resort
     let feed = (await getFeeds()).find((feed) => feed.url === input.url);
@@ -708,7 +708,7 @@ export async function startServer() {
   });
 
   // import a tar of the server's state
-  router.post("/api/import", koaBodyMiddleware, jwtMiddleware, async (ctx, next) => {
+  router.post("/api/import", jwtAndBodyParser, async (ctx, next) => {
     // enforce its existence
     await Deno.mkdir(
       `static/files`,
@@ -733,7 +733,7 @@ export async function startServer() {
   });
 
   // save the post layout
-  router.post("/api/layout", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.post("/api/layout", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
     await saveLayout(input.layout);
     ctx.body = {};
@@ -755,7 +755,7 @@ export async function startServer() {
   });
 
   // performs a string replacement of all instances of the old domain passed in with the new one
-  router.post("/api/domain", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.post("/api/domain", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
     await changeDomains(input.oldDomain, input.newDomain);
 
@@ -777,7 +777,7 @@ export async function startServer() {
   });
 
   // add a new page
-  router.post("/api/page", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.post("/api/page", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
     if (!input.name || input.name === "") {
       ctx.status = 400;
@@ -826,7 +826,7 @@ export async function startServer() {
   });
 
   // edit an existing page
-  router.put("/api/page", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.put("/api/page", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body.page ? ctx.request.body.page : {};
     if (!input.url || input.url === "") {
       ctx.status = 400;
@@ -860,7 +860,7 @@ export async function startServer() {
   });
 
   // delete an existing page
-  router.delete("/api/page", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.delete("/api/page", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
     if (!input.page.url || input.page.url === "") {
       ctx.status = 400;
@@ -887,7 +887,7 @@ export async function startServer() {
   });
 
   // add a file to a page
-  router.post("/api/page/file", jwtMiddleware, koaBodyMiddleware, async (ctx, next) => {
+  router.post("/api/page/file", jwtAndBodyParser, async (ctx, next) => {
     const input = ctx.request.body;
     if (!Array.isArray(ctx.request.files.myFile)) {
       ctx.request.files.myFile = [ctx.request.files.myFile];
