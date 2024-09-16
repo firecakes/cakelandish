@@ -81,6 +81,7 @@
   text-align: center;
   appearance: button;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .small-button {
@@ -92,6 +93,7 @@
   text-align: center;
   appearance: button;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .textbox {
@@ -109,6 +111,16 @@
   font-size: 20px;
   position: fixed;
   width: 100%;
+}
+
+/* Don't use default purple visited color, as it clashes with colors on the site */
+a:visited { 
+  color: #000055;
+}
+
+/* Apply light grey color to our buttons that have a tags */
+a:visited.button { 
+  color: #d2d2d2;
 }
 
 /* keep at bottom of css! */
