@@ -320,20 +320,25 @@
           let audioTypes = ["wav", "ogg", "mp3"];
           let videoTypes = ["webm", "mp4"];
           const extension = fileName.split(".").reverse()[0];
+          const imgInjection = `\n<img src="${fileName}"></img>`;
+          const audioInjection = `\n<audio controls>
+<source src="${fileName}">
+</audio>`;
+          const videoInjection = `\n<video controls>
+<source src="${fileName}" type="video/${extension}">
+</video>`;
+          const linkInjection = `\n<a href="${fileName}">${fileName.split("/").reverse()[0]}</a>`;
 
           if (imageTypes.includes(extension)) {
-            this.htmlInput += `\n<img src="${fileName}"></img>`
+            this.htmlInput += imgInjection;
           } else if (audioTypes.includes(extension)) {
-            this.htmlInput += `\n<audio controls>
-<source src="${fileName}">
-</audio>`
+            this.htmlInput += audioInjection;
           } else if (videoTypes.includes(extension)) {
-            this.htmlInput += `\n<video controls>
-<source src="${fileName}" type="video/${extension}">
-</video>`
+            this.htmlInput += videoInjection;
           } else {
-            this.htmlInput += `\n<a href="${fileName}">${fileName.split("/").reverse()[0]}</a>` // default to using a link
+            this.htmlInput += linkInjection // default to using a link
           }
+          this.sanitizeHtml();
         },
         async filesSubmitted (event) {
           const formData = new FormData();
