@@ -3,10 +3,11 @@ import { setPages } from "./db.ts";
 import { logger } from "./log.ts";
 
 export const EDITABLE_EXTENSIONS = ["html", "css", "js", "txt"];
-const BLACKLISTED_FOLDERS = ["archive", "lib", "posts"];
+const BLACKLISTED_FOLDERS = ["archive", "posts", "tmp"];
 const IMPORTANT_FILES = [ // files the user should really not mess with unless they know what they're doing
   "components", // this is a directory, technically.
   "curssor", // this is a directory, technically.
+  "lib", // this is a directory, technically.
   "feed.atom",
   "eye-open.png",
   "eye-closed.png",
