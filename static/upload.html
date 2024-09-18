@@ -116,8 +116,8 @@
           <button v-if="!localUrl || localUrl && localUrl.startsWith('/tmp/')" class="button discard-draft-button" @click="saveDraft">Save as Draft</button>
           <button v-else class="button discard-draft-button" @click="saveDraft">Copy as Draft</button>
 
-          <button v-if="localUrl && localUrl.startsWith('/tmp/')" class="button discard-draft-button" @click="discardPost">Cancel</button>
-          <button v-else class="button discard-draft-button" @click="discardPost">Discard</button>
+          <button v-if="!localUrl" class="button discard-draft-button" @click="discardPost">Discard</button>
+          <button v-else class="button discard-draft-button" @click="discardPost">Cancel</button>
         </div>
       </div>
 
