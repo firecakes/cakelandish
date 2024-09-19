@@ -35,7 +35,7 @@
         <p class="small-title center" style="color: #ff0000">Also, should be obvious, but please do not upload some random person's tar file. Make sure it's your own exported tar.</p>
         <div v-if="!importInProgress" class="form">
           <label for="file-upload" class="form file-upload">
-            <p class="flex-center">Import Data</p>
+            <p class="flex-center button" style="align-content: center;">Import Data</p>
           </label>
           <input id="file-upload" accept="tar/*" type="file" @change="fileSubmitted"/>
         </div>
@@ -66,7 +66,7 @@
                 background: `linear-gradient(90deg, #d2d2d2 ${(100 * data / timeData.max) + '%'}, #273038 0)`,
                 backgroundColor: '#d2d2d2' 
               }">
-              {{ new Date(timeData.ranges[index].start).toLocaleString()}} - {{ new Date(timeData.ranges[index].end).toLocaleString() }} ({{ data }} visits)
+              <div class="traffic-text">{{ new Date(timeData.ranges[index].start).toLocaleString()}} - {{ new Date(timeData.ranges[index].end).toLocaleString() }} ({{ data }} visits)</div>
             </div>
           </div>
 
@@ -78,7 +78,7 @@
                 background: `linear-gradient(90deg, #d2d2d2 ${(100 * data.count / pageData.max) + '%'}, #273038 0)`,
                 backgroundColor: '#d2d2d2' 
               }">
-              {{ data.page }} ({{ data.count }} visits)
+              <div class="traffic-text">{{ data.page }} ({{ data.count }} visits)</div>
             </div>
           </div>
 
@@ -90,7 +90,7 @@
                 background: `linear-gradient(90deg, #d2d2d2 ${(100 * data.count / ipData.max) + '%'}, #273038 0)`,
                 backgroundColor: '#d2d2d2' 
               }">
-              {{ data.page }} ({{ data.count }} visits)
+              <div class="traffic-text">{{ data.page }} ({{ data.count }} visits)</div>
             </div>
           </div>
 
@@ -383,6 +383,36 @@
       font-size: 18px;
       background: #273038;
       border: 0px;
+    }
+
+    @media only screen and (max-width: 1000px) {
+      .small-title {
+        font-size: 20px;
+      }
+      .title {
+        font-size: 26px;
+      }
+      .traffic-text {
+        font-size: 14px;
+      }
+      .textbox {
+        font-size: 16px;
+      }
+    }
+
+    @media only screen and (max-width: 600px) {
+      .small-title {
+        font-size: 16px;
+      }
+      .title {
+        font-size: 20px;
+      }
+      .traffic-text {
+        font-size: 10px;
+      }
+      .textbox {
+        font-size: 14px;
+      }
     }
 
   </style>

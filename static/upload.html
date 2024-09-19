@@ -109,7 +109,7 @@
         <p class="tiny-text">Dangerous / unnecessary tags such as script and style are removed in sanitization. Be aware of this as this is how users will see your post using this server's RSS reader.</p>
         <span v-html="htmlOutput" class="html-output"></span>
 
-        <div class="form" style="justify-content: space-around;">
+        <div class="form button-action-group" style="justify-content: space-around;">
           <button v-if="!localUrl || localUrl && localUrl.startsWith('/tmp/')" class="button submit-button" @click="submitPost">Publish Post</button>
           <button v-else class="button submit-button" @click="submitPost">Update Post</button>
 
@@ -623,12 +623,12 @@
 
     .submit-button {
       margin-top: 15px;
-      width: 200px;
+      width: 160px;
     }
 
     .discard-draft-button {
       margin-top: 15px;
-      width: 150px;
+      width: 140px;
       font-size: 14px;
     }
 
@@ -700,6 +700,9 @@
       }
       .submit-button {
         width: 150px;
+      }
+      .button-action-group {
+        flex-direction: column;
       }
     }
 

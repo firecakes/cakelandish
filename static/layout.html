@@ -30,7 +30,7 @@
       <!-- right side -->
       <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'output')" class="half flex-v">
         <p class="center title">How it renders on your site:</p>
-        <iframe :srcdoc="debouncedHtmlInputLayoutApplied" title="Layout Render"></iframe> 
+        <iframe class="iframe" :srcdoc="debouncedHtmlInputLayoutApplied" title="Layout Render"></iframe> 
       </div>
 
       <div v-if="isAuthenticated === false" class="half flex-v">
@@ -215,6 +215,10 @@
 
     .switch-view-button {
       margin: 0px;
+    }
+
+    .iframe {
+      height: 600px; /* best easy option atm */
     }
 
     /* media queries + changing layout of HTML based on screen size */
