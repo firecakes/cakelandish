@@ -25,7 +25,7 @@ export async function init() {
     await addFeed({
       name: "Local Feed",
       url: `${config.link}/feed.atom`,
-      updateMinutes: 5,
+      updateMinutes: 60,
       index: 0,
     });
     db = await readDb();
