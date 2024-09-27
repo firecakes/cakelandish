@@ -14,8 +14,15 @@
       <!-- switch view button for smaller screen sizes -->
       <button v-if="screen !== 'lg' && isAuthenticated" class="button switch-view-button" @click="switchViews">{{ currentViewText }}</button>
 
+      <!-- uncollapse sidebar button -->
+      <button v-if="collapseSidebar && screen === 'lg'"
+        style="position: fixed; align-self: start;"
+        class="button small-button"
+        @click="toggleSidebar"> →
+      </button>
+
       <!-- feed sidebar -->
-      <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'feeds')" class="fourth flex-v" :class="{ 'sidebar': screen === 'lg' }">
+      <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'feeds') && (screen !== 'lg' || !collapseSidebar)" class="fourth flex-v" :class="{ 'sidebar': screen === 'lg' }">
         <div class="main-buttons">
           <a class="button main-button margin-center" href="upload.html">New Post</a>
           <a class="button main-button margin-center" href="manage.html">Manage Posts</a>
@@ -26,6 +33,12 @@
           <a class="button sidebar-button small-button margin-center percent50" href="admin.html">Admin Tools</a>
         </div>
         <p class="small-title center margin-center">Your Feeds</p>
+
+        <!-- collapse sidebar button -->
+        <button class="button small-button" v-if="screen === 'lg'" 
+          style="position: absolute; align-self: end; margin-top: 180px; margin-right: 4px" 
+          @click="toggleSidebar"> ←
+        </button>
 
         <!-- feed list -->
         <div 
@@ -158,7 +171,7 @@
       </div>
 
       <!-- display feed content -->
-      <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'posts')" class="three-fourth flex-v" :class="{ 'display-feed': screen === 'lg'}">
+      <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'posts')" class="three-fourth flex-v" :class="{ 'display-feed': screen === 'lg' && !collapseSidebar}">
         <p v-if="isLoading && (screen !== 'lg' && currentView === 'posts')" class="small-title center margin-center">
           Updating feed content...
         </p>
@@ -245,6 +258,7 @@
           totalPosts: 0,
           lastExportDateDays: null,
           showSearch: false,
+          collapseSidebar: false,
         }
       },
       async mounted () {
@@ -604,6 +618,9 @@
         },
         dragOffFeed (event) {
           event.target.style['background-color'] = ''; // remove bg color
+        },
+        toggleSidebar () {
+          this.collapseSidebar = !this.collapseSidebar
         }
       }
     }).mount('#app');
