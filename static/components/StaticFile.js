@@ -22,10 +22,10 @@ export default {
       <div v-if="!page.requestDeletion" class="third form"><button class="button" @click="deletePage(page)">Delete {{ page.directory ? "directory" : "file" }}</button></div>
       <div v-if="page.requestDeletion" class="third form"><button class="button" @click="deletePage(page)">Are you sure?</button></div>
       <div v-if="page.directory" class="third form">
-        <label :for="'file-upload-' + page.url" class="form file-upload button">
+        <label tabindex="0" role="button" @keydown.enter="$refs['uploadFile' + key].click()" :for="'file-upload-' + page.url" class="form file-upload button">
           <p class="flex-center">Upload file here</p>
         </label>
-        <input :id="'file-upload-' + page.url" accept="image/*" class="hidden" type="file" @change="uploadFile($event, page)" multiple/>
+        <input :ref="'uploadFile' + key" :id="'file-upload-' + page.url" accept="image/*" class="hidden" type="file" @change="uploadFile($event, page)" multiple/>
       </div>
       <div v-else class="third form"></div>
     </div>

@@ -43,7 +43,7 @@ export default {
           @click="loadReplyTo(post.entry)">
           Source Not Found. Click to Retry
         </button>
-        <a v-if="post.entry.noSource" target="_blank" :href="post.entry.originalLink">Original link: {{ post.entry.originalLink }} </a>
+        <a v-if="post.entry.noSource" :href="post.entry.originalLink">Original link: {{ post.entry.originalLink }} </a>
         <div class="content-end"></div>
       </div>
     </div>

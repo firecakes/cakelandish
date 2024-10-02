@@ -3,6 +3,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <head>
+    <title>Administrator Page</title>
     <script src="/lib/vue.js"></script>
     <script src="/lib/axios.min.js"></script>
     <link rel="stylesheet" href="/main.css">
@@ -11,7 +12,7 @@
   <body id="bg">
     <div id="app" class="flex" v-cloak>
 
-      <div class="flex" v-if="isAuthenticated === true">
+      <main class="flex" v-if="isAuthenticated === true">
         <p class="title center">Admin Settings</p>
         <p class="center"><a class="button" href="index.html">Return to Main Page</a></p>
 
@@ -34,10 +35,10 @@
         <p class="small-title center">Upload a tar from a previous export and fall back to a previous state of the server. THIS WILL WIPE YOUR CURRENT DATA!!!</p>
         <p class="small-title center" style="color: #ff0000">Also, should be obvious, but please do not upload some random person's tar file. Make sure it's your own exported tar.</p>
         <div v-if="!importInProgress" class="form">
-          <label for="file-upload" class="form file-upload">
+          <label tabindex="0" role="button" @keydown.enter="$refs.importData.click()" for="file-upload" class="form file-upload">
             <p class="flex-center button" style="align-content: center;">Import Data</p>
           </label>
-          <input id="file-upload" accept="tar/*" type="file" @change="fileSubmitted"/>
+          <input ref="importData" id="file-upload" accept="tar/*" type="file" @change="fileSubmitted"/>
         </div>
         <button v-if="importInProgress" class="button small-button margin-center">Your data is importing! This may take a long time. Do not leave the page!</button>
 
@@ -63,7 +64,7 @@
           <p class="title center">Time Data</p>
           <div>
             <div v-for="(data, index) in timeData.data" :style="{
-                background: `linear-gradient(90deg, #d2d2d2 ${(100 * data / timeData.max) + '%'}, #273038 0)`,
+                background: `linear-gradient(90deg, #555555 ${(100 * data / timeData.max) + '%'}, #273038 0)`,
                 backgroundColor: '#d2d2d2' 
               }">
               <div class="traffic-text">{{ new Date(timeData.ranges[index].start).toLocaleString()}} - {{ new Date(timeData.ranges[index].end).toLocaleString() }} ({{ data }} visits)</div>
@@ -75,7 +76,7 @@
           <p class="title center">Page Data</p>
           <div>
             <div v-for="data in pageData.data" :style="{
-                background: `linear-gradient(90deg, #d2d2d2 ${(100 * data.count / pageData.max) + '%'}, #273038 0)`,
+                background: `linear-gradient(90deg, #555555 ${(100 * data.count / pageData.max) + '%'}, #273038 0)`,
                 backgroundColor: '#d2d2d2' 
               }">
               <div class="traffic-text">{{ data.page }} ({{ data.count }} visits)</div>
@@ -87,7 +88,7 @@
           <p class="title center">IP Data</p>
           <div>
             <div v-for="data in ipData.data" :style="{
-                background: `linear-gradient(90deg, #d2d2d2 ${(100 * data.count / ipData.max) + '%'}, #273038 0)`,
+                background: `linear-gradient(90deg, #555555 ${(100 * data.count / ipData.max) + '%'}, #273038 0)`,
                 backgroundColor: '#d2d2d2' 
               }">
               <div class="traffic-text">{{ data.page }} ({{ data.count }} visits)</div>
@@ -121,13 +122,13 @@
           <button v-if="requestTrafficDeletion" class="button small-button" @click="deleteTraffic()">Are you sure?</button>
         </div>
 
-        <img style="image-rendering: pixelated; padding-top: 50px;" src="/curssor/curssor-hunting.png"></img>
+        <img alt="A drawing of CuRSSor the Skiltaire, looking happily at the viewer with a caught blue bird in his mouth" style="image-rendering: pixelated; padding-top: 50px;" src="/curssor/curssor-hunting.png"></img>
 
-      </div>
+      </main>
 
-      <div v-if="isAuthenticated === false" class="fourth flex-v">
+      <main v-if="isAuthenticated === false" class="fourth flex-v">
         <p class="title center margin-center">You are not authorized to view this page</p>
-      </div>
+      </main>
 
     </div>
   </body>
@@ -383,6 +384,10 @@
       font-size: 18px;
       background: #273038;
       border: 0px;
+    }
+
+    .traffic-text {
+      color: #d2d2d2
     }
 
     @media only screen and (max-width: 1000px) {

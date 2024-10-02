@@ -3,6 +3,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <head>
+    <title>Create and Edit Posts and Drafts</title>
     <script src="/lib/vue.js"></script>
     <script src="/lib/axios.min.js"></script>
     <link rel="stylesheet" href="/main.css">
@@ -17,8 +18,8 @@
       <!-- left side -->
       <div id="side" v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'input')" class="half flex-v">
         <!-- HTML input -->
-        <p class="center title">HTML goes here!</p>
-        <textarea class="html-input textarea" rows="30" v-model="htmlInput" @input="sanitizeDebounce"></textarea>
+        <label for="htmlInput" class="center title">HTML goes here!</label>
+        <textarea id="htmlInput" class="html-input textarea" rows="30" v-model="htmlInput" @input="sanitizeDebounce"></textarea>
 
         <!-- RSS override -->
         <button class="button rss-override" @click="toggleRssOverride">Toggle RSS Override</button>
@@ -62,7 +63,7 @@
               </div>
 
               <div class="flex form">
-                <select class="tag-select shrinkable-input" @change="chooseTag">
+                <select aria-label="Used tags" class="tag-select shrinkable-input" @change="chooseTag" aria-label="Used tags">
                   <option value="">Used tags</option>
                   <option v-for="tag in existingTags">{{ tag }}</option>
                 </select>
@@ -72,10 +73,10 @@
 
             <!-- upload media form -->
             <div class="form">
-              <label for="file-upload" class="file form file-upload-images">
+              <label tabindex="0" role="button" @keydown.enter="$refs.uploadMedia.click()" for="file-upload" class="file form file-upload-images">
                 <p class="cursor flex-center">Upload media</p>
               </label>
-              <input id="file-upload" accept="image/*" type="file" @change="filesSubmitted" multiple/>
+              <input ref="uploadMedia" id="file-upload" accept="image/*" type="file" @change="filesSubmitted" multiple/>
             </div>
 
             <p v-if="uploadsInProgress.size !== 0" class="tiny-text">Currently uploading:</p>

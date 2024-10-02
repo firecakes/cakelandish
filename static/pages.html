@@ -3,6 +3,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <head>
+    <title>Manage Custom Pages and Files</title>
     <script src="/lib/vue.js"></script>
     <script src="/lib/axios.min.js"></script>
     <link rel="stylesheet" href="/main.css">
@@ -18,8 +19,8 @@
           <!-- edit a page -->
           <div class="half flex-v">
             <!-- HTML input -->
-            <p class="center title">File goes here!</p>
-            <textarea class="html-input" cols="60" rows="30" v-model="selectedPage.content"></textarea>
+            <label for="htmlInput" class="center title">File goes here!</label>
+            <textarea id="htmlInput" class="html-input" cols="60" rows="30" v-model="selectedPage.content"></textarea>
           </div>
 
           <div class="half flex-v">
@@ -50,15 +51,15 @@
       <div v-if="isAuthenticated === true">
         <p class="title center">Page List</p>
         <div class="center">
-          <p class="small-title red" style="display:inline">Show files critical to Cakelandish (editing carelessly may permanently break your server!)</p>
-          <input type="checkbox" class="checkbox center" v-model="showImportantFiles">
+          <label for="showCriticalFiles" class="small-title red" style="display:inline">Show files critical to Cakelandish (editing carelessly may permanently break your server!)</label>
+          <input id="showCriticalFiles" type="checkbox" class="checkbox center" v-model="showImportantFiles">
         </div>
 
         <div class="form">
-          <label for="file-upload-static" class="form file-upload button">
+          <label tabindex="0" role="button" @keydown.enter="$refs.uploadRootFile.click()" for="file-upload-static" class="form file-upload button">
             <p class="flex-center">Upload file to static folder</p>
           </label>
-          <input id="file-upload-static" accept="image/*" class="hidden" type="file" @change="uploadFile($event, {url: ''})" multiple/>
+          <input ref="uploadRootFile" id="file-upload-static" accept="image/*" class="hidden" type="file" @change="uploadFile($event, {url: ''})" multiple/>
         </div>
 
         <p v-if="uploadsInProgress.size !== 0" class="tiny-text center">Currently uploading:</p>

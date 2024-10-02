@@ -3,21 +3,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <head>
+    <title>Layout Editor</title>
     <script src="/lib/vue.js"></script>
     <script src="/lib/axios.min.js"></script>
     <link rel="stylesheet" href="/main.css">
   </head>
 
   <body id="bg">
-    <div id="app" class="flex" v-cloak>
+    <main id="app" class="flex" v-cloak>
       <!-- switch view button for smaller screen sizes -->
       <button v-if="screen !== 'lg' && isAuthenticated" class="button switch-view-button" @click="switchViews">{{ currentViewText }}</button>
 
       <!-- left side -->
       <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'input')" class="half flex-v">
         <!-- HTML input -->
-        <p class="center title">HTML Layout goes here!</p>
-        <textarea class="html-input textarea" rows="30" v-model="htmlInput"></textarea>
+        <label for="htmlInput" class="center title">HTML Layout goes here!</label>
+        <textarea id="htmlInput" class="html-input textarea" rows="30" v-model="htmlInput"></textarea>
 
         <p class="tiny-text">This layout will be injected into every post you've made and will make. To make sure your posts render where you want them to make sure you include %%%content%%% in the file where you want it to go.</p>
 
@@ -37,7 +38,7 @@
         <p class="title center margin-center">You are not authorized to view this page</p>
       </div>
 
-    </div>
+    </main>
   </body>
 
   <script type="module">

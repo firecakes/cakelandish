@@ -3,20 +3,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <head>
+    <title>Manage Posts and Drafts</title>
     <script src="/lib/vue.js"></script>
     <script src="/lib/axios.min.js"></script>
     <link rel="stylesheet" href="/main.css">
   </head>
 
   <body id="bg">
-    <div id="app" class="flex-v" v-cloak>
+    <main id="app" class="flex-v" v-cloak>
       <!-- Drafts -->
       <a v-if="isAuthenticated === true" class="button submit-button" href="index.html">Return to Main Page</a>
       <p v-if="isAuthenticated === true" class="title center">Your drafts</p>
       
       <div v-if="isAuthenticated === true" class="post" v-for="post in drafts">
         <div class="post-contents">
-          <a :href="post.link" target="_blank"> {{ post.title }}</a>
+          <a :href="post.link"> {{ post.title }}</a>
           <br>
           <pre>{{ post.originalContent }}</pre>
         </div>
@@ -30,7 +31,7 @@
 
       <div v-if="isAuthenticated === true" class="post" v-for="post in orderedPosts">
         <div class="post-contents">
-          <a :href="post.link" target="_blank"> {{ post.title }}</a>
+          <a :href="post.link"> {{ post.title }}</a>
           <br>
           <pre>{{ post.originalContent }}</pre>
         </div>
@@ -39,13 +40,13 @@
         <button v-if="post.requestDeletion" class="button" @click="deletePost(post)">Are you sure?</button>
       </div>
 
-      <img style="image-rendering: pixelated;" src="/curssor/curssor-sleeping.png"></img>
+      <img alt="A drawing of CuRSSor the Skiltaire, sleeping happily at the bottom of the post list" style="image-rendering: pixelated;" src="/curssor/curssor-sleeping.png"></img>
 
       <div v-if="isAuthenticated === false" class="fourth flex-v">
         <p class="title center margin-center">You are not authorized to view this page</p>
       </div>
 
-    </div>
+    </main>
   </body>
 
   <script type="module">

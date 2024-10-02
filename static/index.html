@@ -3,6 +3,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <head>
+    <title>Cakelandish Home Page</title>
     <script src="/lib/vue.js"></script>
     <script src="/lib/axios.min.js"></script>
     <link rel="alternate" type="application/atom+xml" href="/feed.atom">
@@ -23,15 +24,15 @@
 
       <!-- feed sidebar -->
       <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'feeds') && (screen !== 'lg' || !collapseSidebar)" class="fourth flex-v" :class="{ 'sidebar': screen === 'lg' }">
-        <div class="main-buttons">
+        <nav aria-label="Primary Navigation" class="main-buttons">
           <a class="button main-button margin-center" href="upload.html">New Post</a>
           <a class="button main-button margin-center" href="manage.html">Manage Posts</a>
           <a class="button main-button margin-center" href="pages.html">Manage Custom Pages and Files</a>
-        </div>
-        <div class="other-buttons">
+        </nav>
+        <nav aria-label="Secondary Navigation" class="other-buttons">
           <a class="button sidebar-button small-button margin-center percent50" href="layout.html">Edit Post Layout</a>
           <a class="button sidebar-button small-button margin-center percent50" href="admin.html">Admin Tools</a>
-        </div>
+        </nav>
         <p class="small-title center margin-center">Your Feeds</p>
 
         <!-- collapse sidebar button -->
@@ -53,23 +54,31 @@
           <div v-for="(feed, index) in feeds" class="feed-list">
             <!-- the feed items are drag n droppable! -->
             <div class="form" draggable="true" @dragstart="dragFeedItem($event, index)"> 
-              <img class="icon" :src="feed.iconUrl"></img>
+              <img class="icon" :src="feed.iconUrl" alt=""></img>
               <!-- parsing errors should show the text in red -->
-              <p class="textbox" :class="{ 'red-text': !feed.success }" id="name" @click="presentFeed(index)">{{ feed.name }}</p>
+              <p tabindex=0 role="button" class="textbox" :class="{ 'red-text': !feed.success }" id="name" @click="presentFeed(index)" @keydown.enter="presentFeed(index)">{{ feed.name }}</p>
               <!-- more feed history to download -->
               <img 
+                tabindex=0
+                role="button"
                 v-if="feed.meta && feed.meta.prevArchive && !searchingForExtraFeed" 
                 class="icon" 
                 src="/feed-extras.png"
                 title="Archive feed link found. Click to download more content from this feed."
-                @click="downloadExtras(feed)"> </img>
+                @click="downloadExtras(feed)"
+                @keydown.enter="downloadExtras(feed)"
+                alt="Click to download more content from this feed"> </img>
               <!-- Focusing on one feed -->
               <img 
+                tabindex=0
+                role="button"
                 v-if="focusedFeedIndex === index || focusedFeedIndex === null" 
                 class="icon" 
                 src="/eye-open.png" 
-                @click="focusFeed(index)"> </img>
-              <img v-else class="icon" src="/eye-closed.png" @click="focusFeed(index)"> </img>
+                @click="focusFeed(index)"
+                @keydown.enter="focusFeed(index)"
+                alt="Focus on this feed"> </img>
+              <img v-else tabindex=0 role="button" class="icon" src="/eye-closed.png" @click="focusFeed(index)" @keydown.enter="focusFeed(index)"> </img>
             </div>
             
             <div 
@@ -99,7 +108,7 @@
             <input class="textbox" id="url" v-model="feed.url">
           </div>
           <div class="form">
-            <label class="label" for="update-interval">Update Interval  </label>
+            <label class="label" for="update-interval">Update Interval</label>
             <input type="number" class="textbox" id="update-interval" v-model="feed.updateMinutes">
             <p style="margin-left: 10px">Minutes</p>
           </div>
@@ -112,42 +121,42 @@
         <p v-if="isLoading" class="small-title center margin-center">
           Updating feed content...
         </p>
-        <img style="image-rendering: pixelated;" v-if="isLoading" src="/curssor/curssor-searching.gif"></img>
+        <img alt="CuRSSor the Skiltaire, reaching out to the web to grab feed content" style="image-rendering: pixelated;" v-if="isLoading" src="/curssor/curssor-searching.gif"></img>
 
         <!-- Search posts -->
-        <p @click="toggleSearch" class="button sidebar-button small-title center margin-center">Search Posts</p>
+        <button @click="toggleSearch" class="button sidebar-button small-title center margin-center">Search Posts</button>
 
         <div v-if="showSearch" class="flex-v search">
 
           <div class="flex" style="margin-bottom: 10px">
             <div class="flex-v half form space-to-edges">
-              <p class="small-title center margin-center">Type</p>
-              <select class="center select" v-model="searchType">
+              <label for="searchType" class="small-title center margin-center">Type</label>
+              <select id="searchType" class="center select" v-model="searchType" aria-label="Filter type">
                 <option v-for="type in searchTypeList"> {{ type }} </option>
               </select>
             </div>
             <div class="flex-v half form space-to-edges">
-              <p class="small-title center margin-center">Value</p>
-              <input v-if="searchType === 'Category'" class="select" v-model="searchValues[0].value">
-              <input v-if="searchType === 'Title'" class="select" v-model="searchValues[1].value">
-              <input v-if="searchType === 'Content'" class="select" v-model="searchValues[2].value">
-              <div class="flex" v-if="searchType === 'Date'">
+              <label for="searchValue" class="small-title center margin-center">Value</label>
+              <input id="searchValue" v-if="searchType === 'Category'" class="select" v-model="searchValues[0].value">
+              <input id="searchValue" v-if="searchType === 'Title'" class="select" v-model="searchValues[1].value">
+              <input id="searchValue" v-if="searchType === 'Content'" class="select" v-model="searchValues[2].value">
+              <div id="searchValue" class="flex" v-if="searchType === 'Date'">
                 <div>
-                  <p class="date-field-text center margin-center">From</p>
-                  <input class="select small-side-margin" type="date" v-model="searchValues[3].value.from">
+                  <label for="searchDateFrom" class="date-field-text center margin-center">From</label>
+                  <input id="searchDateFrom" class="select small-side-margin" type="date" v-model="searchValues[3].value.from">
                 </div>
                 <div>
-                  <p class="date-field-text center margin-center">To</p>
-                  <input class="select small-side-margin" type="date" v-model="searchValues[3].value.to">
+                  <label for="searchDateTo" class="date-field-text center margin-center">To</label>
+                  <input id="searchDateTo" class="select small-side-margin" type="date" v-model="searchValues[3].value.to">
                 </div>
               </div>
-              <input v-if="searchType === 'Has Image'" type="checkbox" class="select checkbox" v-model="searchValues[4].value">
+              <input id="searchValue" v-if="searchType === 'Has Image'" type="checkbox" class="select checkbox" v-model="searchValues[4].value">
             </div>
           </div>
 
           <div class="flex form">
-            <p class="small-title center margin-center">Invert filter</p>
-            <input type="checkbox" class="select checkbox" v-model="invertFilter">
+            <label for="invertFilter" class="small-title center margin-center">Invert filter</label>
+            <input id="invertFilter" type="checkbox" class="select checkbox" v-model="invertFilter">
           </div>
 
           <button class="button add-feed-option-button" @click="addFilter()">Add Filter</button>
@@ -155,7 +164,7 @@
           <div class="flex form" v-for="(filter, index) in filters" 
             style="margin-left: 10px; margin-right: 10px;">
             <p class="tiny-text half">{{ filter.type }}:{{ filter.value }}{{ filter.inverted ? " (not)" : "" }}</p>
-            <p class="cursor center tiny-text" @click="deleteFilter(index)">Delete</p>
+            <p tabindex=0 role="button" class="cursor center tiny-text" @click="deleteFilter(index)" @keydown.enter="deleteFilter(index)">Delete</p>
           </div>
         </div>
 
@@ -166,16 +175,16 @@
             <a href="https://github.com/firecakes/cakelandish/releases">Newer version available: {{ remoteVersion }}</a>
           </p>
           <p v-if="lastExportDateDays" class="version center">You have last exported your data {{ lastExportDateDays }} {{ lastExportDateDays == 1 ? "day" : "days" }} ago.</p>
-          <img style="image-rendering: pixelated;" :src="curssorStatus"></img>
+          <img alt="CuRSSor the Skilatire, showing his satisfaction of your server upkeep behavior" style="image-rendering: pixelated;" :src="curssorStatus"></img>
         </div>
       </div>
 
       <!-- display feed content -->
-      <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'posts')" class="three-fourth flex-v" :class="{ 'display-feed': screen === 'lg' && !collapseSidebar}">
+      <main v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'posts')" class="three-fourth flex-v" :class="{ 'display-feed': screen === 'lg' && !collapseSidebar}">
         <p v-if="isLoading && (screen !== 'lg' && currentView === 'posts')" class="small-title center margin-center">
           Updating feed content...
         </p>
-        <img style="image-rendering: pixelated;" v-if="isLoading && (screen !== 'lg' && currentView === 'posts')" src="/curssor/curssor-searching.gif"></img>
+        <img alt="CuRSSor the Skiltaire, reaching out to the web to grab feed content" style="image-rendering: pixelated;" v-if="isLoading && (screen !== 'lg' && currentView === 'posts')" src="/curssor/curssor-searching.gif"></img>
         <!-- render each post -->
         <feed-post 
           @render-reply-to="renderReplyTo"
@@ -185,17 +194,17 @@
           class="post" 
           v-for="(post, index) in orderedContent.filter((post, index) => index < this.postsToRender)">
         </feed-post>
-      </div>
+      </main>
 
       <!-- unauthenticated view of posts (not RSS) -->
-      <div v-if="isAuthenticated === false" class="half flex-v">
+      <main v-if="isAuthenticated === false" class="half flex-v">
         <p class="center title post-index-title">Post Index</p>
         <div class="post-index" v-for="(post, index) in postLocations">
           <p class="center title" v-if="index === 0 || post.year !== postLocations[index - 1].year || post.month !== postLocations[index - 1].month">{{ numberToMonth(post.month) }} {{ post.year }}<br></p>
           <a v-if="post.title" class="post-index-link" :href="post.path">{{ post.title }}</a>
           <a v-else class="post-index-link" :href="post.path">Untitled Post</a>
         </div>
-      </div>
+      </main>
 
     </div>
   </body>

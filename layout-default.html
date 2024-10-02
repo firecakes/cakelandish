@@ -3,6 +3,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <head>
+    <title>%%%title%%%</title>
     <script src="/lib/vue.js"></script>
     <script src="/lib/axios.min.js"></script>
     <link rel="stylesheet" href="/main.css">
@@ -10,7 +11,7 @@
   </head>
 
   <body id="bg" class="no-space">
-    <div id="app">
+    <main id="app">
       <p class="center title">%%%title%%%</p>
       <div class="center">
         <a href="/index.html" class="center button small-button">Return to Main Page</a>
@@ -23,7 +24,7 @@
         <p>{{ new Date("%%%updated%%%").toLocaleString() }}</p>
         <p v-if="'%%%categories%%%'.length > 0">{{ "%%%categories%%%".split(",").map(s => "#" + s).join(" ") }}</p>
       </div>
-    </div>
+    </main>
   </body>
 
 <script type="module">

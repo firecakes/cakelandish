@@ -3,20 +3,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <head>
+    <title>Login Page</title>
     <script src="/lib/vue.js"></script>
     <script src="/lib/axios.min.js"></script>
     <link rel="stylesheet" href="/main.css">
   </head>
 
   <body id="bg">
-    <div id="app" class="flex-v" v-cloak>
-      <p class="title center">{{ titleText }}</p>
+    <main id="app" class="flex-v" v-cloak>
+      <label for="authCode" class="title center">{{ titleText }}</label>
 
-      <input v-if="!authenticated" class="textbox" id="title" v-model="code">
+      <input id="authCode" aria-label="Authorization passcode" v-if="!authenticated" class="textbox" id="title" v-model="code">
 
       <button v-if="!authenticated" class="button submit-button" @click="auth()">Authenticate</button>
       <a class="button submit-button" href="index.html">Return to Main Page</a>
-    </div>
+    </main>
   </body>
 
   <script type="module">
