@@ -60,7 +60,7 @@ export default {
       </div>
       <!-- date at the bottom -->
       <div class="date">
-        <p class="center time-ago">{{ new Date(post.entry.date).toLocaleString() }} ({{ new Date(post.entry.date).toString().match(/\\\([A-z\\\s]+\\\)/)[0].match(/[A-z\\\s]+/)[0].split(' ').map(s => s[0]).join('')  }})</p>
+        <p class="center time-ago">{{ new Date(post.entry.date).toLocaleString() }} ({{ extractTimeZone(post.entry.date) }})</p>
         <p class="center time-ago">{{ computeRelativeTime(post.entry.date) }}</p>
       </div>
       <button class="button reply-button" @click="startReply(post)">Reply to post</button>
@@ -72,6 +72,17 @@ export default {
   mounted() {
   },
   methods: {
+    extractTimeZone(date) {
+      const timeZoneParen = new Date(date).toString().match(/\([A-z\\\s]+\)/);
+      if (timeZoneParen === null || timeZoneParen.length === 0) {
+        return "???";
+      }
+      const timeZoneString = timeZoneParen[0].match(/[A-z\\\s]+/);
+      if (timeZoneString === null || timeZoneString.length === 0) {
+        return "???";
+      }
+      return timeZoneString[0].split(' ').map(s => s[0]).join('');
+    },
     computeRelativeTime(date) {
       let ms = Date.now() - new Date(date);
       let seconds = Math.floor(ms / 1000);
