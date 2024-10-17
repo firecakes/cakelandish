@@ -13,6 +13,10 @@ export default {
     screen: {
       type: String
     },
+    swapStartingView: {
+      type: Boolean,
+      required: false
+    }
   },
   template: `
   <div v-if="screen !== 'lg' && isAuthenticated">
@@ -34,8 +38,8 @@ export default {
   `,
   data: function () {
     return {
-      currentView: "left",
-      currentViewText: this.rightViewName,
+      currentView: this.swapStartingView ? "right" : "left",
+      currentViewText: this.swapStartingView ? this.leftViewName : this.rightViewName,
     };
   },
   mounted() {

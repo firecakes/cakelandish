@@ -171,11 +171,13 @@ html {
 }
 
 .switch-view-button-fixed {
+  border-radius: 0px;
   position: fixed;
   width: 100%;
 }
 
 .switch-view-button {
+  border-radius: 0px;
   width: 100%;
 }
 
