@@ -12,122 +12,128 @@
   <body id="bg">
     <div id="app" class="flex" v-cloak>
 
-      <main class="flex" v-if="isAuthenticated === true">
-        <p class="title center">Admin Settings</p>
-        <p class="center"><a class="button" href="index.html">Return to Main Page</a></p>
+      <main class="flex-v flex-center" v-if="isAuthenticated === true">
+        <p class="title light text-xlarge">Admin Settings</p>
+        <a class="button text-medium half" href="index.html">Return to Main Page</a>
 
         <div class="margin"></div>
 
         <!-- export data -->
-        <p class="small-title center">Creates a tar of all your posts, your traffic data, and your database.json for you to download</p>
-        <button v-if="!exportedData && !exportInProgress" class="button small-button margin-center" @click="exportData()">Export Data</button>
-        <button v-if="!exportedData && exportInProgress" class="button small-button margin-center">Your data is exporting! This may take a long time. Do not leave the page!</button>
+        <p class="title light text-large">Creates a tar of all your posts, your traffic data, and your database.json for you to download</p>
+        <button v-if="!exportedData && !exportInProgress" class="button text-medium half" @click="exportData()">Export Data</button>
+        <button v-if="!exportedData && exportInProgress" class="button text-medium half">Your data is exporting! This may take a long time. Do not leave the page!</button>
         <a v-if="exportedData" 
             download="exported.tar" 
             :href="exportedData" 
-            class="button small-button margin-center">
+            class="button text-medium half">
           Click here to download your exported data
         </a>
 
         <div class="margin"></div>
 
         <!-- import data -->
-        <p class="small-title center">Upload a tar from a previous export and fall back to a previous state of the server. THIS WILL WIPE YOUR CURRENT DATA!!!</p>
-        <p class="small-title center" style="color: #ff0000">Also, should be obvious, but please do not upload some random person's tar file. Make sure it's your own exported tar.</p>
-        <div v-if="!importInProgress" class="form">
-          <label tabindex="0" role="button" @keydown.enter="$refs.importData.click()" for="file-upload" class="form file-upload">
-            <p class="flex-center button" style="align-content: center;">Import Data</p>
+        <p class="title light text-large">Upload a tar from a previous export and fall back to a previous state of the server. THIS WILL WIPE YOUR CURRENT DATA!!!</p>
+        <p class="title light text-large text-error">Also, should be obvious, but please do not upload some random person's tar file. Make sure it's your own exported tar.</p>
+        <div v-if="!importInProgress" class="flex-center half">
+          <label tabindex="0" role="button" @keydown.enter="$refs.importData.click()" for="file-upload" class="flex-center one-part">
+            <p class="flex-center button text-medium one-part">Import Data</p>
           </label>
           <input ref="importData" id="file-upload" accept="tar/*" type="file" @change="fileSubmitted"/>
         </div>
-        <button v-if="importInProgress" class="button small-button margin-center">Your data is importing! This may take a long time. Do not leave the page!</button>
+        <button v-if="importInProgress" class="button text-medium half">Your data is importing! This may take a long time. Do not leave the page!</button>
 
         <div class="margin"></div>
 
         <!-- change domain name -->
-        <p class="small-title center">Attempts to replace all instances of a domain name with another one. It's literally just a string replacement method going through all your RSS posts, but intended for migrating over to a new domain. Please back up your data before trying this feature out!</p>
-        <div>
-          <label for="oldDomain" class="title">Old Domain</label>
-          <input class="textbox" id="oldDomain" v-model="oldDomain">
+        <p class="title light text-large">Attempts to replace all instances of a domain name with another one. It's literally just a string replacement method going through all your RSS posts, but intended for migrating over to a new domain. Please back up your data before trying this feature out!</p>
+        <div class="flex">
+          <label for="oldDomain" class="title light text-large side-space">Old Domain</label>
+          <input class="textbox bg-dark light text-medium" id="oldDomain" v-model="oldDomain">
         </div>
-        <div>
-          <label for="newDomain" class="title">New Domain</label>
-          <input class="textbox" id="newDomain" v-model="newDomain">
+
+        <div class="margin"></div>
+
+        <div class="flex">
+          <label for="newDomain" class="title light text-large side-space">New Domain</label>
+          <input class="textbox bg-dark light text-medium" id="newDomain" v-model="newDomain">
         </div>
-        <button v-if="oldDomain && newDomain" class="button small-button margin-center" @click="changeDomain()">Replace RSS Links with New Domains</button>
+
+        <div class="margin"></div>
+
+        <button v-if="oldDomain && newDomain" class="button text-medium half" @click="changeDomain()">Replace RSS Links with New Domains</button>
 
         <!-- traffic data -->
         <div v-if="trafficData.length > 0" style="width: 100%" class="center">
 
           <div class="margin"></div>
 
-          <p class="title center">Time Data</p>
+          <p class="title light text-large">Time Data</p>
           <div>
             <div v-for="(data, index) in timeData.data" :style="{
-                background: `linear-gradient(90deg, #555555 ${(100 * data / timeData.max) + '%'}, #273038 0)`,
-                backgroundColor: '#d2d2d2' 
+                background: `linear-gradient(90deg, #555555 ${(100 * data / timeData.max) + '%'}, var(--color-primary) 0)`,
+                backgroundColor: 'var(--text-color-light)' 
               }">
-              <div class="traffic-text">{{ new Date(timeData.ranges[index].start).toLocaleString()}} - {{ new Date(timeData.ranges[index].end).toLocaleString() }} ({{ data }} visits)</div>
+              <div class="traffic-text text-small">{{ new Date(timeData.ranges[index].start).toLocaleString()}} - {{ new Date(timeData.ranges[index].end).toLocaleString() }} ({{ data }} visits)</div>
             </div>
           </div>
 
           <div class="margin"></div>
 
-          <p class="title center">Page Data</p>
+          <p class="title light text-large">Page Data</p>
           <div>
             <div v-for="data in pageData.data" :style="{
-                background: `linear-gradient(90deg, #555555 ${(100 * data.count / pageData.max) + '%'}, #273038 0)`,
-                backgroundColor: '#d2d2d2' 
+                background: `linear-gradient(90deg, #555555 ${(100 * data.count / pageData.max) + '%'}, var(--color-primary) 0)`,
+                backgroundColor: 'var(--text-color-light)' 
               }">
-              <div class="traffic-text">{{ data.page }} ({{ data.count }} visits)</div>
+              <div class="traffic-text text-xsmall">{{ data.page }} ({{ data.count }} visits)</div>
             </div>
           </div>
 
           <div class="margin"></div>
 
-          <p class="title center">IP Data</p>
+          <p class="title light text-large">IP Data</p>
           <div>
             <div v-for="data in ipData.data" :style="{
-                background: `linear-gradient(90deg, #555555 ${(100 * data.count / ipData.max) + '%'}, #273038 0)`,
-                backgroundColor: '#d2d2d2' 
+                background: `linear-gradient(90deg, #555555 ${(100 * data.count / ipData.max) + '%'}, var(--color-primary) 0)`,
+                backgroundColor: 'var(--text-color-light)' 
               }">
-              <div class="traffic-text">{{ data.page }} ({{ data.count }} visits)</div>
+              <div class="traffic-text text-xsmall">{{ data.page }} ({{ data.count }} visits)</div>
             </div>
           </div>
 
           <div class="margin"></div>
 
-          <p class="title center">IP Blacklist</p>
-          <div class="center">
-            <p class="small-title center">You likely want to remove your own IP addresses when you're viewing the statistics. Put in a comma-separated list of IPs to remove from the results</p>
-            <label for="ip" class="small-title">Put Your IP Here</label>
-            <input class="textbox" id="ip" v-model="yourIps">
+          <p class="title light text-large">IP Blacklist</p>
+          <div class="center flex-v">
+            <p class="title light text-medium">You likely want to remove your own IP addresses when you're viewing the statistics. Put in a comma-separated list of IPs to remove from the results</p>
+            <label for="ip" class="title light text-large">Put Your IP(s) Here</label>
+            <input class="textbox bg-dark light text-medium" id="ip" v-model="yourIps">
           </div>
 
           <div class="margin"></div>
 
-          <p class="title center">Filter Date Range</p>
-          <div class="flex-h">
+          <p class="title light text-large">Filter Date Range</p>
+          <div class="flex flex-center">
             <div>
-              <p class="center small-title">From</p>
-              <input class="select" type="date" v-model="dateStartFilter">
+              <p class="title light text-medium">From</p>
+              <input class="center textbox bg light text-medium" type="date" v-model="dateStartFilter">
             </div>
             <div>
-              <p class="center small-title">To</p>
-              <input class="select" type="date" v-model="dateEndFilter">
+              <p class="title light text-medium">To</p>
+              <input class="center textbox bg light text-medium" type="date" v-model="dateEndFilter">
             </div>
           </div>
 
-          <button v-if="!requestTrafficDeletion" class="button small-button" @click="deleteTraffic()">Delete Traffic History</button>
-          <button v-if="requestTrafficDeletion" class="button small-button" @click="deleteTraffic()">Are you sure?</button>
+          <div class="margin"></div>
+
+          <button v-if="!requestTrafficDeletion" class="button text-medium half" @click="deleteTraffic()">Delete Traffic History</button>
+          <button v-if="requestTrafficDeletion" class="button text-medium half" @click="deleteTraffic()">Are you sure?</button>
         </div>
 
-        <img alt="A drawing of CuRSSor the Skiltaire, looking happily at the viewer with a caught blue bird in his mouth" style="image-rendering: pixelated; padding-top: 50px;" src="/curssor/curssor-hunting.png"></img>
+        <div class="margin"></div>
 
-      </main>
+        <img class="pixel-art" alt="A drawing of CuRSSor the Skiltaire, looking happily at the viewer with a caught blue bird in his mouth" src="/curssor/curssor-hunting.png"></img>
 
-      <main v-if="isAuthenticated === false" class="fourth flex-v">
-        <p class="title center margin-center">You are not authorized to view this page</p>
       </main>
 
     </div>
@@ -331,94 +337,18 @@
       display: none;
     }
 
-    .flex-h {
-      display: flex;
-      flex-direction: row;
-      justify-content: center;
-    }
-
-    .flex {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .button {
-      margin-bottom: 20px;
-      margin-top: 20px;
-      padding-left: 20px;
-      padding-right: 20px;
-      height: 30px;
-      align-self: center;
-      font-size: 20px;
-    }
-
-    .textbox {
-      background: #1B2327;
-    }
-
     .margin {
-      margin-bottom: 25px;
-    }
-
-    .fourth {
-      background: #273038;
-    }
-
-    .file-upload {
-      border-radius: 8px;
-      font-family: Inika;
-      background-color: #382f27;
-      font-size: 20px;
-      color: #d2d2d2;
-      border: 0px;
-      align-items: center;
-      width: 200px;
-    }
-
-    .select {
-      margin-left: 10px;
-      margin-right: 10px;
-      color: #d2d2d2;
-      font-family: Inika;
-      font-size: 18px;
-      background: #273038;
-      border: 0px;
+      margin-bottom: 24px;
     }
 
     .traffic-text {
-      color: #d2d2d2
-    }
-
-    @media only screen and (max-width: 1000px) {
-      .small-title {
-        font-size: 20px;
-      }
-      .title {
-        font-size: 26px;
-      }
-      .traffic-text {
-        font-size: 14px;
-      }
-      .textbox {
-        font-size: 16px;
-      }
+      color: var(--text-color-light)
     }
 
     @media only screen and (max-width: 600px) {
-      .small-title {
-        font-size: 16px;
-      }
-      .title {
-        font-size: 20px;
-      }
-      .traffic-text {
-        font-size: 10px;
-      }
-      .textbox {
-        font-size: 14px;
+      .text-small {
+        font-size: var(--size-xsmall);
       }
     }
-
   </style>
 </html>

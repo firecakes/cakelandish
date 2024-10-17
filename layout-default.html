@@ -12,14 +12,15 @@
 
   <body id="bg" class="no-space">
     <main id="app">
-      <p class="center title">%%%title%%%</p>
-      <div class="center">
-        <a href="/index.html" class="center button small-button">Return to Main Page</a>
+      <p class="title light text-large">%%%title%%%</p>
+      <div class="flex-center">
+        <a href="/index.html" class="button text-medium half">Return to Main Page</a>
       </div>
       <br>
 
-      %%%content%%%
-      <div>
+      <div class="light text-medium">%%%content%%%</div>
+
+      <div class="light text-medium">
         <hr>
         <p>{{ new Date("%%%updated%%%").toLocaleString() }}</p>
         <p v-if="'%%%categories%%%'.length > 0">{{ "%%%categories%%%".split(",").map(s => "#" + s).join(" ") }}</p>
@@ -41,8 +42,5 @@
   </script>
 
   <style>
-    #app {
-      color: #d2d2d2;
-    }
   </style>
 </html>

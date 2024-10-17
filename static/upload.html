@@ -10,129 +10,134 @@
   </head>
 
   <body id="bg">
-    <div id="app" class="flex" v-cloak>
+    <div id="app" class="flex-v" v-cloak>
 
-      <!-- switch view button for smaller screen sizes -->
-      <button v-if="screen !== 'lg' && isAuthenticated" class="button switch-view-button" @click="switchViews">{{ currentViewText }}</button>
+      <switch-view-component
+        :screen="screen"
+        :is-authenticated="isAuthenticated"
+        left-view-name="Show Input"
+        right-view-name="Show Output">
 
-      <!-- left side -->
-      <div id="side" v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'input')" class="half flex-v">
-        <!-- HTML input -->
-        <label for="htmlInput" class="center title">HTML goes here!</label>
-        <textarea id="htmlInput" class="html-input textarea" rows="30" v-model="htmlInput" @input="sanitizeDebounce"></textarea>
+        <template v-slot:left-side>
+          <div class="flex-v one-part side-space">
+            <!-- HTML input -->
+            <label for="htmlInput" class="title light text-large">HTML goes here!</label>
+            <textarea id="htmlInput" class="bg light textarea" rows="30" v-model="htmlInput" @input="sanitizeDebounce"></textarea>
 
-        <!-- RSS override -->
-        <button class="button rss-override" @click="toggleRssOverride">Toggle RSS Override</button>
-        <div v-if="showRssOverride" class="flex-v">
-          <p class="tiny-text">Enabling RSS Override means you want to put different content in your RSS post than the content that is stored on your server. You should keep as much of the same content in your RSS post as possible. Only enable this if you want to include more intricate styling and functionality than what the RSS reader allows for those who visit your server!</p>
-          <textarea class="html-input textarea" rows="30" v-model="rssInput" @input="sanitizeDebounce"></textarea>
-        </div>
+            <!-- RSS override -->
+            <button class="button text-medium top-space" @click="toggleRssOverride">Toggle RSS Override</button>
+            <div v-if="showRssOverride" class="flex-v light">
+              <p class="text-xsmall">Enabling RSS Override means you want to put different content in your RSS post than the content that is stored on your server. You should keep as much of the same content in your RSS post as possible. Only enable this if you want to include more intricate styling and functionality than what the RSS reader allows for those who visit your server!</p>
+              <textarea class="bg light textarea" rows="30" v-model="rssInput" @input="sanitizeDebounce"></textarea>
+            </div>
 
-        <p class="tiny-text">Be aware that full URLs are used for images so that RSS feeds link the images properly. Make sure your server is setup on a permanent address before making posts!</p>
+            <p class="light text-xsmall">Be aware that full URLs are used for images so that RSS feeds link the images properly. Make sure your server is setup on a permanent address before making posts!</p>
 
-        <!-- post info -->
-        <div class="form">
-          <label for="title" class="title">Title</label>
-          <input class="textbox" id="title" v-model="title">
-        </div>
+            <!-- post info -->
+            <div class="flex-center">
+              <label for="title" class="title light text-medium">Title</label>
+              <input class="textbox bg light one-part text-medium side-space" id="title" v-model="title">
+            </div>
 
-        <div class="form">
-          <label for="replyFeed" class="title">Reply Feed URL</label>
-          <input class="textbox" id="replyFeed" v-model="replyFeedUrl">
-        </div>
+            <div class="flex-center">
+              <label for="replyFeed" class="title light text-medium">Reply Feed URL</label>
+              <input class="textbox bg light one-part text-medium side-space" id="replyFeed" v-model="replyFeedUrl">
+            </div>
 
-        <div class="form">
-          <label for="replyId" class="title">Reply Post ID URL</label>
-          <input class="textbox" id="replyId" v-model="replyPostIdUrl">
-        </div>
+            <div class="flex-center">
+              <label for="replyId" class="title light text-medium">Reply Post ID URL</label>
+              <input class="textbox bg light one-part text-medium side-space" id="replyId" v-model="replyPostIdUrl">
+            </div>
 
-        <!-- Embed Reply info + button -->
-        <p v-if="this.replyFeedUrl && this.replyPostIdUrl && showEmbedButton" class="tiny-text">Clicking this button will fetch the contents of the post you're replying to and then bake them into your site's post. This makes it so that viewers of your site can have the context of your post without needing the RSS link parsing logic of Cakelandish to render it. Press this button only when you're finished making your post, as this will turn on RSS override to prevent the parent post from also appearing in your feed file. Pressing the button multiple times will proceed to load additional parent posts if they are found.</p>
-        <button v-if="this.replyFeedUrl && this.replyPostIdUrl && showEmbedButton" class="button embed-button" @click="embedReply">Embed Reply in Post</button>
+            <!-- Embed Reply info + button -->
+            <p v-if="this.replyFeedUrl && this.replyPostIdUrl && showEmbedButton" class="light text-xsmall">Clicking this button will fetch the contents of the post you're replying to and then bake them into your site's post. This makes it so that viewers of your site can have the context of your post without needing the RSS link parsing logic of Cakelandish to render it. Press this button only when you're finished making your post, as this will turn on RSS override to prevent the parent post from also appearing in your feed file. Pressing the button multiple times will proceed to load additional parent posts if they are found.</p>
+            <button v-if="this.replyFeedUrl && this.replyPostIdUrl && showEmbedButton" class="button text-medium" @click="embedReply">Embed Reply in Post</button>
 
-        <!-- tag management + upload -->
-        <div class="tag-management">
+            <!-- tag management + upload -->
+            <div class="top-space">
 
-          <div class="form third flex-v">
+              <div class="flex-v">
+                <!-- tag form -->
+                <div class="flex tag-form">
+                  <div class="flex one-part">
+                    <label for="tag" class="title light text-medium">Tags</label>
+                    <input class="textbox bg light text-medium side-space one-part" id="tag" v-model="tag">
+                  </div>
 
-            <!-- tag form -->
-            <div class="tag-form form">
-              <div class="flex form">
-                <label for="tag" class="title">Tags</label>
-                <input class="textbox tag-input shrinkable-input" id="tag" v-model="tag">
+                  <div class="flex one-part used-tags-form">
+                    <select aria-label="Used tags" class="textbox bg light text-medium one-part" @change="chooseTag" aria-label="Used tags">
+                      <option value="">Used tags</option>
+                      <option v-for="tag in existingTags">{{ tag }}</option>
+                    </select>
+                    <button class="button text-medium side-space" @click="addTag">Add tag</button>
+                  </div>
+                </div>
+
+                <!-- upload media form -->
+                <div>
+                  <label tabindex="0" role="button" @keydown.enter="$refs.uploadMedia.click()" for="file-upload" class="button text-medium one-part cursor flex-center top-space">
+                    Upload media
+                  </label>
+                  <input ref="uploadMedia" id="file-upload" accept="image/*" type="file" @change="filesSubmitted" multiple/>
+                </div>
+
+                <p v-if="uploadsInProgress.size !== 0" class="light text-xsmall flex-center">Currently uploading:</p>
+                <div class="light text-xsmall flex-center" v-for="upload in Array.from(uploadsInProgress)">
+                  {{ upload }}
+                </div>
+
+                <p v-if="uploadedFiles.length !== 0" class="light text-small flex-center">All uploaded files. Click on one to embed it into the post automatically.</p>
+                <div class="flex" v-for="fileName in uploadedFiles">
+                  <p class="cursor text-xsmall one-part light no-space top-space" @click="insertEmbedFromFile(fileName)">{{ fileName }}</p>
+                  <p class="cursor center text-xsmall light no-space top-space side-space" @click="deleteUpload(fileName)">Delete</p>
+                </div>
+
               </div>
 
-              <div class="flex form">
-                <select aria-label="Used tags" class="tag-select shrinkable-input" @change="chooseTag" aria-label="Used tags">
-                  <option value="">Used tags</option>
-                  <option v-for="tag in existingTags">{{ tag }}</option>
-                </select>
-                <button class="button tag-button" @click="addTag">Add tag</button>
+              <div class="top-space">
+                <div class="flex-center" v-for="(t, index) in tags">
+                  <p class="light text-xsmall one-part no-space top-space"><b>{{ t }}</b></p>
+                  <button class="button text-small one-part" @click="removeTag(index)">Remove</button>
+                </div>
               </div>
             </div>
-
-            <!-- upload media form -->
-            <div class="form">
-              <label tabindex="0" role="button" @keydown.enter="$refs.uploadMedia.click()" for="file-upload" class="file form file-upload-images">
-                <p class="cursor flex-center">Upload media</p>
-              </label>
-              <input ref="uploadMedia" id="file-upload" accept="image/*" type="file" @change="filesSubmitted" multiple/>
-            </div>
-
-            <p v-if="uploadsInProgress.size !== 0" class="tiny-text">Currently uploading:</p>
-            <div v-for="upload in Array.from(uploadsInProgress)">
-              <p class="tiny-text">{{ upload }}</p>
-            </div>
-
-            <p v-if="uploadedFiles.length !== 0" class="tiny-text">All uploaded files. Click on one to embed it into the post automatically.</p>
-            <div class="flex uploaded-file" v-for="fileName in uploadedFiles">
-              <p class="cursor tiny-text half" @click="insertEmbedFromFile(fileName)">{{ fileName }}</p>
-              <p class="cursor center tiny-text" @click="deleteUpload(fileName)">Delete</p>
-            </div>
-
           </div>
+        </template>
 
-          <div class="two-third">
-            <div class="form" v-for="(t, index) in tags">
-              <p class="tiny-text half"><b>{{ t }}</b></p>
-              <button class="button half" @click="removeTag(index)">Remove</button>
+        <template v-slot:right-side>
+          <div class="flex-v one-part side-space">
+            <p class="title light text-large">How it renders on your site:</p>
+            <iframe :srcdoc="debouncedHtmlInputLayoutApplied" class="iframe" title="Layout Render"></iframe> 
+            <p class="title light text-large">How it renders on your server's RSS reader:</p>
+            <p class="light text-xsmall no-space">Dangerous / unnecessary tags such as script and style are removed in sanitization. Be aware of this as this is how users will see your post using this server's RSS reader.</p>
+
+            <span class="bg light text-small top-space" v-html="htmlOutput"></span>
+
+            <div class="flex button-action-group top-space" style="justify-content: space-around;">
+              <button v-if="!localUrl || localUrl && localUrl.startsWith('/tmp/')" class="button button-spacing text-medium one-part side-space" @click="submitPost">Publish Post</button>
+              <button v-else class="button button-spacing text-medium one-part side-space" @click="submitPost">Update Post</button>
+
+              <button v-if="!localUrl || localUrl && localUrl.startsWith('/tmp/')" class="button button-spacing text-medium one-part side-space" @click="saveDraft">Save as Draft</button>
+              <button v-else class="button button-spacing text-medium one-part side-space" @click="saveDraft">Copy as Draft</button>
+
+              <button v-if="!localUrl" class="button button-spacing text-medium one-part side-space" @click="discardPost">Discard</button>
+              <button v-else class="button button-spacing text-medium one-part side-space" @click="discardPost">Cancel</button>
             </div>
           </div>
-        </div>
-        
-      </div>
+        </template>
 
-      <!-- right side -->
-      <div id="side" v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'output')" class="half flex-v">
-        <p class="center title">How it renders on your site:</p>
-        <iframe :srcdoc="debouncedHtmlInputLayoutApplied" class="html-output iframe" title="Layout Render"></iframe> 
-        <p class="center title">How it renders on your server's RSS reader:</p>
-        <p class="tiny-text">Dangerous / unnecessary tags such as script and style are removed in sanitization. Be aware of this as this is how users will see your post using this server's RSS reader.</p>
-        <span v-html="htmlOutput" class="html-output"></span>
-
-        <div class="form button-action-group" style="justify-content: space-around;">
-          <button v-if="!localUrl || localUrl && localUrl.startsWith('/tmp/')" class="button submit-button" @click="submitPost">Publish Post</button>
-          <button v-else class="button submit-button" @click="submitPost">Update Post</button>
-
-          <button v-if="!localUrl || localUrl && localUrl.startsWith('/tmp/')" class="button discard-draft-button" @click="saveDraft">Save as Draft</button>
-          <button v-else class="button discard-draft-button" @click="saveDraft">Copy as Draft</button>
-
-          <button v-if="!localUrl" class="button discard-draft-button" @click="discardPost">Discard</button>
-          <button v-else class="button discard-draft-button" @click="discardPost">Cancel</button>
-        </div>
-      </div>
-
-      <div v-if="isAuthenticated === false" class="half flex-v">
-        <p class="title center margin-center">You are not authorized to view this page</p>
-      </div>
-
+      </switch-view-component>
     </div>
   </body>
 
   <script type="module">
     import * as util from "./util.js";
+    import SwitchViewComponent from "./components/SwitchViewComponent.js";
 
     Vue.createApp({
+      components: {
+        SwitchViewComponent
+      },
       data () {
         return {
           htmlInput: "Hello <i>World!</i>",
@@ -456,15 +461,6 @@
             timer = setTimeout(() => { func.apply(this, args); }, timeout);
           };
         },
-        switchViews () {
-          if (this.currentView === "input") {
-            this.currentView = "output";
-            this.currentViewText = "Show Input"
-          } else if (this.currentView === "output") {
-            this.currentView = "input";
-            this.currentViewText = "Show Output"
-          }
-        },
         async embedReply () {
           if (this.isRunningEmbedReply) {
             return;
@@ -553,178 +549,35 @@
     }
 
     #bg {
-      background: #1B2327;
-    }
-
-    #file-upload {
-      display: none;
+      background: var(--color-primary-dark);
     }
 
     .textarea { 
       resize: vertical; 
     }
 
-    .file-upload-images {
-      border-radius: 8px;
-    }
-
-    .flex-center {
-      flex-grow: 1;
-      text-align: center;
-    }
-
-    .form {
-      display: flex;
-      align-items: center;
-      margin-bottom: 5px;
-    }
-
-    .two-third {
-      margin-left: 10px;
-    }
-
-    .half {
-      margin-left: 10px;
-      margin-right: 10px;
-    }
-
-    .tag-input {
-      width: 200px;
-    }
-
-    .button {
-      margin-left: 20px;
-      height: 30px;
-      font-size: 14px;
-    }
-
-    .embed-button {
-      margin-left: 20px;
-      margin-right: 20px;
-    }
-
-    .file {
-      height: 30px;
-      color: #d2d2d2;
-      font-family: Inika;
-      font-size: 14px;
-      background: #382f27;
-      width: 200px;
-      margin-top: 5px;
-    }
-
-    .tag-button {
-      width: 100px;
-    }
-
-    .upload-button {
-      margin-top: 5px;
-      width: 200px;
-    }
-
-    .submit-button {
-      margin-top: 15px;
-      width: 160px;
-    }
-
-    .discard-draft-button {
-      margin-top: 15px;
-      width: 140px;
-      font-size: 14px;
-    }
-
-    .html-input {
-      background: #273038;
-      flex-grow: 1;
-      color: #d2d2d2;
-      margin-bottom: 10px;
-    }
-
-    .html-output {
-      background: #273038;
-      flex-grow: 1;
-      color: #d2d2d2;
-    }
-
-    .rss-override {
-      align-self: center;
-    }
-
-    .tag-select {
-      margin-left: 20px;
-      height: 30px;
-      color: #d2d2d2;
-      font-family: Inika;
-      font-size: 24px;
-      background: #273038;
-      border: 0px;
-      flex-grow: 1;
-    }
-
-    .switch-view-button {
-      margin: 0px;
-    }
-
-    .tag-management {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .tag-form {
-      display: flex;
-    }
-
-    .shrinkable-input {
-      min-width: 200px;
-      width: 100%;
-    }
-
     .iframe {
-      height: 600px; /* best easy option atm */
+      height: 600px;
     }
 
-    .cursor {
-      cursor: pointer;
-    }
-
-    .uploaded-file {
-      width: 100%;
-      justify-content: space-around;
-      margin-top: 10px;
-    }
+    #file-upload {
+      display: none;
+    }   
 
     /* media queries + changing layout of HTML based on screen size */
 
-    @media only screen and (max-width: 1200px) {
-      .title {
-        font-size: 24px;
-      }
-      .submit-button {
-        width: 150px;
-      }
+    @media only screen and (max-width: 600px) {
       .button-action-group {
         flex-direction: column;
       }
-    }
-
-    @media only screen and (max-width: 1000px) {
-      #side {
-        padding-top: 30px;
-      }
-    }
-
-    @media only screen and (max-width: 600px) {
-      .title {
-        font-size: 16px;
-      }
-      .textbox {
-        font-size: 16px;
-      }
-      .tag-select {
-        font-size: 16px;
-      }
       .tag-form {
         flex-direction: column;
+      }
+      .used-tags-form {
+        margin-top: 8px;
+      }
+      .button-spacing {
+        margin-top: 8px;
       }
     }
 

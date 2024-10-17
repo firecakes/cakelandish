@@ -11,60 +11,60 @@
 
   <body id="bg">
     <div id="app" class="flex-v" v-cloak>
-      <p v-if="isAuthenticated === true" class="title center">Your Custom Pages</p>
-      <a v-if="isAuthenticated === true" class="button submit-button" href="index.html"><p class="return-main">Return to Main Page</p></a>
+      <a v-if="isAuthenticated === true" class="button text-large button-center" href="index.html">Return to Main Page</a>
+      <p v-if="isAuthenticated === true" class="title light text-xlarge">Your Custom Pages</p>
 
       <div v-if="isAuthenticated === true && selectedPage">
         <div class="flex page">
           <!-- edit a page -->
-          <div class="half flex-v">
+          <div class="one-part flex-v">
             <!-- HTML input -->
-            <label for="htmlInput" class="center title">File goes here!</label>
-            <textarea id="htmlInput" class="html-input" cols="60" rows="30" v-model="selectedPage.content"></textarea>
+            <label for="htmlInput" class="title light text-large">File goes here!</label>
+            <textarea id="htmlInput" class="html-input bg light" cols="60" rows="30" v-model="selectedPage.content"></textarea>
           </div>
 
-          <div class="half flex-v">
+          <div class="one-part flex-v">
             <!-- HTML input -->
-            <p class="center title">Rendering goes here!</p>
+            <p class="title light text-large">Rendering goes here!</p>
             <iframe :srcdoc="debouncedSelectedPageContent" title="Layout Render"></iframe> 
           </div>
         </div>
 
-        <div class="flex action-buttons">
-          <button @click="savePage" class="button">Save page</button>
-          <button @click="discardPage" class="button">Discard changes</button>
+        <div class="flex top-space" style="justify-content: space-evenly; width: 50%;">
+          <button @click="savePage" class="button text-large one-part side-space">Save page</button>
+          <button @click="discardPage" class="button text-large one-part side-space">Discard changes</button>
         </div>
       </div>
 
       <div v-if="isAuthenticated === true">
         <!-- make a new page -->
-        <p class="title center">Make a New Page</p>
-        <div class="form flex">
-          <label for="title" class="title">URL Name</label>
-          <input class="textbox" id="title" v-model="pageName">
-          <button @click="makeNewPage" class="button">Create new page</button>
+        <p class="title light text-large">Make a New Page</p>
+        <div class="flex-center">
+          <label for="title" class="title light text-large">URL Name</label>
+          <input class="textbox bg-dark light one-part text-large side-space" id="title" v-model="pageName">
+          <button @click="makeNewPage" class="button text-large">Create new page</button>
         </div>
-        <p class="small-title">Use "/" in the name to make new directories</p>
+        <p class="light text-medium no-space">Use "/" in the name to make new directories</p>
       </div>
 
       <!-- page list --> 
       <div v-if="isAuthenticated === true">
-        <p class="title center">Page List</p>
+        <p class="title light text-large">Page List</p>
         <div class="center">
-          <label for="showCriticalFiles" class="small-title red" style="display:inline">Show files critical to Cakelandish (editing carelessly may permanently break your server!)</label>
-          <input id="showCriticalFiles" type="checkbox" class="checkbox center" v-model="showImportantFiles">
+          <label for="showCriticalFiles" class="title text-error text-large" style="display:inline">Show files critical to Cakelandish (editing carelessly may permanently break your server!)</label>
+          <input id="showCriticalFiles" type="checkbox" class="checkbox" v-model="showImportantFiles">
         </div>
 
-        <div class="form">
-          <label tabindex="0" role="button" @keydown.enter="$refs.uploadRootFile.click()" for="file-upload-static" class="form file-upload button">
-            <p class="flex-center">Upload file to static folder</p>
+        <div class="flex-center">
+          <label tabindex="0" role="button" @keydown.enter="$refs.uploadRootFile.click()" for="file-upload-static" class="flex-center button">
+            <p class="title light text-medium side-space">Upload file to static folder</p>
           </label>
           <input ref="uploadRootFile" id="file-upload-static" accept="image/*" class="hidden" type="file" @change="uploadFile($event, {url: ''})" multiple/>
         </div>
 
-        <p v-if="uploadsInProgress.size !== 0" class="tiny-text center">Currently uploading:</p>
+        <p v-if="uploadsInProgress.size !== 0" class="title light text-small">Currently uploading:</p>
         <div v-for="upload in Array.from(uploadsInProgress)">
-          <p class="tiny-text center">{{ upload }}</p>
+          <p class="title light text-small">{{ upload }}</p>
         </div>
 
         <!-- list each file and directory -->
@@ -79,10 +79,6 @@
           v-for="page in pages">
         </static-file>
 
-      </div>
-
-      <div v-if="isAuthenticated === false" class="fourth flex-v">
-        <p class="title center margin-center">You are not authorized to view this page</p>
       </div>
 
     </div>
@@ -227,94 +223,19 @@
   </script>
 
   <style>
-    .hidden {
-      display: none;
-    }
-
-    .file-upload {
-      border-radius: 8px;
-      font-family: Inika;
-      background-color: #382f27;
-      color: #d2d2d2;
-      border: 0px;
-      align-items: center;
-    }
-
-    .post {
-      margin-top: 15px;
-      margin-bottom: 15px;
-      font-family: Inika;
-      background-color: #ECF8FF;
-      border: 0px;
-      display: flex;
-      flex-grow: 1;
-      align-items: center;
-    }
-
-    .post-contents {
-      flex-grow: 1;
-    }
-
-    .button {
-      margin-left: 20px;
-      margin-right: 20px;
-      padding-left: 20px;
-      padding-right: 20px;
-      height: 30px;
-      font-size: 14px;
+    .button-center {
+      width: 50%;
       align-self: center;
-    }
-
-    .submit-button {
-      margin-top: 15px;
-      margin-bottom: 20px;
-      font-size: 20px;
-      display: flex;
-      align-items: center;
-    }
-
-    .edit-post-text {
-      align-self: center;
-    }
-
-    .textbox {
-      background: #1B2327;
     }
 
     .html-input {
-      background: #273038;
-      flex-grow: 1;
       margin-right: 10px;
-      color: #d2d2d2;
       margin-bottom: 10px;
       resize: vertical;
     }
 
-    .html-output {
-      background: #273038;
-      flex-grow: 1;
-      color: #d2d2d2;
-    }
-
-    .return-main {
-      margin: 0px;
-    }
-
-    .action-buttons {
-      padding-top: 20px;
-    }
-
-    .fourth {
-      background: #273038;
-    }
-
-    .checkbox {
-      width: 20px;
-      height: 20px;
-    }
-
-    .red {
-      color: #FF0000;
+    .hidden {
+      display: none;
     }
 
     iframe {
@@ -324,21 +245,6 @@
       background: #FFFFFF;
     }
 
-    /* Rules that allow for better resizing of the content */
-
-    img {
-      max-width: 100%;
-      object-fit: contain;
-    }
-
-    pre {
-      white-space: pre-wrap;
-    }
-
-    p {
-      word-break: break-word;
-    }
-
     /* media queries + changing layout of HTML based on screen size */
 
     @media only screen and (max-width: 1000px) {
@@ -346,45 +252,9 @@
         flex-direction: column;
       }
 
-      .title {
-        font-size: 20px;
-      }
-
-      .small-title {
-        font-size: 16px;
-      }
-
-      .textbox {
-        font-size: 20px;
-      }
-
-      .button {
-        font-size: 11px;
-      }
-
       iframe {
         height: 600px;
       }
-    }
-
-    @media only screen and (max-width: 600px) {
-      .title {
-        font-size: 16px;
-      }
-
-      .small-title {
-        font-size: 12px;
-      }
-
-      .textbox {
-        font-size: 16px;
-      }
-
-      .button {
-        padding-left: 5px;
-        padding-right: 5px;
-      }
-
     }
 
   </style>

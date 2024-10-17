@@ -10,49 +10,57 @@
   </head>
 
   <body id="bg">
-    <main id="app" class="flex" v-cloak>
-      <!-- switch view button for smaller screen sizes -->
-      <button v-if="screen !== 'lg' && isAuthenticated" class="button switch-view-button" @click="switchViews">{{ currentViewText }}</button>
+    <main id="app" class="flex-v" v-cloak>
 
-      <!-- left side -->
-      <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'input')" class="half flex-v">
-        <!-- HTML input -->
-        <label for="htmlInput" class="center title">HTML Layout goes here!</label>
-        <textarea id="htmlInput" class="html-input textarea" rows="30" v-model="htmlInput"></textarea>
+      <switch-view-component
+        :screen="screen"
+        :is-authenticated="isAuthenticated"
+        left-view-name="Show Input"
+        right-view-name="Show Output">
 
-        <p class="tiny-text">This layout will be injected into every post you've made and will make. To make sure your posts render where you want them to make sure you include %%%content%%% in the file where you want it to go.</p>
+        <template v-slot:left-side>
+          <div class="flex-v one-part side-space">
+            <!-- HTML input -->
+            <label for="htmlInput" class="title light text-large">HTML Layout goes here!</label>
+            <textarea id="htmlInput" class="bg light textarea" rows="30" v-model="htmlInput"></textarea>
 
-        <div class="form" style="justify-content: space-around;">
-          <button class="button" @click="submitLayout()">Submit Layout</button>
-          <a class="button" href="index.html">Return to Main Page</a>
-        </div>
-      </div>
+            <p class="light text-xsmall">This layout will be injected into every post you've made and will make. To make sure your posts render where you want them to make sure you include %%%content%%% in the file where you want it to go.</p>
 
-      <!-- right side -->
-      <div v-if="isAuthenticated === true && (screen === 'lg' || currentView === 'output')" class="half flex-v">
-        <p class="center title">How it renders on your site:</p>
-        <iframe class="iframe" :srcdoc="debouncedHtmlInputLayoutApplied" title="Layout Render"></iframe> 
-      </div>
+            <div class="flex-center" style="justify-content: space-around;">
+              <button class="button text-large one-part side-space" @click="submitLayout()">Submit Layout</button>
+              <a class="button text-large one-part side-space" href="index.html">Return to Main Page</a>
+            </div>
+          </div>
+        </template>
 
-      <div v-if="isAuthenticated === false" class="half flex-v">
-        <p class="title center margin-center">You are not authorized to view this page</p>
-      </div>
+        <template v-slot:right-side>
+          <div class="flex-v one-part side-space">
+            <div class="flex-v one-part">
+              <p class="title light text-large">How it renders on your site:</p>
+              <iframe class="iframe" :srcdoc="debouncedHtmlInputLayoutApplied" title="Layout Render"></iframe> 
+            </div>
+          </div>
+        </template>
+
+      </switch-view-component>
 
     </main>
   </body>
 
   <script type="module">
     import * as util from "./util.js";
+    import SwitchViewComponent from "./components/SwitchViewComponent.js";
 
     Vue.createApp({
+      components: {
+        SwitchViewComponent
+      },
       data () {
         return {
           htmlInput: "",
           isAuthenticated: null,
           performAction: false,
           screen: "lg",
-          currentView: "input",
-          currentViewText: "Show Output",
           defaultInjections: {
             title: "Sample Title",
             tags: "art,drawing",
@@ -151,15 +159,6 @@
         },
         toMainPage: function () {
           window.location.href = '/index.html';
-        },
-        switchViews () {
-          if (this.currentView === "input") {
-            this.currentView = "output";
-            this.currentViewText = "Show Input"
-          } else if (this.currentView === "output") {
-            this.currentView = "input";
-            this.currentViewText = "Show Output"
-          }
         }
       }
     }).mount('#app');
@@ -172,78 +171,16 @@
     }
 
     iframe {
-      height: 100%;
+      height: 600px;
       flex-grow: 1;
     }
 
     #bg {
-      background: #1B2327;
+      background: var(--color-primary-dark);
     }
 
     .textarea { 
       resize: vertical; 
     }
-
-    .flex-center {
-      flex-grow: 1;
-      text-align: center;
-    }
-
-    .half {
-      margin-left: 10px;
-      margin-right: 10px;
-    }
-
-    .button {
-      margin-top: 20px;
-      padding-left: 20px;
-      padding-right: 20px;
-      font-size: 24px;
-    }
-
-    .html-input {
-      background: #273038;
-      flex-grow: 1;
-      color: #d2d2d2;
-      margin-bottom: 10px;
-    }
-
-    .html-output {
-      background: #273038;
-      flex-grow: 1;
-      color: #d2d2d2;
-    }
-
-    .switch-view-button {
-      margin: 0px;
-    }
-
-    .iframe {
-      height: 600px; /* best easy option atm */
-    }
-
-    /* media queries + changing layout of HTML based on screen size */
-
-    @media only screen and (max-width: 1000px) {
-      .half {
-        padding-top: 30px;
-      }
-      .title {
-        font-size: 24px;
-      }
-      .button {
-        font-size: 20px;
-      }
-    }
-
-    @media only screen and (max-width: 600px) {
-      .title {
-        font-size: 16px;
-      }
-      .button {
-        font-size: 12px;
-      }
-    }
-
   </style>
 </html>

@@ -1,5 +1,52 @@
+@font-face {
+  font-family: Inika;
+  src: url('Inika-Regular.ttf');
+}
+
+@font-face {
+  font-family: Inika;
+  src: url('Inika-Bold.ttf');
+  font-weight: bold;
+}
+
+html {
+  --color-primary: #273038;
+  --color-primary-dark: #1B2327;
+  --color-primary-light: #ECF8FF;
+  --color-accent: #382F27;
+  --text-color-light: #D2D2D2;
+  --text-color-dark: #232323;
+  --text-error: #FF0000;
+  --font: Inika;
+  --size-xsmall: 0.875em; /* 14px */
+  --size-small: 1em; /* 16px */
+  --size-medium: 1.25em; /* 20px */
+  --size-large: 1.5em; /* 24px */
+  --size-xlarge: 2em; /* 32px */
+}
+
+.bg {
+  background: var(--color-primary);
+}
+
+.bg-dark {
+  background: var(--color-primary-dark);
+}
+
+.bg-light {
+  background: var(--color-primary-light);
+}
+
+.dark {
+  color: var(--text-color-dark);
+}
+
+.light {
+  color: var(--text-color-light);
+}
+
 #bg {
-  background: #273038;
+  background: var(--color-primary);
 }
 
 .flex {
@@ -11,71 +58,110 @@
   flex-direction: column;
 }
 
-.fourth {
-  flex: 1 0 0;
-  background: #1b2327;
-  height: 100%;
+.center {
+  text-align: center;
 }
 
-.third {
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.one-part {
   flex: 1 0 0;
 }
 
-.two-third {
+.two-part {
   flex: 2 0 0;
-  margin-left: 10px;
 }
 
-.three-fourth {
+.three-part {
   flex: 3 0 0;
 }
 
 .half {
-  flex: 1 0 0;
+  min-width: 50%;
 }
+
+.textbox {
+  margin-top: 0px;
+  margin-bottom: 0px;
+  display: flex;
+  align-items: center;
+  border: 0px;
+}
+
+.pixel-art {
+  image-rendering: pixelated;
+}
+
+/* Spacing rules */
 
 .no-space {
   margin: 0px;
   padding: 0px;
 }
 
+.top-space {
+  margin-top: 8px;
+}
+
+.side-space {
+  margin-left: 8px;
+  margin-right: 8px;
+}
+
+/* Text classes */
+
 .title {
-  color: #d2d2d2;
-  font-family: Inika;
-  font-size: 32px;
-  margin: 0px;
-}
-
-.small-title {
-  color: #d2d2d2;
-  font-family: Inika;
-  font-size: 24px;
-  margin: 0px;
-  margin-bottom: 10px;
-}
-
-.tiny-text {
-  color: #d2d2d2;
-  font-family: Inika;
-  font-size: 12px;
-  margin: 0px;
-}
-
-.center {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  font-family: var(--font);
   text-align: center;
 }
 
-.form {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.text-xsmall {
+  font-family: var(--font);
+  font-size: var(--size-xsmall);
 }
 
-.button {
-  color: #d2d2d2;
-  font-family: Inika;
-  font-size: 36px;
-  background: #382f27;
+.text-small {
+  font-family: var(--font);
+  font-size: var(--size-small);
+}
+
+.text-medium {
+  font-family: var(--font);
+  font-size: var(--size-medium);
+}
+
+.text-large {
+  font-family: var(--font);
+  font-size: var(--size-large);
+}
+
+.text-xlarge {
+  font-family: var(--font);
+  font-size: var(--size-xlarge);
+}
+
+.text-error {
+  color: var(--text-error);
+}
+
+.cursor {
+  cursor: pointer;
+}
+
+/* Button classes */
+
+.button,
+.switch-view-button, 
+.switch-view-button-fixed {
+  color: var(--text-color-light);
+  font-family: var(--font);
+  background: var(--color-accent);
   border: 0px;
   border-radius: 8px;
   text-align: center;
@@ -84,33 +170,20 @@
   cursor: pointer;
 }
 
-.small-button {
-  font-family: Inika;
-  font-size: 20px;
-  padding-left: 10px;
-  padding-right: 10px;
-  align-self: center;
-  text-align: center;
-  appearance: button;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.textbox {
-  margin-left: 20px;
-  height: 30px;
-  color: #d2d2d2;
-  font-family: Inika;
-  font-size: 28px;
-  background: #273038;
-  border: 0px;
-  flex-grow: 1;
+.switch-view-button-fixed {
+  position: fixed;
+  width: 100%;
 }
 
 .switch-view-button {
-  font-size: 20px;
-  position: fixed;
   width: 100%;
+}
+
+/* Other classes */
+
+.checkbox {
+  width: 20px;
+  height: 20px;
 }
 
 /* Don't use default purple visited color, as it clashes with colors on the site */
@@ -120,8 +193,28 @@ a:visited {
 
 /* Apply light grey color to our buttons that have a tags */
 a:visited.button { 
-  color: #d2d2d2;
+  color: var(--text-color-light);
 }
+
+/* Rules that allow for better resizing of the content */
+
+img {
+  max-width: 100%;
+  object-fit: contain;
+}
+
+pre {
+  white-space: pre-wrap;
+}
+
+p {
+  word-break: break-word;
+}
+
+table {
+  overflow-wrap: anywhere;
+}
+
 
 /* keep at bottom of css! */
 [v-cloak] {

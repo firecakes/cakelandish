@@ -10,13 +10,13 @@
   </head>
 
   <body id="bg">
-    <main id="app" class="flex-v" v-cloak>
-      <label for="authCode" class="title center">{{ titleText }}</label>
+    <main id="app" class="flex-v flex-center" v-cloak>
+      <label for="authCode" class="title light text-xlarge">{{ titleText }}</label>
 
-      <input id="authCode" aria-label="Authorization passcode" v-if="!authenticated" class="textbox" id="title" v-model="code">
+      <input id="authCode" aria-label="Authorization passcode" v-if="!authenticated" class="textbox bg-dark light text-large one-part half" id="title" v-model="code">
 
-      <button v-if="!authenticated" class="button submit-button" @click="auth()">Authenticate</button>
-      <a class="button submit-button" href="index.html">Return to Main Page</a>
+      <button v-if="!authenticated" class="button text-large half top-space" @click="auth()">Authenticate</button>
+      <a class="button text-large half top-space" href="index.html">Return to Main Page</a>
     </main>
   </body>
 
@@ -56,24 +56,6 @@
   </script>
 
   <style>
-
-    .button {
-      margin-top: 20px;
-      padding-left: 50px;
-      padding-right: 50px;
-      height: 30px;
-      font-size: 14px;
-      align-self: center;
-    }
-
-    .submit-button {
-      font-size: 20px;
-    }
-
-    .textbox {
-      background: #1B2327;
-      margin-right: 20px;
-    }
 
   </style>
 </html>

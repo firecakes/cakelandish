@@ -11,40 +11,37 @@
 
   <body id="bg">
     <main id="app" class="flex-v" v-cloak>
+      <a v-if="isAuthenticated === true" class="button text-large button-center" href="index.html">Return to Main Page</a>
+
       <!-- Drafts -->
-      <a v-if="isAuthenticated === true" class="button submit-button" href="index.html">Return to Main Page</a>
-      <p v-if="isAuthenticated === true" class="title center">Your drafts</p>
-      
-      <div v-if="isAuthenticated === true" class="post" v-for="post in drafts">
-        <div class="post-contents">
+      <p v-if="isAuthenticated === true" class="title light text-large">Your drafts</p>
+
+      <div v-if="isAuthenticated === true" class="post flex bg-light top-space" v-for="post in orderedDrafts">
+        <div class="one-part">
           <a :href="post.link"> {{ post.title }}</a>
           <br>
-          <pre>{{ post.originalContent }}</pre>
+          <pre class="dark text-xsmall">{{ post.originalContent }}</pre>
         </div>
-        <a class="button flex" :href="`/upload.html?localUrl=${post.localUrl}`"><p class="edit-post-text">Edit draft</p></a>
-        <button v-if="!post.requestDeletion" class="button" @click="deleteDraft(post)">Delete draft</button>
-        <button v-if="post.requestDeletion" class="button" @click="deleteDraft(post)">Are you sure?</button>
+        <a class="button button-option text-medium side-space" :href="`/upload.html?localUrl=${post.localUrl}`"><p>Edit draft</p></a>
+        <button v-if="!post.requestDeletion" class="button button-option text-medium side-space" @click="deleteDraft(post)"><p>Delete draft</p></button>
+        <button v-if="post.requestDeletion" class="button button-option text-medium side-space" @click="deleteDraft(post)"><p>Are you sure?</p></button>
       </div>
 
       <!-- Posts -->
-      <p v-if="isAuthenticated === true" class="title center">Your posts</p>
+      <p v-if="isAuthenticated === true" class="title light text-large">Your posts</p>
 
-      <div v-if="isAuthenticated === true" class="post" v-for="post in orderedPosts">
-        <div class="post-contents">
+      <div v-if="isAuthenticated === true" class="post flex bg-light top-space" v-for="post in orderedPosts">
+        <div class="one-part">
           <a :href="post.link"> {{ post.title }}</a>
           <br>
-          <pre>{{ post.originalContent }}</pre>
+          <pre class="dark text-xsmall">{{ post.originalContent }}</pre>
         </div>
-        <a class="button flex" :href="`/upload.html?localUrl=${post.localUrl}`"><p class="edit-post-text">Edit post</p></a>
-        <button v-if="!post.requestDeletion" class="button" @click="deletePost(post)">Delete post</button>
-        <button v-if="post.requestDeletion" class="button" @click="deletePost(post)">Are you sure?</button>
+        <a class="button button-option text-medium side-space" :href="`/upload.html?localUrl=${post.localUrl}`"><p>Edit post</p></a>
+        <button v-if="!post.requestDeletion" class="button button-option text-medium side-space" @click="deletePost(post)"><p>Delete post</p></button>
+        <button v-if="post.requestDeletion" class="button button-option text-medium side-space" @click="deletePost(post)"><p>Are you sure?</p></button>
       </div>
 
-      <img alt="A drawing of CuRSSor the Skiltaire, sleeping happily at the bottom of the post list" style="image-rendering: pixelated;" src="/curssor/curssor-sleeping.png"></img>
-
-      <div v-if="isAuthenticated === false" class="fourth flex-v">
-        <p class="title center margin-center">You are not authorized to view this page</p>
-      </div>
+      <img style="height: 100%" class="pixel-art top-space" alt="A drawing of CuRSSor the Skiltaire, sleeping happily at the bottom of the post list" src="/curssor/curssor-sleeping.png"></img>
 
     </main>
   </body>
@@ -76,6 +73,11 @@
         this.drafts = resultDrafts.data.posts
       },
       computed: {
+        orderedDrafts: function () {
+          return this.drafts.sort((a, b) => {
+            return new Date(b.updated) - new Date(a.updated)
+          });
+        },
         orderedPosts: function () {
           return this.posts.sort((a, b) => {
             return new Date(b.updated) - new Date(a.updated)
@@ -126,58 +128,17 @@
   </script>
 
   <style>
-
-    .post {
-      margin-bottom: 30px;
-      font-family: Inika;
-      background-color: #ECF8FF;
-      border: 0px;
-      display: flex;
-      flex-grow: 1;
-      align-items: center;
-    }
-
-    .post-contents {
-      flex-grow: 1;
-    }
-
-    .button {
-      margin-left: 20px;
-      margin-right: 20px;
-      padding-left: 20px;
-      padding-right: 20px;
-      height: 30px;
-      font-size: 14px;
+    .button-center {
+      width: 50%;
       align-self: center;
     }
 
-    .submit-button {
-      margin-top: 15px;
-      margin-bottom: 20px;
-      font-size: 20px;
-    }
-
-    .edit-post-text {
+    .button-option {
       align-self: center;
-    }
-
-    .fourth {
-      background: #273038;
-    }
-
-    /* Rules that allow for better resizing of the content */
-
-    img {
-      max-width: 100%;
-      object-fit: contain;
-    }
-
-    pre {
-      white-space: pre-wrap;
-    }
-
-    p {
-      word-break: break-word;
+      padding-left: 8px;
+      padding-right: 8px;
+      margin-top: 8px;
+      margin-bottom: 8px;
     }
 
     /* media queries + changing layout of HTML based on screen size */
