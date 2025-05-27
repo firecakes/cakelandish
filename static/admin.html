@@ -103,7 +103,7 @@
 
           <div class="margin"></div>
 
-          <p class="title light text-large">IP Blacklist</p>
+          <p class="title light text-large">IP Filter</p>
           <div class="center flex-v">
             <p class="title light text-medium">You likely want to remove your own IP addresses when you're viewing the statistics. Put in a comma-separated list of IPs to remove from the results</p>
             <label for="ip" class="title light text-large">Put Your IP(s) Here</label>
@@ -132,6 +132,25 @@
 
         <div class="margin"></div>
 
+        <p class="title light text-large">IP Blacklist</p>
+        <div class="center flex-v">
+          <p class="title light text-medium">You may ban a single IP or a range of IPv4 addresses using "*" in place of the number.</p>
+          <p class="title light text-medium text-error">Don't ban your own IP address. Even if it sounds funny.</p>
+          <input class="textbox bg-dark light text-medium" id="ipban" v-model="ipToBan">
+          <div class="margin"></div>
+          <button v-if="ipToBan && ipToBan !== '*'" class="button text-medium half" @click="addIpBan()">Ban this IP!</button>
+        </div>
+
+        <p class="title light text-large">Banned IPs</p>
+        <div v-for="ip in ipBans" class="flex">
+          <p class="light no-space text-xsmall">{{ ip }}</p>
+          <p class="cursor no-space light text-xsmall" @click="deleteIpBan(ip)">
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Unban
+          </p>
+        </div>
+
+        <div class="margin"></div>
+
         <img class="pixel-art" alt="A drawing of CuRSSor the Skiltaire, looking happily at the viewer with a caught blue bird in his mouth" src="/curssor/curssor-hunting.png"></img>
 
       </main>
@@ -156,6 +175,8 @@
           dateStartFilter: null,
           dateEndFilter: null,
           requestTrafficDeletion: false,
+          ipBans: [],
+          ipToBan: "",
         }
       },
       async created () {
@@ -172,6 +193,8 @@
         const data = (await axios.get('/api/traffic')).data;
         data.sort((a, b) => a.date - b.date);
         this.trafficData = data;
+
+        this.getIpBans();
       },
       computed: {
         filteredTrafficData: function () {
@@ -327,6 +350,24 @@
 
           window.location.href = '/admin.html'; // refresh page when finished
         },
+        async getIpBans () {
+          const data = (await axios.get('/api/ipban')).data;
+          this.ipBans = data.ipBans;
+        },
+        async addIpBan () {
+          await axios.post("/api/ipban", {
+            ip: this.ipToBan,
+          });
+          this.ipToBan = "";
+          await this.getIpBans();
+        },
+        async deleteIpBan (ip) {
+          await axios.delete("/api/ipban", {data: {
+            ip: ip
+          }});
+          await this.getIpBans();
+        },
+        
       }
     }).mount('#app');
 
