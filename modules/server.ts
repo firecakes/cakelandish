@@ -1114,9 +1114,13 @@ async function deleteTmpFiles() {
 
 // sometimes tmp folders get made and aren't deleted due to shenanigans outside the server's control
 async function deleteUntrackedTmpFolders() {
-  const draftFolderNames = (await getDrafts()).map((draft) =>
-    draft.localUrl.split("/tmp/")[1]
-  );
+  let draftFolderNames = [];
+  try { // database could not be initialized yet
+    draftFolderNames = (await getDrafts()).map((draft) =>
+      draft.localUrl.split("/tmp/")[1]
+    );
+  } catch (err) {
+  }
   // delete all folders inside /tmp not catalogued in database.json
   try {
     const files = await Deno.readDir("static/tmp");
