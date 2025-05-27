@@ -27,6 +27,8 @@ import net from "node:net";
 export { net };
 import protobuf from "npm:protobufjs@7.3.2";
 export { protobuf };
+import koaIp from "npm:koa-ip@2.1.3";
+export { koaIp };
 
 // Node modules
 import { createReadStream } from "node:fs";

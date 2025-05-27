@@ -64,6 +64,11 @@ export async function init() {
     db.drafts = [];
   }
 
+  // initialize ipBans
+  if (db.ipBans === undefined) {
+    db.ipBans = [];
+  }
+
   await saveDb(db);
   await generatePostFileStructure();
   return db;
@@ -162,6 +167,35 @@ export async function editDraft(post: Entry) {
 export async function deleteDraft(post: Entry) {
   let db = await readDb();
   db.drafts = db.drafts.filter((target) => target.localUrl !== post.localUrl);
+  await saveDb(db);
+}
+
+// ip ban functions
+export async function getIpBans(): Object {
+  const file = await Deno.readTextFile("database.json");
+  return JSON.parse(file).ipBans ? JSON.parse(file).ipBans : [];
+}
+
+export async function addIpBan(ip) {
+  const db = await readDb();
+
+  const foundIndex = db.ipBans.findIndex((target) =>
+    target === ip
+  );
+  if (foundIndex !== -1) {
+    return false;
+  }
+
+  if (!Array.isArray(db.ipBans)) {
+    db.ipBans = [];
+  }
+  db.ipBans.push(ip);
+  await saveDb(db);
+}
+
+export async function deleteIpBan(ip) {
+  let db = await readDb();
+  db.ipBans = db.ipBans.filter((target) => target !== ip);
   await saveDb(db);
 }
 

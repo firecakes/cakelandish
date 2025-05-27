@@ -14,6 +14,7 @@
 - Check that the IP blacklist accepts a list of comma-separated strings that filter out IPs from all three aggregate data types.
 - Check that you can limit the viewing of traffic data by a date range
 - Check that you can wipe out all traffic data with the "Delete Traffic History" button.
+- Check that you can edit the list of banned IPv4s, including adding wildcards to a number in the address.
 
 ## index.html
 - Check that the unauthenticated view shows a list of all posts created.

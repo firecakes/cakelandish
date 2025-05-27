@@ -6,6 +6,7 @@ import {
   http,
   https,
   Koa,
+  koaIp,
   koaBody,
   koaCompose,
   Router,
@@ -23,12 +24,14 @@ import {
 import {
   addDraft,
   addFeed,
+  addIpBan,
   addOrEditPage,
   addPageFile,
   addPost,
   changeDomains,
   deleteDraft,
   deleteFeed,
+  deleteIpBan,
   deletePage,
   deletePost,
   editDraft,
@@ -37,6 +40,7 @@ import {
   feedGetHelper,
   getDrafts,
   getFeeds,
+  getIpBans,
   getLastDateExported,
   getLayout,
   getPages,
@@ -95,6 +99,12 @@ const defaultHTML = `<!DOCTYPE html>
 </html>
 `;
 
+let ipBlacklist = [];
+try {
+  ipBlacklist = await getIpBans();
+} catch (err) {
+}
+
 let remoteVersion = ""; // update this value periodically
 async function getRemoteVersion() {
   try {
@@ -118,6 +128,14 @@ export async function startServer() {
 
   app.use(restoreRequesterIP);
   app.use(rateLimiter);
+  app.use(koaIp({
+    blacklist: ipBlacklist,
+    handler: async (ctx, next) => {
+      ctx.status = 403
+    }
+  }))
+
+  await getIpBans()
 
   // Koa body parsing + file uploading middleware function
   const koaBodyMiddleware = koaBody({
@@ -680,6 +698,47 @@ export async function startServer() {
     // delete from database
     await deleteFeed(input.index);
 
+    ctx.body = {};
+  });
+
+  // return all ip bans
+  router.get("/api/ipban", jwtAndBodyParser, async (ctx, next) => {
+    // read from database
+    ctx.body = {
+      ipBans: await getIpBans(),
+    };
+  });
+
+  // add a new ip ban
+  router.post("/api/ipban", jwtAndBodyParser, async (ctx, next) => {
+    const input = ctx.request.body;
+    if (typeof input.ip !== "string") {
+      ctx.status = 400;
+    }
+    // add to database
+    await addIpBan(input.ip);
+
+    // keep reference but replace array
+    const ipBans = await getIpBans()
+    ipBlacklist.splice(0, ipBlacklist.length, ...ipBans)
+
+    ctx.body = {};
+  });
+
+  // delete an existing ip ban
+  router.delete("/api/ipban", jwtAndBodyParser, async (ctx, next) => {
+    const input = ctx.request.body;
+    if (typeof input.ip !== "string") {
+      ctx.status = 400;
+    }
+
+    // delete from database
+    await deleteIpBan(input.ip);
+
+    // keep reference but replace array
+    const ipBans = await getIpBans()
+    ipBlacklist.splice(0, ipBlacklist.length, ...ipBans)
+    
     ctx.body = {};
   });
 
