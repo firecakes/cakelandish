@@ -16,6 +16,7 @@ log.txt
 traffic.json
 exported/**
 cakelandish.sock
+node_modules/**
 
 # macOS
 .DS_Store
