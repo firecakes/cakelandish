@@ -105,7 +105,8 @@
 
           <p class="title light text-large">IP Filter</p>
           <div class="center flex-v">
-            <p class="title light text-medium">You likely want to remove your own IP addresses when you're viewing the statistics. Put in a comma-separated list of IPs to remove from the results</p>
+            <p class="title light text-medium">You likely want to remove your own IP addresses when you're viewing the statistics. Put in a comma-separated list of IPs to remove from the results, followed by a minus sign (ex. 127.0.0.1-, 127.0.0.2-)</p>
+            <p class="title light text-medium">Alternatively, you may search for a specific set of IPs by adding the IPs in a comma-separated list followed by the plus sign (ex. 127.0.0.1+, 127.0.0.2+)</p>
             <label for="ip" class="title light text-large">Put Your IP(s) Here</label>
             <input class="textbox bg-dark light text-medium" id="ip" v-model="yourIps">
           </div>
@@ -198,19 +199,24 @@
       },
       computed: {
         filteredTrafficData: function () {
-          const blacklistedIps = this.yourIps.split(",").map(s => s.trim());
-          return this.trafficData.filter(data => !blacklistedIps.includes(data.ip)).filter(data => {
-            if (!this.dateStartFilter || !this.dateEndFilter) {
+          const blacklistedIps = this.yourIps.split(",").map(s => s.trim()).filter(s => s.includes("-")).map(s => s.slice(0, -1));
+          const whitelistedIps = this.yourIps.split(",").map(s => s.trim()).filter(s => s.includes("+")).map(s => s.slice(0, -1));
+
+          return this.trafficData
+            .filter(data => !blacklistedIps.includes(data.ip))
+            .filter(data => whitelistedIps.length > 0 ? whitelistedIps.includes(data.ip) : true)
+            .filter(data => {
+              if (!this.dateStartFilter || !this.dateEndFilter) {
+                return true;
+              }
+              const postDate = new Date(data.date);
+              let fromDate = this.convertInputDate(this.dateStartFilter);
+              let toDate = this.convertInputDate(this.dateEndFilter);
+              if (postDate < fromDate || postDate > toDate) {
+                return false;
+              }
               return true;
-            }
-            const postDate = new Date(data.date);
-            let fromDate = this.convertInputDate(this.dateStartFilter);
-            let toDate = this.convertInputDate(this.dateEndFilter);
-            if (postDate < fromDate || postDate > toDate) {
-              return false;
-            }
-            return true;
-          });
+            });
         },
         timeData: function () {
           if (this.filteredTrafficData.length === 0) {
