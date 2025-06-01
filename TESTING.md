@@ -11,7 +11,7 @@
 - Check that "Import Data" lets you select an exported tar that then brings the state of Cakelandish back to that of the tar. Feeds and post data from the tar should be present on Cakelandish after the import.
 - Check that Old Domain / New Domain text fields do proper string replacement across all post content and links in the database.
 - Check that if traffic logs are enabled that time, page, and IP data are displayed in 20 aggregate intervals each.
-- Check that the IP blacklist accepts a list of comma-separated strings that filter out IPs from all three aggregate data types.
+- Check that the IP blacklist accepts a list of comma-separated strings that filter out IPs from all three aggregate data types. Check that adding a "-" in front of the IP blacklists it while adding a "+" in front of the IP whitelists it in search.
 - Check that you can limit the viewing of traffic data by a date range
 - Check that you can wipe out all traffic data with the "Delete Traffic History" button.
 - Check that you can edit the list of banned IPv4s, including adding wildcards to a number in the address.
