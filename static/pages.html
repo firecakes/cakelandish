@@ -59,7 +59,7 @@
           <label tabindex="0" role="button" @keydown.enter="$refs.uploadRootFile.click()" for="file-upload-static" class="flex-center button">
             <p class="title light text-medium side-space">Upload file to static folder</p>
           </label>
-          <input ref="uploadRootFile" id="file-upload-static" accept="image/*" class="hidden" type="file" @change="uploadFile($event, {url: ''})" multiple/>
+          <input ref="uploadRootFile" id="file-upload-static" accept="*" class="hidden" type="file" @change="uploadFile($event, {url: ''})" multiple/>
         </div>
 
         <p v-if="uploadsInProgress.size !== 0" class="title light text-small">Currently uploading:</p>

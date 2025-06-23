@@ -25,7 +25,7 @@ export default {
         <label tabindex="0" role="button" @keydown.enter="$refs['uploadFile' + page.url].click()" :for="'file-upload-' + page.url" class="button text-medium one-part side-space">
           Upload file here
         </label>
-        <input :ref="'uploadFile' + page.url" :id="'file-upload-' + page.url" accept="image/*" class="hidden" type="file" @change="uploadFile($event, page)" multiple/>
+        <input :ref="'uploadFile' + page.url" :id="'file-upload-' + page.url" accept="*" class="hidden" type="file" @change="uploadFile($event, page)" multiple/>
       </div>
       <div v-else class="flex one-part"></div>
     </div>

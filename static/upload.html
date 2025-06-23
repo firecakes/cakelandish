@@ -78,7 +78,7 @@
                   <label tabindex="0" role="button" @keydown.enter="$refs.uploadMedia.click()" for="file-upload" class="button text-medium one-part cursor flex-center top-space">
                     Upload media
                   </label>
-                  <input ref="uploadMedia" id="file-upload" accept="image/*" type="file" @change="filesSubmitted" multiple/>
+                  <input ref="uploadMedia" id="file-upload" accept="*" type="file" @change="filesSubmitted" multiple/>
                 </div>
 
                 <p v-if="uploadsInProgress.size !== 0" class="light text-xsmall flex-center">Currently uploading:</p>
