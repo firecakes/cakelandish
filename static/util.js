@@ -228,7 +228,7 @@ async function parseRss (xml, sanitizeHash) {
         element.attributes.getNamedItem("rel").value === "related"
       )
       .map((element) => element.attributes.getNamedItem("href").value),
-    date: xmlGetOne(entry, ["pubDate"], true),
+    date: xmlGetOne(entry, ["pubDate"], true).replace("\n", "").trim(),
     content: sanitizeHash && sanitizeHash[index] ? sanitizeHash[index] : null
   }));
   return {
@@ -284,9 +284,9 @@ async function parseAtom (xml, sanitizeHash) {
         element.attributes.getNamedItem("rel").value === "related"
       )
       .map((element) => element.attributes.getNamedItem("href").value),
-    date: xmlGetOne(entry, ["updated"], true) // prefer the updated post date versus the original post date
-      ? xmlGetOne(entry, ["updated"], true)
-      : xmlGetOne(entry, ["published"], true),
+    date: xmlGetOne(entry, ["updated"], true).replace("\n", "").trim() // prefer the updated post date versus the original post date
+      ? xmlGetOne(entry, ["updated"], true).replace("\n", "").trim()
+      : xmlGetOne(entry, ["published"], true).replace("\n", "").trim(),
     content: sanitizeHash && sanitizeHash[index] ? sanitizeHash[index] : null,
     summary: xmlGetOne(entry, ["summary"], true),
   }));
