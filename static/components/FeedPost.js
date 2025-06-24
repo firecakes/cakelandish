@@ -13,7 +13,7 @@ export default {
 
       <div class="flex-v side-space one-part">
         <div class="center">
-          <span class="text-large dark">{{ post.entry.title }}</span>
+          <p class="text-large dark no-space">{{ post.entry.title }}</p>
         </div>
         <a class="center text-xsmall" :href="post.entry.id">{{ post.entry.id }}</a>
 
@@ -25,12 +25,12 @@ export default {
         </button>
 
         <!-- summary text is included as a tooltip when hovering over the content -->
-        <span 
-          class="top-space dark"
+        <p 
+          class="top-space dark no-space"
           v-html="post.entry.content"
           v-if="!post.entry.nsfw"
           :title="post.entry.summary">
-        </span>
+        </p>
 
         <br>
 
@@ -62,8 +62,8 @@ export default {
     <div class="post-metadata bg-light dark flex-v">
 
       <div class="flex-v content-margins one-part" style="margin-bottom: 5px;">
-        <span class="center text-small">{{ post.meta.title }}</span>
-        <span v-if="post.meta.subtitle" class="center text-xsmall">{{ post.meta.subtitle }}</span>
+        <p class="center text-small no-space">{{ post.meta.title }}</p>
+        <p v-if="post.meta.subtitle" class="center text-xsmall no-space">{{ post.meta.subtitle }}</p>
         <p v-if="post.meta.author" class="center text-xsmall">{{ post.meta.author }}</p>
         <p class="center text-xsmall">{{ post.meta.id }}</p>
         <p class="center text-xsmall no-space" v-for="category in post.entry.categories">
