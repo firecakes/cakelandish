@@ -69,6 +69,14 @@ export async function init() {
     db.ipBans = [];
   }
 
+  // initialize hidden + blacklisted tags
+  if (db.hiddenTags === undefined) {
+    db.hiddenTags = [];
+  }
+  if (db.blacklistedTags === undefined) {
+    db.blacklistedTags = [];
+  }
+
   await saveDb(db);
   await generatePostFileStructure();
   return db;
@@ -85,8 +93,8 @@ export async function saveDb(db) {
 
 // post functions
 export async function getPosts(): Object {
-  const file = await Deno.readTextFile("database.json");
-  return JSON.parse(file).entries;
+  const file = await readDb();
+  return file.entries;
 }
 
 export async function addPost(post: Entry) {
@@ -136,8 +144,8 @@ export async function deletePost(post: Entry) {
 
 // draft functions
 export async function getDrafts(): Object {
-  const file = await Deno.readTextFile("database.json");
-  return JSON.parse(file).drafts ? JSON.parse(file).drafts : [];
+  const file = await readDb();
+  return file.drafts ? file.drafts : [];
 }
 
 export async function addDraft(post: Entry) {
@@ -172,16 +180,14 @@ export async function deleteDraft(post: Entry) {
 
 // ip ban functions
 export async function getIpBans(): Object {
-  const file = await Deno.readTextFile("database.json");
-  return JSON.parse(file).ipBans ? JSON.parse(file).ipBans : [];
+  const file = await readDb();
+  return file.ipBans ? file.ipBans : [];
 }
 
 export async function addIpBan(ip) {
   const db = await readDb();
 
-  const foundIndex = db.ipBans.findIndex((target) =>
-    target === ip
-  );
+  const foundIndex = db.ipBans.findIndex((target) => target === ip);
   if (foundIndex !== -1) {
     return false;
   }
@@ -290,6 +296,59 @@ export async function refreshFeedIntervals() {
   }
   memory.timers = [];
   await initializeFeeds(db);
+}
+
+// feed tag functions
+export async function getFeedTags(): Object {
+  const file = await readDb();
+  return {
+    hiddenTags: file.hiddenTags ? file.hiddenTags : [],
+    blacklistedTags: file.blacklistedTags ? file.blacklistedTags : [],
+  };
+}
+
+export async function addFeedHiddenTag(tag) {
+  const db = await readDb();
+
+  const foundIndex = db.hiddenTags.findIndex((target) => target === tag);
+  if (foundIndex !== -1) {
+    return false;
+  }
+
+  if (!Array.isArray(db.hiddenTags)) {
+    db.hiddenTags = [];
+  }
+  db.hiddenTags.push(tag);
+  await saveDb(db);
+  return true;
+}
+
+export async function addFeedBlacklistedTag(tag) {
+  const db = await readDb();
+
+  const foundIndex = db.blacklistedTags.findIndex((target) => target === tag);
+  if (foundIndex !== -1) {
+    return false;
+  }
+
+  if (!Array.isArray(db.blacklistedTags)) {
+    db.blacklistedTags = [];
+  }
+  db.blacklistedTags.push(tag);
+  await saveDb(db);
+  return true;
+}
+
+export async function deleteFeedHiddenTag(tag) {
+  let db = await readDb();
+  db.hiddenTags = db.hiddenTags.filter((target) => target !== tag);
+  await saveDb(db);
+}
+
+export async function deleteFeedBlacklistedTag(tag) {
+  let db = await readDb();
+  db.blacklistedTags = db.blacklistedTags.filter((target) => target !== tag);
+  await saveDb(db);
 }
 
 // helper functions

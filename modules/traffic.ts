@@ -39,12 +39,12 @@ async function saveDb(db) {
   return Deno.writeTextFile("traffic.json", formatJsonToString(db));
 }
 
-function formatJsonToString (json) {
+function formatJsonToString(json) {
   // makes it so each inner object in the array is printed on one line. useful for greping information
   return JSON.stringify(json.map(JSON.stringify), null, 2)
-    .replace(new RegExp("\\\\", 'g'), "")
+    .replace(new RegExp("\\\\", "g"), "")
     .split("\n")
-    .map((objString, index) => objString.replace("\"{", "{").replace("}\"", "}") )
+    .map((objString, index) => objString.replace('"{', "{").replace('}"', "}"))
     .join("\n");
 }
 

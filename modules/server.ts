@@ -6,9 +6,9 @@ import {
   http,
   https,
   Koa,
-  koaIp,
   koaBody,
   koaCompose,
+  koaIp,
   Router,
   serve,
 } from "../deps.ts";
@@ -24,6 +24,8 @@ import {
 import {
   addDraft,
   addFeed,
+  addFeedBlacklistedTag,
+  addFeedHiddenTag,
   addIpBan,
   addOrEditPage,
   addPageFile,
@@ -31,6 +33,8 @@ import {
   changeDomains,
   deleteDraft,
   deleteFeed,
+  deleteFeedBlacklistedTag,
+  deleteFeedHiddenTag,
   deleteIpBan,
   deletePage,
   deletePost,
@@ -40,6 +44,7 @@ import {
   feedGetHelper,
   getDrafts,
   getFeeds,
+  getFeedTags,
   getIpBans,
   getLastDateExported,
   getLayout,
@@ -131,11 +136,11 @@ export async function startServer() {
   app.use(koaIp({
     blacklist: ipBlacklist,
     handler: async (ctx, next) => {
-      ctx.status = 403
-    }
-  }))
+      ctx.status = 403;
+    },
+  }));
 
-  await getIpBans()
+  await getIpBans();
 
   // Koa body parsing + file uploading middleware function
   const koaBodyMiddleware = koaBody({
@@ -701,6 +706,72 @@ export async function startServer() {
     ctx.body = {};
   });
 
+  // return all feed hidden + blacklisted tags
+  router.get("/api/feed/tag", jwtMiddleware, async (ctx, next) => {
+    // read from database
+    ctx.body = await getFeedTags();
+  });
+
+  // add a new hidden tag
+  router.post("/api/feed/tag/hidden", jwtAndBodyParser, async (ctx, next) => {
+    const input = ctx.request.body;
+    if (typeof input.name !== "string" || input.name === "") {
+      return ctx.status = 400;
+    }
+    // add to database
+    const success = await addFeedHiddenTag(input.name);
+    if (!success) {
+      ctx.status = 400;
+    }
+    ctx.body = {};
+  });
+
+  // add a new blacklisted tag
+  router.post(
+    "/api/feed/tag/blacklisted",
+    jwtAndBodyParser,
+    async (ctx, next) => {
+      const input = ctx.request.body;
+      if (typeof input.name !== "string" || input.name === "") {
+        return ctx.status = 400;
+      }
+      // add to database
+      const success = await addFeedBlacklistedTag(input.name);
+      if (!success) {
+        ctx.status = 400;
+      }
+      ctx.body = {};
+    },
+  );
+
+  // delete an existing hidden tag
+  router.delete("/api/feed/tag/hidden", jwtAndBodyParser, async (ctx, next) => {
+    const input = ctx.request.body;
+    if (typeof input.name !== "string") {
+      return ctx.status = 400;
+    }
+
+    // delete from database
+    await deleteFeedHiddenTag(input.name);
+    ctx.body = {};
+  });
+
+  // delete an existing blacklisted tag
+  router.delete(
+    "/api/feed/tag/blacklisted",
+    jwtAndBodyParser,
+    async (ctx, next) => {
+      const input = ctx.request.body;
+      if (typeof input.name !== "string") {
+        return ctx.status = 400;
+      }
+
+      // delete from database
+      await deleteFeedBlacklistedTag(input.name);
+      ctx.body = {};
+    },
+  );
+
   // return all ip bans
   router.get("/api/ipban", jwtAndBodyParser, async (ctx, next) => {
     // read from database
@@ -719,8 +790,8 @@ export async function startServer() {
     await addIpBan(input.ip);
 
     // keep reference but replace array
-    const ipBans = await getIpBans()
-    ipBlacklist.splice(0, ipBlacklist.length, ...ipBans)
+    const ipBans = await getIpBans();
+    ipBlacklist.splice(0, ipBlacklist.length, ...ipBans);
 
     ctx.body = {};
   });
@@ -736,9 +807,9 @@ export async function startServer() {
     await deleteIpBan(input.ip);
 
     // keep reference but replace array
-    const ipBans = await getIpBans()
-    ipBlacklist.splice(0, ipBlacklist.length, ...ipBans)
-    
+    const ipBans = await getIpBans();
+    ipBlacklist.splice(0, ipBlacklist.length, ...ipBans);
+
     ctx.body = {};
   });
 

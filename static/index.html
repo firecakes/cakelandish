@@ -175,6 +175,44 @@
                 </div>
               </div>
 
+              <!-- Blacklist / hide tags -->
+              <button @click="toggleHiddenTags" class="button text-large top-space">Hidden Tags</button>
+
+              <div v-if="showHiddenTags" class="flex-v">
+
+                <div class="flex-v top-space one-part">
+                  <p class="light no-space text-medium center">Hidden Tags</p>
+                  <div v-for="tag in hiddenTags" class="flex">
+                    <p class="light no-space text-small three-part">{{ tag }}</p>
+                    <p class="cursor no-space light text-xsmall one-part" style="text-align: right" @click="removeHiddenTag(tag)">
+                      Remove
+                    </p>
+                  </div>
+                  <div class="flex">
+                    <label class="label light text-small" for="hiddenTag">New Tag: </label>
+                    <input class="textbox bg light one-part text-small" id="hiddenTag" v-model="hiddenTag">
+                  </div>
+                  <button class="button text-medium top-space" @click="addHiddenTag()">Add Tag</button>
+                </div>
+
+                <div class="flex-v top-space one-part">
+                  <p class="light no-space text-medium center">Blacklisted Tags</p>
+                  <div v-for="tag in blacklistedTags" class="flex">
+                    <p class="light no-space text-small three-part">{{ tag }}</p>
+                    <p class="cursor no-space light text-xsmall one-part" style="text-align: right" @click="removeBlacklistedTag(tag)">
+                      Remove
+                    </p>
+                  </div>
+                  <div class="flex">
+                    <label class="label light text-small" for="blacklistedTag">New Tag: </label>
+                    <input class="textbox bg light one-part text-small" id="blacklistedTag" v-model="blacklistedTag">
+                  </div>
+                  <button class="button text-medium top-space" @click="addBlacklistedTag()">Add Tag</button>
+                </div>
+
+                <p v-if="tagChangeTip" class="light no-space text-medium center">{{ tagChangeTip }}</p>
+              </div>
+
               <!-- Version information -->
               <div v-if="currentVersion" class="flex-v flex-center">
                 <p class="text-xsmall light center">Current version: {{ currentVersion }}</p>
@@ -283,6 +321,12 @@
           lastExportDateDays: null,
           showSearch: false,
           collapseSidebar: false,
+          showHiddenTags: false,
+          hiddenTag: "",
+          blacklistedTag: "",
+          hiddenTags: [],
+          blacklistedTags: [],
+          tagChangeTip: "",
         }
       },
       async mounted () {
@@ -309,6 +353,7 @@
           this.remoteVersion = versionData.remoteVersion;
           const exportDataDate = (await axios.get('/api/export/date')).data.exportDate;
           this.lastExportDateDays = Math.floor((Date.now() - exportDataDate) / (1000 * 60 * 60 * 24)); // days ago
+          await this.getTags(false);
           this.isLoading = false;
         } else {
           const postLocations = (await axios.get('/api/post/all')).data.postLocations;
@@ -370,6 +415,9 @@
         toggleSearch () {
           this.showSearch = !this.showSearch;
         },
+        toggleHiddenTags () {
+          this.showHiddenTags = !this.showHiddenTags;
+        },
         numberToMonth (num) {
           return ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][num];
         },
@@ -395,6 +443,14 @@
           this.feeds = updatedFeedList.sort((feed1,feed2) => feed1.index - feed2.index);
           this.feedToList();
         },
+        async getTags(tagDataChanged = false) {
+          const tagData = (await axios.get('/api/feed/tag')).data;
+          this.hiddenTags = tagData.hiddenTags;
+          this.blacklistedTags = tagData.blacklistedTags;
+          if (tagDataChanged) {
+            this.tagChangeTip = "Refresh the page for changes to take effect!";
+          }
+        },
         onScroll (event) {
           const PIXELS_FROM_BOTTOM_OF_FEED = 2000;
           // determine if more posts should be rendered and we're not displaying all of them yet
@@ -414,6 +470,10 @@
             .flat()
             // per-post filters....
             .filter(post => {
+              // blacklisted tag check
+              if (post.entry.categories.map(c => this.blacklistedTags.includes(c)).includes(true)) {
+                return false;
+              }
               // content can be null
               if (post.entry.content === null) {
                 post.entry.content = "";
@@ -455,8 +515,8 @@
             })
             .map(post => { // reset hide reply state since replies get wiped on change
               post.entry.hideReplyToButton = false;
-              // nsfw category check
-              if (post.entry.categories.map(c => c.toLowerCase().includes("nsfw")).includes(true)) {
+              // hidden category check
+              if (post.entry.categories.map(c => this.hiddenTags.includes(c)).includes(true)) {
                 post.entry.nsfw = true;
               }
               return post;
@@ -548,9 +608,41 @@
 
           this.selectedIndex = null;
         },
+        async addHiddenTag () {
+          try {
+            await axios.post('/api/feed/tag/hidden', { name: this.hiddenTag });
+          } catch (err) {
+          }
+          this.hiddenTag = "";
+          await this.getTags(true);
+        },
+        async addBlacklistedTag () {
+          try {
+            await axios.post('/api/feed/tag/blacklisted', { name: this.blacklistedTag });
+          } catch (err) {
+          }
+          this.blacklistedTag = "";
+          await this.getTags(true);
+        },
+        async removeHiddenTag (tag) {
+          await axios.delete('/api/feed/tag/hidden', {
+            data: {
+              name: tag,
+            }
+          });
+          await this.getTags(true);
+        },
+        async removeBlacklistedTag (tag) {
+          await axios.delete('/api/feed/tag/blacklisted', {
+            data: {
+              name: tag,
+            }
+          });
+          await this.getTags(true);
+        },
         renderReplyTo (post, index) {
-          // nsfw category check
-          if (post.entry.categories.map(c => c.includes("nsfw")).includes(true)) {
+          // hidden category check
+          if (post.entry.categories.map(c => this.hiddenTags.includes(c)).includes(true)) {
             post.entry.nsfw = true;
           }
           this.orderedContent.splice(index + 1, 0, post);
