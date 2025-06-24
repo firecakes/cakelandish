@@ -19,7 +19,7 @@
 ## index.html
 - Check that the unauthenticated view shows a list of all posts created.
 - Check that the authenticated view shows a command menu and feed list on the left, and the feed posts on the right.
-- Each post should show the title, HTML rendered content (or a NSFW warning with button to reveal the post if a tag contains "nsfw" as a category), and a metadata sidebar with date of publication, category list, and a "Reply to post" button. Clicking on "Reply to post" takes you to upload.html with Reply feed URL and Reply Post ID URL prepopulated.
+- Each post should show the title, HTML rendered content, and a metadata sidebar with date of publication, category list, and a "Reply to post" button. Clicking on "Reply to post" takes you to upload.html with Reply feed URL and Reply Post ID URL prepopulated.
 - Check that Cakelandish style replies to posts are also rendered on the feed, with a button to show the replied to post. If it is not renderable, show a link to the post instead.
 - The "New Post" button should take you to upload.html.
 - The "Manage Posts" button should take you to manage.html
@@ -33,6 +33,8 @@
 - Each feed can be clicked and dragged to be reordered by releasing the click between two other feeds. All changes are persisted across page loads.
 - "Search Posts" button should toggle showing a set of filter elements to add to restrict what is shown in the feed list. Category controls what tags are shown, Title searches for string matches in the post title, same with Content but with the post content, Date should filter based on a start and end range of dates, Has Image should filter out posts with any image or no images. "Invert filter" should work on every type of filter. There can be multiple filters added and there should be a list of active filters that can be removed.
 - The currently running version of Cakelandish should show at the bottom of the sidebar, as well as how long data was last exported. CuRSSor shows how content he is with the user keeping maintenance up with these two processes.
+- Check that adding a tag to the hidden tags list will cause a matching post's content to be hidden and show a "NSFW" warning
+- Check that adding a tag to the blacklisted tags list will cause a post matching the tag to disappear
 
 ## layout.html
 - The layout file should be applied to every post made in Cakelandish. Various metadata and content can be injected into each post as follows:
