@@ -35,6 +35,7 @@
 - The currently running version of Cakelandish should show at the bottom of the sidebar, as well as how long data was last exported. CuRSSor shows how content he is with the user keeping maintenance up with these two processes.
 - Check that adding a tag to the hidden tags list will cause a matching post's content to be hidden and show a "NSFW" warning
 - Check that adding a tag to the blacklisted tags list will cause a post matching the tag to disappear
+- If viewing the unauthenticated page, descriptions and media embeds should appear if OGP metadata was set appropriately per post.
 
 ## layout.html
 - The layout file should be applied to every post made in Cakelandish. Various metadata and content can be injected into each post as follows:
@@ -76,6 +77,8 @@
 - Draft posts have the option to be published, saved again as a draft, or to not save changes.
 - Published posts have the option to be updated, copied as a new draft, or to not save changes.
 - If the post contains reply information in the reply fields, show the "Embed reply in post" button that when pressed, injects the content of the replied to post in the post.
+- OGP Metadata can be set for the post, which includes webpage description text, and media in OGP metadata format which includes an alt text and an absolute URL to the media.
+- OGP Metadata can be marked such that the user can choose which uploaded media will be rendered and in what order.
 
 ## feed.atom + /archive
 - Every post made is added to feed.atom at the top of the file. All older posts get pushed down, and a maximum of 50 entries are stored in the main feed file by default.

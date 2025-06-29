@@ -474,6 +474,25 @@ export async function startServer() {
       sources: [],
       replyFeedUrl: input.replyFeedUrl,
       replyPostIdUrl: input.replyPostIdUrl,
+      ogpExtra: input.ogpExtra
+        ? {
+          description: input.ogpExtra.description,
+          mediaData: input.ogpExtra.mediaData
+            ? input.ogpExtra.mediaData
+              .filter((media) => media.embedMedia)
+              .map((media) => {
+                return {
+                  order: media.order,
+                  description: media.description,
+                  absoluteUrl: media.url.replace(
+                    regex,
+                    `${config.link}/posts/${folderName}`,
+                  ),
+                };
+              })
+            : [],
+        }
+        : null,
     };
 
     await addPost(entry);
@@ -548,6 +567,25 @@ export async function startServer() {
       sources: [],
       replyFeedUrl: input.replyFeedUrl,
       replyPostIdUrl: input.replyPostIdUrl,
+      ogpExtra: input.ogpExtra
+        ? {
+          description: input.ogpExtra.description,
+          mediaData: input.ogpExtra.mediaData
+            ? input.ogpExtra.mediaData
+              .filter((media) => media.embedMedia)
+              .map((media) => {
+                return {
+                  order: media.order,
+                  description: media.description,
+                  absoluteUrl: media.url.replace(
+                    tmpRegex,
+                    `/tmp/${folderName}`,
+                  ),
+                };
+              })
+            : [],
+        }
+        : null,
     };
 
     await addDraft(entry);
@@ -619,6 +657,25 @@ export async function startServer() {
       sources: [],
       replyFeedUrl: input.replyFeedUrl,
       replyPostIdUrl: input.replyPostIdUrl,
+      ogpExtra: input.ogpExtra
+        ? {
+          description: input.ogpExtra.description,
+          mediaData: input.ogpExtra.mediaData
+            ? input.ogpExtra.mediaData
+              .filter((media) => media.embedMedia)
+              .map((media) => {
+                return {
+                  order: media.order,
+                  description: media.description,
+                  absoluteUrl: media.url.replace(
+                    regex,
+                    `${config.link}/posts/${folderName}`,
+                  ),
+                };
+              })
+            : [],
+        }
+        : null,
     };
 
     if (postIsDraft(input)) { // draft

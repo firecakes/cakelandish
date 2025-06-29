@@ -147,6 +147,18 @@ export function widthToScreenSize (num) {
   }
 };
 
+export function imageTypes () {
+  return ["apng", "avif", "gif", "jpeg", "jpg", "png", "svg", "webp", "bmp"];
+}
+
+export function audioTypes () {
+  return ["wav", "ogg", "mp3"];
+}
+
+export function videoTypes () {
+  return ["webm", "mp4"];
+}
+
 export async function extractFeedLinks (postEntry) {
   let parsedFeed = null;
   let originalLink = null;

@@ -254,6 +254,19 @@
           <p class="title text-xlarge" v-if="index === 0 || post.year !== postLocations[index - 1].year || post.month !== postLocations[index - 1].month">{{ numberToMonth(post.month) }} {{ post.year }}<br></p>
           <a v-if="post.title" class="light text-medium"  :href="post.path">{{ post.title }}</a>
           <a v-else class="light text-medium" :href="post.path">Untitled Post</a>
+          <p v-if="post.ogpExtra && post.ogpExtra.description" class="text-medium">{{ post.ogpExtra.description }}</p>
+          <div v-if="post.ogpExtra && post.ogpExtra.mediaData" v-for="media in post.ogpExtra.mediaData">
+            <img v-if="media.mediaType === 'image'" :src="media.absoluteUrl" :alt="media.description">
+            <audio controls v-if="media.mediaType === 'audio'">
+              <source :src="media.absoluteUrl">
+            </audio>
+            <video controls width="100%" v-if="media.mediaType === 'video'">
+              <source :src="media.absoluteUrl" :type="'video/' + media.extension">
+            </video>
+            <a v-if="media.mediaType === 'link'" :href="media.absoluteUrl">
+              {{ media.absoluteUrl.split("/").reverse()[0] }}
+            </a>
+          </div>
         </div>
       </main>
 
@@ -359,6 +372,35 @@
           const postLocations = (await axios.get('/api/post/all')).data.postLocations;
 
           this.postLocations = postLocations;
+          // transform output to be easier to consume for the HTML
+          let imageTypes = util.imageTypes();
+          let audioTypes = util.audioTypes();
+          let videoTypes = util.videoTypes();
+          this.postLocations.forEach(post => {
+            if (post.ogpExtra && post.ogpExtra.mediaData) {
+              post.ogpExtra.mediaData = post.ogpExtra.mediaData
+                .sort((a, b) => a.order - b.order)
+                .map(media => {
+                  const extension = media.absoluteUrl.split(".").reverse()[0];
+                  let mediaType = "";
+                  if (imageTypes.includes(extension)) {
+                    mediaType = "image";
+                  } else if (audioTypes.includes(extension)) {
+                    mediaType = "audio";
+                  } else if (videoTypes.includes(extension)) {
+                    mediaType = "video";
+                  } else {
+                    mediaType = "link";
+                  }
+                  return {
+                    description: media.description,
+                    absoluteUrl: media.absoluteUrl,
+                    mediaType: mediaType,
+                    extension: extension,
+                  }
+                })
+            }
+          })
         }
       },
       computed: {

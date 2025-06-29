@@ -92,6 +92,36 @@
                   <p class="cursor center text-xsmall light no-space top-space side-space" @click="deleteUpload(fileName)">Delete</p>
                 </div>
 
+                <!-- OGP metadata form -->
+                <div class="flex-v">
+                  <button class="button text-medium top-space" @click="toggleOgpMetadata">Create OGP Metadata</button>
+                  <div v-if="showOgpMetadata" class="flex-v light">
+                    <p class="text-xsmall"><a href="https://ogp.me/">OGP metadata</a> allows for rich media presence when linking the page of this post to other websites. Realistically other sites only support the image formats, but Cakelandish will let you select video and audio files as well. As a bonus, the media selected here will be embedded along with page description text on your main page so the post is not just a simple title linked to the webpage!</p>
+
+                    <div class="flex">
+                      <label class="text-small no-space top-space" for="webpageDescription">Webpage Description</label>
+                      <input class="textbox bg light text-xsmall side-space one-part" id="webpageDescription" v-model="ogpExtra.description">
+                    </div>
+
+                    <p v-if="uploadedFiles.length !== 0" class="light text-small flex-center">All uploaded files. Add description text to the media or select the checkbox to embed it on the main page post.</p>
+                    <div class="flex-v" v-for="media in ogpExtra.mediaData">
+                      <div class="flex">
+                        <p class="text-xsmall one-part light no-space top-space">{{ media.url }}</p>
+                        <label class="text-xsmall no-space top-space" :for="'embedMedia-' + media.url">Embed</label><br>
+                        <input class="no-space top-space side-space" type="checkbox" :id="'embedMedia-' + media.url" v-model="media.embedMedia">
+                      </div>
+
+                      <div class="flex">
+                        <label class="text-xsmall no-space top-space" style="margin-left: 20px" :for="'order-' + media.url">Ordering</label>
+                        <input type="number" class="textbox bg light text-xsmall side-space" :id="'order-' + media.url" v-model="media.order" style="max-width: 40px">
+
+                        <label class="text-xsmall no-space top-space" :for="'description-' + media.url">Media Description</label>
+                        <input class="textbox bg light text-xsmall side-space one-part" :id="'description-' + media.url" v-model="media.description">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
 
               <div class="top-space">
@@ -169,6 +199,11 @@
           debounceTimer: null,
           debouncedHtmlInputLayoutApplied: "",
           uploadedFiles: [],
+          showOgpMetadata: false,
+          ogpExtra: {
+            description: "",
+            mediaData: [],
+          },
         }
       },
       watch: {
@@ -236,6 +271,40 @@
           this.replyPostIdUrl = foundPost.replyPostIdUrl;
           this.tags = foundPost.categories;
           this.published = foundPost.published;
+
+          // get uploaded files
+          await this.getUploadedFiles();
+
+          // transform ogpExtra data to be suitable for use on this page
+          let ogpExtraData = foundPost.ogpExtra;
+          if (!ogpExtraData) {
+            ogpExtraData = {
+              description: "",
+              mediaData: this.uploadedFiles.map((f, index) => ({
+                embedMedia: false,
+                description: "",
+                url: f,
+                order: index
+              })),
+            }
+          } else {
+            ogpExtraData = {
+              description: foundPost.ogpExtra.description,
+              mediaData: this.uploadedFiles.map((f, index) => {
+                const fileName = f.split("/").reverse()[0];
+                const foundMedia = foundPost.ogpExtra.mediaData.find(m => m.absoluteUrl.split("/").reverse()[0] === fileName);
+                return {
+                  embedMedia: !!foundMedia,
+                  description: foundMedia ? foundMedia.description : "",
+                  url: f,
+                  order: foundMedia ? foundMedia.order : index
+                }
+              }),
+            }
+          }
+          this.ogpExtra.description = ogpExtraData.description;
+          this.ogpExtra.mediaData = ogpExtraData.mediaData;
+          
           if (this.htmlInput !== this.rssInput) {
             // different data stored in html and rss. toggle on RSS Override
             this.showRssOverride = true;
@@ -247,9 +316,10 @@
           const result = await axios.post("/api/post/init", {});
           this.title = result.data.name;
           this.tmpTitle = this.title;
+
+          // get uploaded files
+          await this.getUploadedFiles();
         }
-        // get uploaded files
-        await this.getUploadedFiles();
       },
       computed: {
         htmlInputLayoutApplied: function () {
@@ -286,6 +356,49 @@
             new RegExp("%%%replyPostIdUrl%%%", "g"),
             this.replyPostIdUrl,
           );
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%link%%%", "g"),
+            this.link,
+          );
+          let imageTypes = util.imageTypes();
+          let audioTypes = util.audioTypes();
+          let videoTypes = util.videoTypes();
+
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%media%%%", "g"),
+            // id mapping prevents the original array from being sorted and shuffling items around in the UI
+            this.ogpExtra.mediaData ? this.ogpExtra.mediaData.map(id => id).sort((a, b) => a.order - b.order).map(m => {
+              if (!m.embedMedia) {
+                return "";
+              }
+              const extension = m.url.split(".").reverse()[0];
+              let output = "";
+              if (m.url) {
+                if (imageTypes.includes(extension)) {
+                  output += `<meta property="og:image" content="${m.url}" />`
+                  if (m.description) {
+                    output += `<meta property="og:image:alt" content="${m.description}" />`
+                  }
+                } else if (audioTypes.includes(extension)) {
+                  output += `<meta property="og:audio" content="${m.url}" />`
+                  if (m.description) {
+                    output += `<meta property="og:audio:alt" content="${m.description}" />`
+                  }
+                } else if (videoTypes.includes(extension)) {
+                  output += `<meta property="og:video" content="${m.url}" />`
+                  if (m.description) {
+                    output += `<meta property="og:video:alt" content="${m.description}" />`
+                  }
+                }
+              }
+              return output;
+            }).filter(m => m !== "").join("\n") : "",
+          );
+
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%description%%%", "g"),
+            this.ogpExtra.description ? this.ogpExtra.description : "",
+          );
 
           return modifiedContent;
         }
@@ -296,9 +409,26 @@
             tmpTitle: this.tmpTitle,
             localUrl: this.localUrl,
           }})).data.files.sort();
+
+          // update ogpData
+          this.updateOgpMetadata();
+        },
+        updateOgpMetadata () {
+          this.ogpExtra.mediaData = this.uploadedFiles.map((f, index) => {
+            const foundMedia = this.ogpExtra.mediaData.find(m => m.url === f);
+            return {
+              embedMedia: foundMedia ? foundMedia.embedMedia : false,
+              description: foundMedia ? foundMedia.description : "",
+              url: f,
+              order: foundMedia ? foundMedia.order : index
+            }
+          });
         },
         toggleRssOverride () {
           this.showRssOverride = !this.showRssOverride;
+        },
+        toggleOgpMetadata () {
+          this.showOgpMetadata = !this.showOgpMetadata;
         },
         async sanitizeHtml () {
           if (!this.showRssOverride) {
@@ -322,9 +452,9 @@
         },
         insertEmbedFromFile (fileName) {
           // smartly create different elements depending on the file type submitted
-          let imageTypes = ["apng", "avif", "gif", "jpeg", "jpg", "png", "svg", "webp", "bmp"];
-          let audioTypes = ["wav", "ogg", "mp3"];
-          let videoTypes = ["webm", "mp4"];
+          let imageTypes = util.imageTypes();
+          let audioTypes = util.audioTypes();
+          let videoTypes = util.videoTypes();
           const extension = fileName.split(".").reverse()[0];
           const imgInjection = `\n<img src="${fileName}"></img>`;
           const audioInjection = `\n<audio controls>
@@ -449,6 +579,7 @@
             tags: this.tags,
             localUrl: this.localUrl, // for editing a post
             published: this.published,
+            ogpExtra: this.ogpExtra
           }
         },
         chooseTag (event) {

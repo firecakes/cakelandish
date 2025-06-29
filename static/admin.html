@@ -45,7 +45,7 @@
         <div class="margin"></div>
 
         <!-- change domain name -->
-        <p class="title light text-large">Attempts to replace all instances of a domain name with another one. It's literally just a string replacement method going through all your RSS posts, but intended for migrating over to a new domain. Please back up your data before trying this feature out!</p>
+        <p class="title light text-large">Attempts to replace all instances of a domain name with another one. It's literally just a string replacement method going through all your RSS posts and OGP links, but intended for migrating over to a new domain. Please back up your data before trying this feature out!</p>
         <div class="flex">
           <label for="oldDomain" class="title light text-large side-space">Old Domain</label>
           <input class="textbox bg-dark light text-medium" id="oldDomain" v-model="oldDomain">
@@ -60,7 +60,7 @@
 
         <div class="margin"></div>
 
-        <button v-if="oldDomain && newDomain" class="button text-medium half" @click="changeDomain()">Replace RSS Links with New Domains</button>
+        <button v-if="oldDomain && newDomain" class="button text-medium half" @click="changeDomain()">Replace Domain Links with New Domains</button>
 
         <!-- traffic data -->
         <div v-if="trafficData.length > 0" style="width: 100%" class="center">

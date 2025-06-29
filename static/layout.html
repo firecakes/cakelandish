@@ -64,10 +64,19 @@
           defaultInjections: {
             title: "Sample Title",
             tags: "art,drawing",
-            localUrl: "http://localhost:8000/",
+            localUrl: "/",
             replyFeedUrl: "http://localhost:8000/feed.atom",
             replyPostIdUrl: "http://localhost:8000/posts/first/index.html",
-            content: "Sample content"
+            content: "Sample content",
+            link: "http://localhost:8000",
+            ogpExtra: {
+              description: "Webpage Description",
+              mediaData: [{
+                absoluteUrl: "http://localhost:8000/curssor/curssor-approved.png",
+                description: "CuRSSor giving a thumbs up",
+                order: 0
+              }]
+            }
           },
           debounceTimer: null,
           debouncedHtmlInputLayoutApplied: "",
@@ -117,6 +126,48 @@
           modifiedContent = modifiedContent.replace(
             new RegExp("%%%replyPostIdUrl%%%", "g"),
             this.defaultInjections.replyPostIdUrl,
+          );
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%link%%%", "g"),
+            this.defaultInjections.link,
+          );
+          
+          let imageTypes = util.imageTypes();
+          let audioTypes = util.audioTypes();
+          let videoTypes = util.videoTypes();
+
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%media%%%", "g"),
+            this.defaultInjections.ogpExtra.mediaData ? this.defaultInjections.ogpExtra.mediaData
+              .sort((a, b) => a.order - b.order)
+              .map(m => {
+              const extension = m.absoluteUrl.split(".").reverse()[0];
+              let output = "";
+              if (m.absoluteUrl) {
+                if (imageTypes.includes(extension)) {
+                  output += `<meta property="og:image" content="${m.absoluteUrl}" />`
+                  if (m.description) {
+                    output += `<meta property="og:image:alt" content="${m.description}" />`
+                  }
+                } else if (audioTypes.includes(extension)) {
+                  output += `<meta property="og:audio" content="${m.absoluteUrl}" />`
+                  if (m.description) {
+                    output += `<meta property="og:audio:alt" content="${m.description}" />`
+                  }
+                } else if (videoTypes.includes(extension)) {
+                  output += `<meta property="og:video" content="${m.absoluteUrl}" />`
+                  if (m.description) {
+                    output += `<meta property="og:video:alt" content="${m.description}" />`
+                  }
+                }
+              }
+              return output;
+            }).filter(m => m !== "").join("\n") : "",
+          );
+
+          modifiedContent = modifiedContent.replace(
+            new RegExp("%%%description%%%", "g"),
+            this.defaultInjections.ogpExtra.description ? this.defaultInjections.ogpExtra.description : "",
           );
 
           return modifiedContent;

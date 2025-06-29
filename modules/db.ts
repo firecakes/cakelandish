@@ -446,6 +446,65 @@ export async function applyLayoutToPost(layout, post) {
     new RegExp("%%%replyPostIdUrl%%%", "g"),
     post.replyPostIdUrl,
   );
+  modifiedContent = modifiedContent.replace(
+    new RegExp("%%%link%%%", "g"),
+    post.link,
+  );
+
+  // TODO: unify this data with the frontend util.js file
+  let imageTypes = [
+    "apng",
+    "avif",
+    "gif",
+    "jpeg",
+    "jpg",
+    "png",
+    "svg",
+    "webp",
+    "bmp",
+  ];
+  let audioTypes = ["wav", "ogg", "mp3"];
+  let videoTypes = ["webm", "mp4"];
+
+  modifiedContent = modifiedContent.replace(
+    new RegExp("%%%media%%%", "g"),
+    (post.ogpExtra && post.ogpExtra.mediaData)
+      ? post.ogpExtra.mediaData.sort((a, b) => a.order - b.order).map((m) => {
+        const extension = m.absoluteUrl.split(".").reverse()[0];
+        let output = "";
+        if (m.absoluteUrl) {
+          if (imageTypes.includes(extension)) {
+            output += `<meta property="og:image" content="${m.absoluteUrl}" />`;
+            if (m.description) {
+              output +=
+                `<meta property="og:image:alt" content="${m.description}" />`;
+            }
+          } else if (audioTypes.includes(extension)) {
+            output += `<meta property="og:audio" content="${m.absoluteUrl}" />`;
+            if (m.description) {
+              output +=
+                `<meta property="og:audio:alt" content="${m.description}" />`;
+            }
+          } else if (videoTypes.includes(extension)) {
+            output += `<meta property="og:video" content="${m.absoluteUrl}" />`;
+            if (m.description) {
+              output +=
+                `<meta property="og:video:alt" content="${m.description}" />`;
+            }
+          }
+        }
+        return output;
+      }).filter((m) => m !== "").join("\n")
+      : "",
+  );
+
+  modifiedContent = modifiedContent.replace(
+    new RegExp("%%%description%%%", "g"),
+    (post.ogpExtra && post.ogpExtra.description)
+      ? post.ogpExtra.description
+      : "",
+  );
+
   // save the post contents
   await Deno.writeTextFile(
     `static${post.localUrl}/index.html`,
@@ -474,6 +533,15 @@ export async function changeDomains(oldDomain, newDomain) {
       new RegExp(oldDomain, "g"),
       newDomain,
     );
+    if (entry.ogpExtra && entry.ogpExtra.mediaData) {
+      for (let i = 0; i < entry.ogpExtra.mediaData.length; i++) {
+        const absoluteUrl = entry.ogpExtra.mediaData[i].absoluteUrl;
+        entry.ogpExtra.mediaData[i].absoluteUrl = absoluteUrl.replace(
+          new RegExp(oldDomain, "g"),
+          newDomain,
+        );
+      }
+    }
     return entry;
   });
 
@@ -674,6 +742,7 @@ export interface Entry {
   sources: URL[];
   replyFeedUrl: URL;
   replyPostIdUrl: URL;
+  ogpExtra?: OgpExtra;
   postIndex: number;
 }
 
@@ -691,4 +760,15 @@ export interface StaticFile {
   directory: StaticFile[];
   isImportant: boolean;
   editable: boolean;
+}
+
+export interface OgpExtra {
+  description?: string;
+  mediaData: MediaData[];
+}
+
+export interface MediaData {
+  order: number;
+  absoluteUrl: URL;
+  description?: string;
 }
