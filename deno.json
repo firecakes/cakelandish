@@ -1,9 +1,9 @@
 {
   "tasks": {
-    "dev": "deno run --allow-net --allow-read --allow-write=./ --allow-env --watch --unstable-kv main.ts",
-    "code": "deno run --allow-net --allow-read --allow-write=./ --allow-env --unstable-kv main.ts code",
+    "dev": "deno run --allow-net --allow-read --allow-write --allow-env --watch --unstable-kv main.ts",
+    "code": "deno run --allow-net --allow-read --allow-write --allow-env --unstable-kv main.ts code",
     "auto-format": "deno fmt --watch ./**/*.ts",
-    "compile": "deno compile --output=out/ --no-check --allow-net --allow-read --allow-write=./ --allow-env --unstable-kv main.ts",
+    "compile": "deno compile --output=out/ --no-check --allow-net --allow-read --allow-write --allow-env --unstable-kv main.ts",
     "compile-all": "./scripts/build-all.sh"
   }
 }

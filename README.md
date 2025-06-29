@@ -29,7 +29,7 @@ my instance here: https://cakelandish.firecakesworld.com
 
 My RSS feed is at `https://cakelandish.firecakesworld.com/feed.atom`.
 
-NOTE: The minimum Deno version recommended is `v1.41.0`.
+NOTE: The minimum Deno version required is `v2.1.2`.
 
 ## Compiling
 
