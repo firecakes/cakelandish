@@ -559,7 +559,7 @@
               post.entry.hideReplyToButton = false;
               // hidden category check
               if (post.entry.categories.map(c => this.hiddenTags.includes(c)).includes(true)) {
-                post.entry.nsfw = true;
+                post.entry.hide = true;
               }
               return post;
             })
@@ -685,7 +685,7 @@
         renderReplyTo (post, index) {
           // hidden category check
           if (post.entry.categories.map(c => this.hiddenTags.includes(c)).includes(true)) {
-            post.entry.nsfw = true;
+            post.entry.hide = true;
           }
           this.orderedContent.splice(index + 1, 0, post);
         },

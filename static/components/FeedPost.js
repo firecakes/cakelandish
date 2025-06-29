@@ -18,17 +18,17 @@ export default {
         <a class="center text-xsmall" :href="post.entry.id">{{ post.entry.id }}</a>
 
         <button 
-          v-if="post.entry.nsfw"
+          v-if="post.entry.hide"
           class="button text-medium top-space" 
-          @click="post.entry.nsfw = false">
-          Post marked as NSFW. Click here to show it.
+          @click="post.entry.hide = false">
+          Post hidden due to user preferences. Click here to show it.
         </button>
 
         <!-- summary text is included as a tooltip when hovering over the content -->
         <p 
           class="top-space dark no-space"
           v-html="post.entry.content"
-          v-if="!post.entry.nsfw"
+          v-if="!post.entry.hide"
           :title="post.entry.summary">
         </p>
 
