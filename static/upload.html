@@ -6,13 +6,17 @@
     <title>Create and Edit Posts and Drafts</title>
     <script src="/lib/vue.js"></script>
     <script src="/lib/axios.min.js"></script>
+    <script src="/lib/suneditor.min.js"></script>
+    <script src="/lib/katex.min.js"></script>
     <link rel="stylesheet" href="/main.css">
+    <link rel="stylesheet" href="/lib/suneditor.min.css">
+    <link rel="stylesheet" href="/lib/katex.min.css">
   </head>
 
   <body id="bg">
     <div id="app" class="flex-v" v-cloak>
 
-      <switch-view-component
+      <switch-view-component-upload
         :screen="screen"
         :is-authenticated="isAuthenticated"
         left-view-name="Show Input"
@@ -22,10 +26,26 @@
           <div class="flex-v one-part side-space">
             <!-- HTML input -->
             <label for="htmlInput" class="title light text-large">HTML goes here!</label>
-            <textarea id="htmlInput" class="bg light textarea" rows="30" v-model="htmlInput" @input="sanitizeDebounce"></textarea>
+            <textarea id="htmlInput" v-if="!showGuiEditor" class="bg light textarea" rows="30" v-model="htmlInput" @input="sanitizeDebounce"></textarea>
+
+            <div v-show="showGuiEditor" class="bg-light" style="height: 600px">
+              <textarea id="suneditor"></textarea>
+            </div>
 
             <!-- RSS override -->
-            <button class="button text-medium top-space" @click="toggleRssOverride">Toggle RSS Override</button>
+            <div class="flex">
+              <button class="button text-medium top-space one-part side-space" @click="toggleGuiEditor">
+                {{ guiSwitchButtonText }}
+              </button>
+              <button class="button text-medium top-space one-part side-space" @click="toggleRssOverride">
+                Toggle RSS Override
+              </button>
+            </div>
+            <div v-if="showGuiEditor" class="light">
+              <p class="text-xsmall">
+                The sun editor view is very experimental! Note that what is displayed there will not carry its styles over to the rendered post. Its primary use is to quickly let you construct HTML. The content in the editor will not carry over to your post: what you must do is select the 'code view' block at the end of the toolbar, copy the HTML the editor generates, then switch back to the raw HTML view to paste it there.
+              </p>
+            </div>
             <div v-if="showRssOverride" class="flex-v light">
               <p class="text-xsmall">Enabling RSS Override means you want to put different content in your RSS post than the content that is stored on your server. You should keep as much of the same content in your RSS post as possible. Only enable this if you want to include more intricate styling and functionality than what the RSS reader allows for those who visit your server!</p>
               <textarea class="bg light textarea" rows="30" v-model="rssInput" @input="sanitizeDebounce"></textarea>
@@ -156,17 +176,17 @@
           </div>
         </template>
 
-      </switch-view-component>
+      </switch-view-component-upload>
     </div>
   </body>
 
   <script type="module">
     import * as util from "./util.js";
-    import SwitchViewComponent from "./components/SwitchViewComponent.js";
+    import SwitchViewComponentUpload from "./components/SwitchViewComponentUpload.js";
 
     Vue.createApp({
       components: {
-        SwitchViewComponent
+        SwitchViewComponentUpload
       },
       data () {
         return {
@@ -204,6 +224,10 @@
             description: "",
             mediaData: [],
           },
+          showGuiEditor: false,
+          guiSwitchButtonText: "Switch to SunEditor",
+          editor: null,
+          temporaryCleanedHtml: "",
         }
       },
       watch: {
@@ -429,6 +453,52 @@
         },
         toggleOgpMetadata () {
           this.showOgpMetadata = !this.showOgpMetadata;
+        },
+        toggleGuiEditor() {
+          this.showGuiEditor = !this.showGuiEditor;
+          if (this.showGuiEditor) {
+            this.guiSwitchButtonText = "Switch to raw HTML";
+            if (this.editor) {
+              return;
+            }
+            this.editor = SUNEDITOR.create('suneditor', {
+              minWidth: "100%",
+              height: "auto",
+              katex: katex,
+              buttonList: [
+                ['undo', 'redo'],
+                ['font', 'fontSize', 'formatBlock'],
+                ['paragraphStyle', 'blockquote'],
+                ['bold', 'underline', 'italic', 'strike', 'subscript', 'superscript'],
+                ['fontColor', 'hiliteColor', 'textStyle'],
+                ['removeFormat'],
+                ['outdent', 'indent'],
+                ['align', 'horizontalRule', 'list', 'lineHeight'],
+                ['table', 'link', 'image', 'math', 'video', 'audio'],
+                ['fullScreen', 'showBlocks', 'codeView'],
+              ]
+            });
+            this.editor.onChange = (event, core) => { 
+              // detect the span class "katex-html" if it exists and remove it as its unnecessary
+              const parsedHtml = new DOMParser().parseFromString(event, "text/html");
+              // cut through the html, body definitions automatically applied by DOMParser
+              const parsedTargetHtml = parsedHtml.childNodes[0].childNodes[1]
+              const searchKatexHtml = parsedTargetHtml.getElementsByClassName("katex-html");
+              if (searchKatexHtml.length > 0) {
+                for (let i = searchKatexHtml.length - 1; i >= 0; i--) {
+                  const removeMe = searchKatexHtml[i];
+                  removeMe.parentNode.removeChild(removeMe);
+                }
+              }
+              // save the changes for when the code view is shown
+              this.temporaryCleanedHtml = parsedTargetHtml.innerHTML;
+            }
+            this.editor.toggleCodeView = (isCodeView, core) => {
+              document.getElementsByClassName("se-wrapper-code")[0].value = this.temporaryCleanedHtml
+            }
+          } else {
+            this.guiSwitchButtonText = "Switch to SunEditor";
+          }
         },
         async sanitizeHtml () {
           if (!this.showRssOverride) {

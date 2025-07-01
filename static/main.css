@@ -217,6 +217,10 @@ table {
   overflow-wrap: anywhere;
 }
 
+table, th, td {
+  border: 1px solid;
+  border-collapse: collapse;
+}
 
 /* keep at bottom of css! */
 [v-cloak] {

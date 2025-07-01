@@ -79,6 +79,7 @@
 - If the post contains reply information in the reply fields, show the "Embed reply in post" button that when pressed, injects the content of the replied to post in the post.
 - OGP Metadata can be set for the post, which includes webpage description text, and media in OGP metadata format which includes an alt text and an absolute URL to the media.
 - OGP Metadata can be marked such that the user can choose which uploaded media will be rendered and in what order.
+- Clicking on "Switch to SunEditor" opens up the editor view where you can structure a post without HTML knowledge, then copy the generated HTML in the code view back to the HTML textarea.
 
 ## feed.atom + /archive
 - Every post made is added to feed.atom at the top of the file. All older posts get pushed down, and a maximum of 50 entries are stored in the main feed file by default.
