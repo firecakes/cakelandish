@@ -75,12 +75,12 @@
       computed: {
         orderedDrafts: function () {
           return this.drafts.sort((a, b) => {
-            return new Date(b.updated) - new Date(a.updated)
+            return new Date(b.published) - new Date(a.published)
           });
         },
         orderedPosts: function () {
           return this.posts.sort((a, b) => {
-            return new Date(b.updated) - new Date(a.updated)
+            return new Date(b.published) - new Date(a.published)
           });
         }
       },
