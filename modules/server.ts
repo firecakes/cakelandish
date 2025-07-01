@@ -191,6 +191,7 @@ export async function startServer() {
       "/manage.html",
       "/pages.html",
       "/upload.html",
+      "/tmp/",
     ];
 
     // check if JWT is enabled. check the access token specifically
