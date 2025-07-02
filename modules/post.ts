@@ -13,8 +13,6 @@ export async function generatePostFileStructure() {
   postLocations = posts.map((post) => {
     const postTime = new Date(post.published);
     return {
-      month: postTime.getUTCMonth() + 1,
-      year: postTime.getUTCFullYear(),
       title: post.title,
       time: postTime.getTime(),
       path: post.localUrl,

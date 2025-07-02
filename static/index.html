@@ -370,8 +370,14 @@
           this.isLoading = false;
         } else {
           const postLocations = (await axios.get('/api/post/all')).data.postLocations;
-
           this.postLocations = postLocations;
+          // inject proper month and year information based on the client's current timezone
+          this.postLocations.forEach(post => {
+            const date = new Date(post.time);
+            post.month = date.getUTCMonth() + 1;
+            post.year = date.getUTCFullYear();
+            console.log(date);
+          });
           // transform output to be easier to consume for the HTML
           let imageTypes = util.imageTypes();
           let audioTypes = util.audioTypes();
