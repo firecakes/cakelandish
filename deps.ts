@@ -6,7 +6,9 @@ export { copy as copyDirectory } from "https://deno.land/std@0.167.0/fs/copy.ts"
 export { cryptoRandomString } from "https://deno.land/x/crypto_random_string@1.1.0/mod.ts";
 export * as jwt from "https://deno.land/x/djwt@v2.8/mod.ts";
 export { timingSafeEqual } from "https://deno.land/std@0.168.0/crypto/timing_safe_equal.ts";
-export { tar } from "https://deno.land/x/compress@v0.5.6/mod.ts";
+// this library requires a very specific version: too high a version and there's a too many files open OS error
+// too low a version and there's Deno API issues or other bugs
+export { tar } from "https://deno.land/x/compress@v0.4.6/mod.ts";
 export * as log from "https://deno.land/std@0.216.0/log/mod.ts";
 export * as OTPAuth from "https://deno.land/x/otpauth@v9.3.1/dist/otpauth.esm.js";
 import qrcode from "https://deno.land/x/qrcode_terminal@v1.1.1/mod.js";
