@@ -360,13 +360,13 @@
         if (this.isAuthenticated) {
           // get all feeds
           this.isLoading = true;
+          await this.getTags(false);
           await this.getFeeds();
           const versionData = (await axios.get('/api/version')).data;
           this.currentVersion = versionData.currentVersion;
           this.remoteVersion = versionData.remoteVersion;
           const exportDataDate = (await axios.get('/api/export/date')).data.exportDate;
           this.lastExportDateDays = Math.floor((Date.now() - exportDataDate) / (1000 * 60 * 60 * 24)); // days ago
-          await this.getTags(false);
           this.isLoading = false;
         } else {
           const postLocations = (await axios.get('/api/post/all')).data.postLocations;
