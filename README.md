@@ -31,6 +31,12 @@ My RSS feed is at `https://cakelandish.firecakesworld.com/feed.atom`.
 
 NOTE: The minimum Deno version required is `v2.1.2`.
 
+## Community + Support
+
+There is now an official forum for discussing this project and for developing personal websites in general. All registrations will be manually approved to help prevent bots. [Register here!](https://forums.cakelandish.com)
+
+I also now accept donations for development and upkeep on the forum and on this project. If you wish to contribute financially, [you may do so here](https://ko-fi.com/firecakes). Thank you!
+
 ## Compiling
 
 Compile for current OS:
@@ -41,7 +47,7 @@ Compile for Windows, MacOS, Linux platforms:
 
 `deno task compile-all`
 
-All compiled binaries are outputted to the [out directory](out/)
+All compiled binaries are outputted to the `out` directory
 
 ## Dev Commands
 
