@@ -6,8 +6,7 @@
 
 ## What is this?
 
-It's a powerful, self-hosting blogging server with minimal social features baked
-into RSS and written in Deno.
+It's a powerful, self-hosted blogging server with RSS reading + writing support and written in Deno.
 
 ## Why did you make this?
 
