@@ -395,7 +395,7 @@
               if (!m.embedMedia) {
                 return "";
               }
-              const extension = m.url.split(".").reverse()[0];
+              const extension = m.url.split(".").reverse()[0].toLowerCase();
               let output = "";
               if (m.url) {
                 if (imageTypes.includes(extension)) {
@@ -525,7 +525,7 @@
           let imageTypes = util.imageTypes();
           let audioTypes = util.audioTypes();
           let videoTypes = util.videoTypes();
-          const extension = fileName.split(".").reverse()[0];
+          const extension = fileName.split(".").reverse()[0].toLowerCase();
           const imgInjection = `\n<img src="${fileName}"></img>`;
           const audioInjection = `\n<audio controls>
 <source src="${fileName}">

@@ -470,7 +470,7 @@ export async function applyLayoutToPost(layout, post) {
     new RegExp("%%%media%%%", "g"),
     (post.ogpExtra && post.ogpExtra.mediaData)
       ? post.ogpExtra.mediaData.sort((a, b) => a.order - b.order).map((m) => {
-        const extension = m.absoluteUrl.split(".").reverse()[0];
+        const extension = m.absoluteUrl.split(".").reverse()[0].toLowerCase();
         let output = "";
         if (m.absoluteUrl) {
           if (imageTypes.includes(extension)) {
