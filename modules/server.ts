@@ -257,7 +257,7 @@ export async function startServer() {
       // strictness means cookie will only be readable with this site specifically
 
       ctx.cookies.set("jwt-access", access.token, {
-        secure: config.https,
+        secure: (config.https && !config.proxy),
         httpOnly: true,
         sameSite: "strict",
         maxAge: access.expiry,
