@@ -44,11 +44,12 @@ export const config = {
   rateLimitMax: Number(envs.RATE_LIMIT_MAX) || 500, // Default max 500 requests in window
   rateLimitExpire: Number(envs.RATE_LIMIT_EXPIRE) || 1 * 24 * 60 * 60 * 1000, // In milliseconds, 1 day default
   rateLimitDuration: Number(envs.RATE_LIMIT_DURATION) || 1 * 60 * 60 * 1000, // In milliseconds, 1 hour default
-  postsPerPage: Number(envs.POSTS_PER_PAGE) || 0, // 0 or below disables pagination, any other number displays that many posts on the unauthenticated frontend at once.
+  postsPerPage: parseInt(envs.POSTS_PER_PAGE) || 0, // Anything less than 1 disables pagination, any other number displays that many posts on the unauthenticated frontend at once.
 };
 
-if (config.postsPerPage < 0) {
-  config.postsPerPage = 0; // let's not see what'd happen if you tried to display negative posts
+if (config.postsPerPage < 1) {
+  // Preventing folks from setting this to decimals less than 1 or negative numbers.
+  config.postsPerPage = 0;
 }
 
 if (config.title === undefined) {
