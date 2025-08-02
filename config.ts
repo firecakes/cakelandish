@@ -44,7 +44,12 @@ export const config = {
   rateLimitMax: Number(envs.RATE_LIMIT_MAX) || 500, // Default max 500 requests in window
   rateLimitExpire: Number(envs.RATE_LIMIT_EXPIRE) || 1 * 24 * 60 * 60 * 1000, // In milliseconds, 1 day default
   rateLimitDuration: Number(envs.RATE_LIMIT_DURATION) || 1 * 60 * 60 * 1000, // In milliseconds, 1 hour default
+  postsPerPage: Number(envs.POSTS_PER_PAGE) || 0, // 0 or below disables pagination, any other number displays that many posts on the unauthenticated frontend at once.
 };
+
+if (config.postsPerPage < 0) {
+  config.postsPerPage = 0; // let's not see what'd happen if you tried to display negative posts
+}
 
 if (config.title === undefined) {
   throw new Error("Variable missing in environment: TITLE");
@@ -120,4 +125,5 @@ if (config.proxyCount > 0) {
   RATE_LIMIT_MAX: The maximum number of requests allowed in the rate limit window. Defaults to 500 requests.
   RATE_LIMIT_EXPIRE: For cleaning up client data in rate limiting algorithm. Defaults to 1 day for each IP.
   RATE_LIMIT_DURATION: How long to ban clients who surpass the max rate limit. Defaults to 1 hour.
+  POSTS_PER_PAGE: How many posts to display at once on the main page. Set to 0 to disable pagination.
 */

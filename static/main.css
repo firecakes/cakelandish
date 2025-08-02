@@ -222,6 +222,18 @@ table, th, td {
   border-collapse: collapse;
 }
 
+.pagination {
+  margin: auto;
+  max-width: 960px;
+  width: 80vw;
+  margin-bottom: 12px;
+}
+
+.hide-element {
+  visibility: hidden;
+}
+
+
 /* keep at bottom of css! */
 [v-cloak] {
   display: none;

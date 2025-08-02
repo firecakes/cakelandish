@@ -350,6 +350,13 @@ export async function startServer() {
     ctx.body = {};
   });
 
+  // get frontend config.
+  router.get("/api/config", async (ctx, next) => {
+    ctx.body = {
+      postsPerPage: config.postsPerPage,
+    };
+  });
+
   // get all posts in static folder. this is public, and does not read from the database to get the info
   router.get("/api/post/all", async (ctx, next) => {
     ctx.body = {

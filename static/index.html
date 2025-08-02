@@ -250,8 +250,12 @@
 
       <main v-if="isAuthenticated === false" class="half flex-v one-part">
         <p class="title light text-xlarge">Post Index</p>
-        <div class="center light" style="margin-bottom: 1em" v-for="(post, index) in postLocations">
-          <p class="title text-xlarge" v-if="index === 0 || post.year !== postLocations[index - 1].year || post.month !== postLocations[index - 1].month">{{ numberToMonth(post.month) }} {{ post.year }}<br></p>
+        <div v-if="postsPerPage > 0 && postLocations !== null && postLocations.length > postsPerPage" class="center pagination flex-center">
+          <button :class="{'hide-element': postPage <= 0}" class="button text-large top-space side-space one-part" @click="lastPage">Previous Page</button>
+          <button :class="{'hide-element': postLocations.length <= (postPage+1)*postsPerPage}" class="button text-large top-space side-space one-part" @click="nextPage">Next Page</button>
+        </div>
+        <div class="center light" style="margin-bottom: 1em" v-for="(post, index) in currentPostPage()">
+          <p class="title text-xlarge" v-if="index === 0 || post.year !== currentPostPage()[index - 1].year || post.month !== currentPostPage()[index - 1].month">{{ numberToMonth(post.month) }} {{ post.year }}<br></p>
           <a v-if="post.title" class="light text-medium"  :href="post.path">{{ post.title }}</a>
           <a v-else class="light text-medium" :href="post.path">Untitled Post</a>
           <p v-if="post.ogpExtra && post.ogpExtra.description" class="text-small">{{ post.ogpExtra.description }}</p>
@@ -267,6 +271,10 @@
               {{ media.absoluteUrl.split("/").reverse()[0] }}
             </a>
           </div>
+        </div>
+        <div v-if="postsPerPage > 0 && postLocations !== null  && postLocations.length > postsPerPage" class="center pagination flex-center">
+          <button :class="{'hide-element': postPage <= 0}" class="button text-large top-space side-space one-part" @click="lastPage">Previous Page</button>
+          <button :class="{'hide-element': postLocations.length <= (postPage+1)*postsPerPage}" class="button text-large top-space side-space one-part" @click="nextPage">Next Page
         </div>
       </main>
 
@@ -331,6 +339,8 @@
           RENDER_POST_INCREASE: 10,
           postsToRender: 20,
           totalPosts: 0,
+          postPage: 0,
+          postsPerPage: 10,
           lastExportDateDays: null,
           showSearch: false,
           collapseSidebar: false,
@@ -371,6 +381,8 @@
         } else {
           const postLocations = (await axios.get('/api/post/all')).data.postLocations;
           this.postLocations = postLocations;
+          const frontEndConfig = (await axios.get('/api/config')).data;
+          this.postsPerPage = frontEndConfig.postsPerPage;
           // inject proper month and year information based on the client's current timezone
           this.postLocations.forEach(post => {
             const date = new Date(post.time);
@@ -464,6 +476,21 @@
         },
         toggleHiddenTags () {
           this.showHiddenTags = !this.showHiddenTags;
+        },
+        nextPage () {
+          this.postPage = ++this.postPage;
+          window.scrollTo(0,0);
+        },
+        lastPage () {
+          this.postPage = --this.postPage;
+          window.scrollTo(0,0);
+        },
+        currentPostPage () {
+          if (this.postsPerPage <= 0 || this.postLocations === null) {
+            return this.postLocations;
+          } else {
+            return this.postLocations.slice(this.postPage*this.postsPerPage,(this.postPage+1)*this.postsPerPage);
+          }
         },
         numberToMonth (num) {
           return ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][num];
