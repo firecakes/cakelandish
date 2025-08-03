@@ -386,7 +386,7 @@
               post.ogpExtra.mediaData = post.ogpExtra.mediaData
                 .sort((a, b) => a.order - b.order)
                 .map(media => {
-                  const extension = media.absoluteUrl.split(".").reverse()[0];
+                  const extension = media.absoluteUrl.split(".").reverse()[0].toLowerCase();
                   let mediaType = "";
                   if (imageTypes.includes(extension)) {
                     mediaType = "image";
