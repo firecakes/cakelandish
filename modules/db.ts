@@ -1,6 +1,7 @@
 import { config } from "../config.ts";
 import { generatePostFileStructure } from "./post.ts";
 import { logger } from "./log.ts";
+import { isEditableExtension } from "./static.ts";
 
 let memory = {
   feeds: [], // store xml and js parsed data in memory to avoid read/write collisions
@@ -681,22 +682,27 @@ export async function addPageFile(pageUrl, file) {
   // add the page to the database
   let fileAlreadyExists = false;
   let foundPage = currentPage.find((element) => element.url === file);
+  let fullPath = `static/${file}`;
+  let isEditable = isEditableExtension(fullPath);
   if (!foundPage) {
     foundPage = {
       url: file,
-      content: null,
+      content: isEditable ? await Deno.readTextFile(fullPath) : null, // don't store content in database that isn't editable by the user,
       directory: null,
       isImportant: false,
       extension: file.split(".").pop(),
-      editable: false,
+      editable: isEditable,
     };
     currentPage.push(foundPage);
     // file is already written
   } else {
     fileAlreadyExists = true;
+    // the file contents could still have been edited and we want to keep track of it
+    foundPage.content = isEditable ? await Deno.readTextFile(fullPath) : null; // don't store content in database that isn't editable by the user,
   }
 
   await saveDb(db);
+  return fileAlreadyExists;
 }
 
 export async function getLastDateExported() {

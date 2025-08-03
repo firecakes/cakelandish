@@ -15,7 +15,7 @@ try {
 }
 
 export const config = {
-  version: "0.14.4",
+  version: "0.15.0",
   title: envs.TITLE || "Cakelandish Feed",
   subtitle: envs.SUBTITLE,
   author: envs.AUTHOR || "Anonymous",
