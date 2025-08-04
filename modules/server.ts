@@ -131,6 +131,9 @@ export async function startServer() {
   const app = new Koa();
   const router = new Router();
 
+  // trust proxy header fields if proxy enabled.
+  app.proxy = config.proxy;
+
   app.use(restoreRequesterIP);
   app.use(rateLimiter);
   app.use(koaIp({
@@ -257,7 +260,7 @@ export async function startServer() {
       // strictness means cookie will only be readable with this site specifically
 
       ctx.cookies.set("jwt-access", access.token, {
-        secure: (config.https && !config.proxy),
+        secure: config.https,
         httpOnly: true,
         sameSite: "strict",
         maxAge: access.expiry,
