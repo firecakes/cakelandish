@@ -357,7 +357,7 @@ export async function startServer() {
     };
   });
 
-  // get all posts in static folder. this is public, and does not read from the database to get the info
+  // get all posts in static folder. this is public, and reads from a subsection of the database
   router.get("/api/post/all", async (ctx, next) => {
     ctx.body = {
       postLocations: getPostLocations(),

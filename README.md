@@ -55,3 +55,11 @@ Auto format on save: `deno task auto-format`
 Auto run on save: `deno task dev`
 
 Create auth code: `deno task code`
+
+## Docker Commands
+
+Build docker image: `docker compose build`
+
+Run docker image: `docker compose up -d`
+
+Tear down docker image: `docker compose down`

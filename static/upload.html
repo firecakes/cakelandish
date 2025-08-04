@@ -4,7 +4,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <head>
     <title>Create and Edit Posts and Drafts</title>
-    <script src="/lib/vue.js"></script>
+    <script src="/lib/vue.global.prod.js"></script>
     <script src="/lib/axios.min.js"></script>
     <script src="/lib/suneditor.min.js"></script>
     <script src="/lib/katex.min.js"></script>
@@ -395,7 +395,7 @@
               if (!m.embedMedia) {
                 return "";
               }
-              const extension = m.url.split(".").reverse()[0];
+              const extension = m.url.split(".").reverse()[0].toLowerCase();
               let output = "";
               if (m.url) {
                 if (imageTypes.includes(extension)) {
@@ -525,7 +525,7 @@
           let imageTypes = util.imageTypes();
           let audioTypes = util.audioTypes();
           let videoTypes = util.videoTypes();
-          const extension = fileName.split(".").reverse()[0];
+          const extension = fileName.split(".").reverse()[0].toLowerCase();
           const imgInjection = `\n<img src="${fileName}"></img>`;
           const audioInjection = `\n<audio controls>
 <source src="${fileName}">
