@@ -272,9 +272,9 @@
             </a>
           </div>
         </div>
-        <div v-if="postsPerPage > 0 && postLocations !== null  && postLocations.length > postsPerPage" class="center pagination flex-center">
+        <div v-if="postsPerPage > 0 && postLocations !== null && postLocations.length > postsPerPage" class="center pagination flex-center">
           <button :class="{'hide-element': postPage <= 0}" class="button text-large top-space side-space one-part" @click="lastPage">Previous Page</button>
-          <button :class="{'hide-element': postLocations.length <= (postPage+1)*postsPerPage}" class="button text-large top-space side-space one-part" @click="nextPage">Next Page
+          <button :class="{'hide-element': postLocations.length <= (postPage+1)*postsPerPage}" class="button text-large top-space side-space one-part" @click="nextPage">Next Page</button>
         </div>
       </main>
 
