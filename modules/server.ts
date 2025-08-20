@@ -131,6 +131,9 @@ export async function startServer() {
   const app = new Koa();
   const router = new Router();
 
+  // trust proxy header fields if proxy enabled.
+  app.proxy = config.proxy;
+
   app.use(restoreRequesterIP);
   app.use(rateLimiter);
   app.use(koaIp({
