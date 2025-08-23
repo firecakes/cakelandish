@@ -1,3 +1,7 @@
+# WARNING
+
+This repository will no longer be updated. Please get newest updates of the project from [this location instead](https://codeberg.org/firecakes/cakelandish).
+
 # Cakelandish
 
 ###### cake + outlandish
