@@ -1,0 +1,13 @@
+version: "3.8"
+services:
+  cakelandish:
+    build: .
+    volumes:
+      - .:/app
+      - ${HTTPS_CERTIFICATE_LOCATION}:${HTTPS_CERTIFICATE_LOCATION}
+      - ${HTTPS_KEY_LOCATION}:${HTTPS_KEY_LOCATION}
+    ports:
+      - "443:443"
+    environment:
+      - PORT=443
+    command: ["deno", "run", "--allow-net", "--allow-read", "--allow-write", "--allow-env", "--unstable-kv", "main.ts"]

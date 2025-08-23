@@ -56,10 +56,30 @@ Auto run on save: `deno task dev`
 
 Create auth code: `deno task code`
 
-## Docker Commands
+## Production Docker Compose Environment
+
+You may use the following docker commands to quickly set up Cakelandish under the assumption it is being deployed permanently under a domain.
+
+### Docker Image Proxy Configuration
+
+Firstly, rename the file `docker-compose-proxy.yml` to `docker-compose.yml`
 
 Build docker image: `docker compose build`
 
 Run docker image: `docker compose up -d`
 
 Tear down docker image: `docker compose down`
+
+Create auth code: `docker compose exec cakelandish deno task code`
+
+### Docker Image No Proxy Configuration
+
+Firstly, rename the file `docker-compose-no-proxy.yml` to `docker-compose.yml`
+
+Build docker image: `docker compose build`
+
+Run docker image: `docker compose up -d`
+
+Tear down docker image: `docker compose down`
+
+Create auth code: `docker compose exec cakelandish deno task code`
